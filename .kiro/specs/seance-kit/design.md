@@ -35,7 +35,9 @@ packages/
   ui/                      tokens, components, timeline, palette
   mcp-server/              stdio MCP server over a registry
 templates/app/             starter copied by `pnpm new:app`
-scripts/                   new-app, check-kiro-not-ignored
+scripts/                   build-all, serve-dist, new-app, check-kiro-not-ignored
+worker/                    Cloudflare Worker: per-app SPA fallback
+wrangler.jsonc             Cloudflare deploy config
 LICENSE  README.md  KIRO_USAGE.md
 ```
 
@@ -169,7 +171,7 @@ Sections in order: hero (template story), "How an app is built" (tool registry i
 
 ## 12. Deployment
 
-Cloudflare Pages, one project. A build script produces `dist/` with:
+Cloudflare Workers static assets (the Cloudflare dashboard's unified Worker/Pages flow), one project named `seance-kit`, configured by `wrangler.jsonc` and deployed with `npx wrangler deploy`. A build script produces `dist/` with:
 
 ```
 /            landing
@@ -177,7 +179,11 @@ Cloudflare Pages, one project. A build script produces `dist/` with:
 /inbox/      inbox-exorcist (Vite base "/inbox/")
 ```
 
-`_redirects` provides SPA fallbacks per app. GitHub Actions runs checks. Cloudflare's Git integration (or `wrangler pages deploy` in CI) deploys `main`, with preview URLs for PRs. Deployment is proven on day one (task group 0).
+Per-app SPA fallback lives in `worker/index.js`, not in `_redirects`. The Worker serves assets first (`env.ASSETS.fetch`). On a 404 for a GET/HEAD navigation under `/archive/` or `/inbox/` (and not a file-like path such as `.js`), it returns that app's own `index.html`. Unknown root URLs and missing files still return 404.
+
+**Decision record (Nov 16-17, 2026).** The first deploy failed with Cloudflare API error 100324 ("Infinite loop detected in this rule") on `/archive/* /archive/index.html 200` and `/inbox/* /inbox/index.html 200`. Workers static assets rejects wildcard 200 rewrites whose destination re-matches the source (see cloudflare/workers-sdk#11824 and #11904). We rejected `assets.not_found_handling = "single-page-application"` because it falls back only to the root `index.html`, so `/archive/` deep links would show the landing page. `build-all.mjs` therefore emits no `_redirects`, and `wrangler.jsonc` sets `main` and `assets.binding = "ASSETS"`.
+
+GitHub Actions runs checks. Cloudflare's Git integration builds and deploys `main` (build command `pnpm install --frozen-lockfile && pnpm build`, deploy command `npx wrangler deploy`). Deployment is proven on day one (task group 0).
 
 ## 13. Testing
 

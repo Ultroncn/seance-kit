@@ -12,6 +12,7 @@ packages/ui/           tokens, components, timeline, palette, DemoBadge
 packages/mcp-server/   stdio MCP server over a registry
 templates/app/         starter used by `pnpm new:app`
 scripts/               repo scripts
+worker/                Cloudflare Worker: per-app SPA fallback (JS, no build step)
 ```
 
 `apps/` holds exactly the two app folders.

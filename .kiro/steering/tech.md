@@ -10,5 +10,5 @@
 - Tools: names in snake_case, risk is one of `read | write | destructive`. Destructive tools soft-delete only and return an undo token.
 - Prefer small pure functions for parsing and normalization so they are property-testable.
 - Dependencies: add only when they save real work. Check license compatibility with MIT.
-- Deploy: Cloudflare Pages, static. Output layout is `/`, `/archive/`, `/inbox/`.
+- Deploy: Cloudflare Workers static assets (`wrangler.jsonc`, `worker/index.js`). Output layout is `/`, `/archive/`, `/inbox/`. Do not use `_redirects` for SPA fallbacks: the platform rejects them (error 100324).
 - Commits: small and conventional (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).

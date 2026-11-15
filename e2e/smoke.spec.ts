@@ -24,6 +24,16 @@ test("archive SPA fallback serves the shell on deep links", async ({ page }) => 
   await expect(page.getByRole("heading", { level: 1, name: "Archive Séance" })).toBeVisible();
 });
 
+test("inbox SPA fallback serves the inbox shell, not the landing page", async ({ page }) => {
+  await page.goto("/inbox/some/deep/link");
+  await expect(page.getByRole("heading", { level: 1, name: "Inbox Exorcist" })).toBeVisible();
+});
+
+test("unknown root URLs return 404", async ({ request }) => {
+  const res = await request.get("/definitely-not-a-page");
+  expect(res.status()).toBe(404);
+});
+
 test("inbox shell loads", async ({ page }) => {
   await page.goto("/inbox/");
   await expect(page.getByRole("heading", { level: 1, name: "Inbox Exorcist" })).toBeVisible();

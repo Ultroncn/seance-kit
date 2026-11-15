@@ -23,10 +23,11 @@ Every milestone ends with a deployed Cloudflare Pages build.
 - [ ] 0.3 `scripts/check-kiro-not-ignored` plus CI job. (R1.6)
 - [ ] 0.4 Empty shells: `site/` (landing), `apps/archive-seance`, `apps/inbox-exorcist` (Vite + React + Tailwind, base paths `/`, `/archive/`, `/inbox/`). `apps/` holds only the two apps. (R1.2)
 - [ ] 0.5 `packages/ui` with tokens and theme only. Shells use it.
-- [ ] 0.6 Combined build script producing `dist/` and `_redirects`.
+- [ ] 0.6 Combined build script producing `dist/`. No `_redirects` (see 0.8a).
 - [ ] 0.7 GitHub Actions: typecheck, lint, test, build. (R11.3)
-- [ ] 0.8 Create the Cloudflare Pages project, connect `main`, enable PR previews. (R11.4, R12.1)
-- [ ] 0.9 Verify the live URL serves landing and both shells. Record the URL in README.
+- [ ] 0.8 Create the Cloudflare project (Workers static assets), connect `main`, enable PR previews. Config in `wrangler.jsonc`. (R11.4, R12.1)
+- [x] 0.8a `worker/index.js` provides per-app SPA fallback, with unit tests and e2e coverage. Workers static assets rejects `_redirects` SPA rewrites (error 100324), so the fallback lives in the Worker. See design.md section 12.
+- [ ] 0.9 Verify the live URL serves landing and both shells, and that `/archive/` and `/inbox/` deep links show the right app (`BASE_URL=<url> pnpm e2e`). Record the URL in README.
 - [ ] 0.10 Playwright smoke: three URLs load. Add to CI.
 - [ ] 0.11 Add Kiro hooks (typecheck on save, tests on commit).
 - [ ] 0.12 Start `KIRO_USAGE.md` with entries for specs, steering, hooks.

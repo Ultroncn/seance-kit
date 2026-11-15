@@ -4,7 +4,7 @@
 //   /archive/  apps/archive-seance
 //   /inbox/    apps/inbox-exorcist
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -24,10 +24,8 @@ for (const t of targets) {
   cpSync(resolve(root, t.dir, "dist"), resolve(dist, t.out), { recursive: true });
 }
 
-// Cloudflare Pages: SPA fallbacks per app. The root has no catch-all, so unknown URLs 404.
-writeFileSync(
-  resolve(dist, "_redirects"),
-  ["/archive/* /archive/index.html 200", "/inbox/* /inbox/index.html 200", ""].join("\n"),
-);
+// No _redirects file on purpose. Workers static assets rejects SPA rewrites such as
+// "/archive/* /archive/index.html 200" (API error 100324, "infinite loop"). Per-app SPA
+// fallback lives in worker/index.js instead.
 
 console.log("build-all: dist/ ready");

@@ -17,7 +17,17 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.{js,mjs}", "**/vite.config.ts", "playwright.config.ts", "vitest.config.ts"],
+    files: ["worker/**/*.js"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
+  {
+    files: [
+      "scripts/**/*.mjs",
+      "*.js",
+      "**/vite.config.ts",
+      "playwright.config.ts",
+      "vitest.config.ts",
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
 );
