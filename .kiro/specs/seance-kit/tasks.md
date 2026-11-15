@@ -45,8 +45,8 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 1.7 Agent loop with step budget, validation, event stream. (R2.1, R2.3, R2.4, R2.6)
 - [x] 1.8 Approval gate and Banish/undo. (R2.5, R2.7)
 - [x] 1.9 PBT P8, P9, P10 for the loop and gates.
-- [ ] 1.10 `packages/llm`: Provider interface, Mock provider with scripts. (R3.1)
-- [ ] 1.11 Anthropic, OpenAI-compatible, Ollama adapters (manual verify against real endpoints).
+- [x] 1.10 `packages/llm`: Provider interface, Mock provider with scripts. (R3.1)
+- [ ] 1.11 Anthropic, OpenAI-compatible, Ollama adapters (manual verify against real endpoints). _Adapters and fake-fetch tests done. Still pending: manual verification against real endpoints with real keys._
 - [ ] 1.12 Settings panel: provider choice, key storage in IndexedDB. (R3.2, R3.5)
 - [ ] 1.13 `<DemoBadge/>` and `useProviderMode`. Unit test. (R3.4)
 - [ ] 1.14 UI kit: layout panes, buttons, inputs, command palette, séance timeline, approval card. (R7)
