@@ -19,3 +19,10 @@ export {
   type BanishResult,
   type UndoResult,
 } from "./banish";
+export {
+  SEARCH_INDEX_COLLECTION,
+  SearchService,
+  type SearchHit,
+  type SearchOptions,
+  type SearchServiceOptions,
+} from "./search";

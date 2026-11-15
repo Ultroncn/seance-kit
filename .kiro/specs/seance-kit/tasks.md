@@ -51,8 +51,8 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [ ] 1.13 `<DemoBadge/>` and `useProviderMode`. Unit test. (R3.4)
 - [ ] 1.14 UI kit: layout panes, buttons, inputs, command palette, séance timeline, approval card. (R7)
 - [ ] 1.15 Reduced-motion handling in kit. (R7.5)
-- [ ] 1.16 Search service over MiniSearch with persistence. PBT P6. (R4.5)
-- [ ] 1.17 Export all and wipe data actions. (R4.4)
+- [x] 1.16 Search service over MiniSearch with persistence. PBT P6. (R4.5)
+- [ ] 1.17 Export all and wipe data actions. (R4.4) _Data layer done (`exportAll`, `wipe`, `parseExportFile`, `importExportFile`, tested). The Settings buttons ship with 1.12._
 - [ ] 1.18 Deploy and verify.
 
 ## M2. Archive Séance (Nov 21-24)

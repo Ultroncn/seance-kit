@@ -13,6 +13,7 @@
   "dependencies": {
     "@seance/llm": "workspace:*",
     "@seance/storage": "workspace:*",
+    "minisearch": "^7",
     "zod": "^4.0.0"
   },
   "devDependencies": {
