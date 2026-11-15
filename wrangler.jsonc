@@ -2,7 +2,7 @@
   "$schema": "https://developers.cloudflare.com/workers/wrangler/configuration.schema.json",
   "name": "seance-kit",
   "main": "worker/index.js",
-  "compatibility_date": "2026-11-16",
+  "compatibility_date": "2026-11-15",
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS"
