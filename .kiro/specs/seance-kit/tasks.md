@@ -40,11 +40,11 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 1.2 IndexedDB adapter (Dexie) passing the contract suite. (R4.1)
 - [x] 1.3 File adapter passing the contract suite. (R4.2)
 - [x] 1.4 PBT P5 for storage.
-- [ ] 1.5 `packages/core`: tool registry with schemas, risk, `toJsonSchema`, `toMcpTools`. (R2.2)
-- [ ] 1.6 PBT P7, P11 for registry.
-- [ ] 1.7 Agent loop with step budget, validation, event stream. (R2.1, R2.3, R2.4, R2.6)
-- [ ] 1.8 Approval gate and Banish/undo. (R2.5, R2.7)
-- [ ] 1.9 PBT P8, P9, P10 for the loop and gates.
+- [x] 1.5 `packages/core`: tool registry with schemas, risk, `toJsonSchema`, `toMcpTools`. (R2.2)
+- [x] 1.6 PBT P7, P11 for registry.
+- [x] 1.7 Agent loop with step budget, validation, event stream. (R2.1, R2.3, R2.4, R2.6)
+- [x] 1.8 Approval gate and Banish/undo. (R2.5, R2.7)
+- [x] 1.9 PBT P8, P9, P10 for the loop and gates.
 - [ ] 1.10 `packages/llm`: Provider interface, Mock provider with scripts. (R3.1)
 - [ ] 1.11 Anthropic, OpenAI-compatible, Ollama adapters (manual verify against real endpoints).
 - [ ] 1.12 Settings panel: provider choice, key storage in IndexedDB. (R3.2, R3.5)

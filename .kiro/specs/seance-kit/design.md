@@ -43,7 +43,7 @@ LICENSE  README.md  KIRO_USAGE.md
 
 The landing page lives in `site/`, outside `apps/`, so `apps/` holds exactly the two app folders the rules require (decided, formerly OQ1).
 
-Dependency direction: `apps/* -> ui, core, llm, storage`. `site -> ui` only. `core -> storage (interface only)`. `llm`, `storage` and `ui` never import `core` internals. `mcp-server -> core, storage`.
+Dependency direction: `apps/* -> ui, core, llm, storage`. `site -> ui` only. `core -> storage (interface only), llm (types only)`. `llm`, `storage` and `ui` never import `core`; `llm` owns the provider and chat-message types, so core can type the loop without a cycle. `mcp-server -> core, storage`.
 
 ## 3. Core
 
@@ -89,7 +89,7 @@ Undo: destructive tools return an `undoToken`. `core.undo(token)` restores the i
 
 ## 4. LLM providers
 
-`Provider.complete(messages, tools, signal) -> AsyncIterable<ProviderEvent>`.
+`Provider.complete({ messages, tools, system, signal }) -> Promise<{ text, toolCalls }>`. Responses are not streamed in v1 (decided in M1 to keep the loop and Mock simple). Streaming is a possible later addition.
 
 - **Anthropic** and **OpenAI-compatible**: direct browser `fetch` using the user's key. Anthropic needs its browser-access header.
 - **Ollama**: `http://localhost:11434`, no key. The user must allow the page origin (`OLLAMA_ORIGINS`). The settings panel explains this.
