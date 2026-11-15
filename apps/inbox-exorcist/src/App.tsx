@@ -1,19 +1,102 @@
+import { MockProvider } from "@seance/llm";
+import { IndexedDbStorage } from "@seance/storage";
+import {
+  AppShell,
+  Button,
+  CommandPalette,
+  DemoBadge,
+  EmptyState,
+  Kbd,
+  PaneHeader,
+  ProviderModeProvider,
+  SeanceProvider,
+  SeanceTimeline,
+  SettingsDialog,
+  usePaletteHotkey,
+} from "@seance/ui";
+import { useState } from "react";
+
+// Both apps share one origin, so each needs its own database name.
+const storage = new IndexedDbStorage({ name: "inbox-exorcist" });
+// Scripts arrive with the agent tools in milestone M3.
+const mock = new MockProvider({ scripts: [] });
+
+function Workspace() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  usePaletteHotkey(setPaletteOpen);
+
+  return (
+    <>
+      <AppShell
+        title="Inbox Exorcist"
+        mark={
+          <span
+            aria-hidden
+            className="size-2 rounded-full bg-ecto shadow-[0_0_12px_var(--color-ecto)]"
+          />
+        }
+        actions={
+          <>
+            <DemoBadge onClick={() => setSettingsOpen(true)} />
+            <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
+              Commands <Kbd>⌘K</Kbd>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
+              Settings
+            </Button>
+          </>
+        }
+        library={<PaneHeader title="Library" />}
+        content={
+          <EmptyState title="No mail yet">
+            Import an .mbox or .eml file to begin. It stays in this browser.
+          </EmptyState>
+        }
+        agent={
+          <>
+            <PaneHeader title="Séance" />
+            <SeanceTimeline
+              entries={[]}
+              onApprove={() => {}}
+              onReject={() => {}}
+              empty={
+                <EmptyState title="The agent arrives in milestone M3">
+                  Triage an .mbox or .eml archive. The agent never sends mail.
+                </EmptyState>
+              }
+            />
+          </>
+        }
+      />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        commands={[
+          {
+            id: "settings",
+            label: "Open settings",
+            group: "App",
+            keywords: ["provider", "api key", "model", "export", "delete"],
+            onSelect: () => setSettingsOpen(true),
+          },
+        ]}
+      />
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        exportName="inbox-exorcist"
+      />
+    </>
+  );
+}
+
 export function App() {
   return (
-    <div className="min-h-screen bg-bg text-fg">
-      <main className="mx-auto max-w-3xl px-6 py-20">
-        <a href="/" className="text-sm text-muted hover:text-fg">
-          ← Séance Kit
-        </a>
-        <h1 className="mt-6 text-4xl font-semibold">Inbox Exorcist</h1>
-        <p className="mt-4 text-lg text-muted">
-          Triage an .mbox or .eml archive with an agent that never sends mail. Everything stays in
-          your browser.
-        </p>
-        <p className="mt-8 rounded-lg border border-line bg-surface p-4 text-sm text-muted">
-          App shell. Features land in milestone M3.
-        </p>
-      </main>
-    </div>
+    <SeanceProvider>
+      <ProviderModeProvider storage={storage} mock={mock}>
+        <Workspace />
+      </ProviderModeProvider>
+    </SeanceProvider>
   );
 }

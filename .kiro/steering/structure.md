@@ -23,6 +23,7 @@ worker/                Cloudflare Worker: per-app SPA fallback (JS, no build ste
 - `site` imports only `ui`.
 - `core` imports the `Storage` interface type and the `Provider`/message types from `llm` (types only, plus `zod`). No React, no DOM.
 - `llm`, `storage`, `ui` never import `core`. `llm` owns the provider and chat-message types.
+- `ui` may import `llm` and `storage` (provider settings, `useProviderMode`, Settings dialog). `llm` may import `storage` types.
 - `mcp-server` imports `core` and `storage`.
 - Apps never import from each other.
 - Tools and importers for an app live inside that app folder.

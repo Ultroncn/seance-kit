@@ -31,3 +31,7 @@ The first Cloudflare deploy built cleanly, then failed at `wrangler deploy` with
 `assets.not_found_handling = "single-page-application"` was no fix either, because it falls back only to the root `index.html` and would show the landing page on `/archive/` deep links.
 
 Decision: remove `_redirects` and add a small Worker (`worker/index.js`) that serves assets first, then returns the right app's `index.html` for navigations under `/archive/` or `/inbox/`. Unknown root URLs still return 404. The local test server (`scripts/serve-dist.mjs`) runs the same Worker, so Playwright covers the deep-link behavior before every deploy. Recorded in `design.md` section 12.
+
+### Secrets never leave through an export
+
+The first draft stored the API key with other settings, which meant "Export all data" would have written it into a JSON file that people share or feed to the MCP server. We added a reserved `secrets` collection that every Storage adapter leaves out of `exportAll`. The shared contract suite enforces it, and an e2e test downloads a real export and checks that the key is absent. The steering file `tech.md` now carries the rule.

@@ -20,7 +20,8 @@ export interface ListOptions {
  *   Mutating an item after `put`, or a value returned by `get`/`list`, never changes what is stored.
  * - `list` returns items sorted by id (UTF-16 code unit order), then applies offset and limit.
  * - `put` on an existing id replaces the item. `remove` on a missing id is a no-op.
- * - `wipe` removes every item in every collection.
+ * - `wipe` removes every item in every collection, including `secrets`.
+ * - `exportAll` never includes the `secrets` collection (API keys and similar).
  * - `remove` is a hard delete. Tools must soft-delete (set `banishedAt`) and never call it.
  */
 export interface Storage {
@@ -32,6 +33,9 @@ export interface Storage {
   exportAll(): Promise<Blob>;
   wipe(): Promise<void>;
 }
+
+/** Reserved collection for API keys and other secrets. Never exported. */
+export const SECRETS_COLLECTION = "secrets";
 
 export interface ExportFile {
   version: 1;

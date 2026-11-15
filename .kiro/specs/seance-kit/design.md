@@ -96,7 +96,11 @@ Undo: destructive tools return an `undoToken`. `core.undo(token)` restores the i
 
 ### Demo mode honesty
 
-A `useProviderMode()` hook exposes `isMock`. The shared `<DemoBadge/>` in `packages/ui` renders in the app header whenever `isMock` is true. Playwright asserts the badge is present with Mock and absent with a fake real provider. The badge is not dismissible.
+`<ProviderModeProvider>` in `packages/ui` loads saved settings and exposes `useProviderMode()`: `{ provider, isMock, config, save, ... }`. `isMock` is read from the `provider` object itself, and the agent must take its provider from the same hook, so the badge cannot disagree with what actually runs. `<DemoBadge/>` renders in the app header whenever `isMock` is true. It is not dismissible, and clicking it opens Settings. Playwright asserts the badge is present with Mock, absent after saving a (fake, routed) real provider, still absent after reload, and back after returning to Demo. A mutation check (badge ignoring `isMock`) fails those tests.
+
+### Settings and secrets
+
+The Settings dialog picks Demo, Anthropic, OpenAI-compatible or Ollama, and offers Test connection (one tiny request, not saved) so a user can verify a real provider with their own key. The config, including the key, is stored in the reserved `secrets` collection. Every Storage adapter excludes `secrets` from `exportAll` (contract-tested), and `parseExportFile` rejects files that contain it. Export and Delete-all-data live in the same dialog. Delete needs a second confirming click. Each app uses its own IndexedDB database (`archive-seance`, `inbox-exorcist`) because both share one origin.
 
 ## 5. Storage
 
@@ -113,7 +117,7 @@ interface Storage {
 
 Adapters: `IndexedDbStorage` (Dexie), `MemoryStorage`, `FileStorage` (JSON files, Node, used by the MCP server). One contract suite runs against all three.
 
-Collections: `conversations`, `messages`, `emails`, `tags`, `summaries`, `drafts`, `settings`, `searchIndex`.
+Collections: `conversations`, `messages`, `emails`, `tags`, `summaries`, `drafts`, `searchIndex`, `banish_log`, and the reserved `secrets` (never exported).
 
 Search: MiniSearch index rebuilt from storage on first load, then serialized to `searchIndex` after changes (debounced).
 

@@ -1,4 +1,4 @@
-import type { ExportFile, ListOptions, StoredItem } from "./types";
+import { SECRETS_COLLECTION, type ExportFile, type ListOptions, type StoredItem } from "./types";
 
 const COLLECTION_RE = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
@@ -31,6 +31,8 @@ export function paginate<T>(sorted: T[], opts: ListOptions = {}): T[] {
 }
 
 export function toExportBlob(collections: Record<string, StoredItem[]>): Blob {
-  const file: ExportFile = { version: 1, collections };
+  // Secrets never leave the device through an export file, whatever the adapter.
+  const { [SECRETS_COLLECTION]: _secrets, ...rest } = collections;
+  const file: ExportFile = { version: 1, collections: rest };
   return new Blob([JSON.stringify(file)], { type: "application/json" });
 }

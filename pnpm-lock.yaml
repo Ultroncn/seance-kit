@@ -44,6 +44,12 @@ importers:
 
   apps/archive-seance:
     dependencies:
+      '@seance/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
+      '@seance/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@seance/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -75,6 +81,12 @@ importers:
 
   apps/inbox-exorcist:
     dependencies:
+      '@seance/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
+      '@seance/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@seance/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -124,6 +136,10 @@ importers:
         version: 4.10.2
 
   packages/llm:
+    dependencies:
+      '@seance/storage':
+        specifier: workspace:*
+        version: link:../storage
     devDependencies:
       fast-check:
         specifier: ^4.0.0
@@ -159,6 +175,12 @@ importers:
       '@radix-ui/react-visually-hidden':
         specifier: ^1
         version: 1.2.13(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@seance/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@seance/storage':
+        specifier: workspace:*
+        version: link:../storage
       cmdk:
         specifier: ^1.1
         version: 1.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)

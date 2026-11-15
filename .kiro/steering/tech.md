@@ -6,7 +6,9 @@
 - zod defines every tool schema. JSON Schema and MCP tool definitions are derived, never hand-written.
 - Storage goes through the `Storage` interface. Never call Dexie or IndexedDB directly from apps or tools.
 - Search: MiniSearch. Email parsing: `postal-mime`.
-- Providers sit behind `Provider`. API keys live only in IndexedDB and are only sent to the chosen endpoint. Never log keys or user content.
+- Providers sit behind `Provider`. API keys live only in IndexedDB, in the reserved `secrets` collection, which `exportAll` never writes. Keys are only sent to the chosen endpoint. Never log keys or user content, and never ask for a key in chat.
+- The agent and the Demo badge both take the provider from `useProviderMode()`. Never build a provider elsewhere.
+- Each app uses its own IndexedDB database name. All apps share one origin.
 - Tools: names in snake_case, risk is one of `read | write | destructive`. Destructive tools soft-delete only and return an undo token.
 - Prefer small pure functions for parsing and normalization so they are property-testable.
 - Dependencies: add only when they save real work. Check license compatibility with MIT.

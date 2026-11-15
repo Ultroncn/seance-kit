@@ -12,7 +12,9 @@
   "dependencies": {
     "@seance/ui": "workspace:*",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@seance/llm": "workspace:*",
+    "@seance/storage": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

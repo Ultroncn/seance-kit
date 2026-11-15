@@ -24,3 +24,10 @@ export {
 } from "./openai";
 export { createProvider, type ProviderConfig, type ProviderKind } from "./factory";
 export type { FetchLike } from "./http";
+export {
+  PROVIDER_SETTINGS_ID,
+  clearProviderConfig,
+  loadProviderConfig,
+  parseProviderConfig,
+  saveProviderConfig,
+} from "./settings";

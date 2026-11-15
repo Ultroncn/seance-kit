@@ -89,6 +89,16 @@ export function runStorageContract(
       await expect(s.get("things", "")).rejects.toThrow(TypeError);
     });
 
+    it("exportAll never includes secrets, and wipe removes them", async () => {
+      await s.put("secrets", { id: "provider", apiKey: "sk-should-not-leak" });
+      await s.put("notes", { id: "n1" });
+      const text = await (await s.exportAll()).text();
+      expect(text).not.toContain("sk-should-not-leak");
+      expect(JSON.parse(text).collections).toEqual({ notes: [{ id: "n1" }] });
+      await s.wipe();
+      expect(await s.get("secrets", "provider")).toBeUndefined();
+    });
+
     it("exportAll lists every non-empty collection, and wipe empties everything", async () => {
       await s.put("one", { id: "b", v: 1 });
       await s.put("one", { id: "a", v: 2 });

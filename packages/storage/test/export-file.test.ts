@@ -34,6 +34,7 @@ describe("export file", () => {
     expect(() => parseExportFile("{}")).toThrow(/version/);
     expect(() => parseExportFile('{"version":1,"collections":[]}')).toThrow(/collections/);
     expect(() => parseExportFile('{"version":1,"collections":{"../x":[]}}')).toThrow(TypeError);
+    expect(() => parseExportFile('{"version":1,"collections":{"secrets":[]}}')).toThrow(/secrets/);
     expect(() => parseExportFile('{"version":1,"collections":{"a":[{"no":"id"}]}}')).toThrow(
       TypeError,
     );

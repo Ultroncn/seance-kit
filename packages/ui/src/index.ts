@@ -44,3 +44,11 @@ export {
   type SeanceTimelineProps,
 } from "./SeanceTimeline";
 export type { StepRisk, TimelineEntry, ToolEntry, ToolStepStatus } from "./timeline-types";
+export {
+  ProviderModeProvider,
+  useProviderMode,
+  type ProviderModeProviderProps,
+  type ProviderModeValue,
+} from "./ProviderMode";
+export { DemoBadge } from "./DemoBadge";
+export { SettingsDialog, type SettingsDialogProps } from "./SettingsDialog";

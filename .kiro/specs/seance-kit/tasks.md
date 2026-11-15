@@ -46,15 +46,15 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 1.8 Approval gate and Banish/undo. (R2.5, R2.7)
 - [x] 1.9 PBT P8, P9, P10 for the loop and gates.
 - [x] 1.10 `packages/llm`: Provider interface, Mock provider with scripts. (R3.1)
-- [ ] 1.11 Anthropic, OpenAI-compatible, Ollama adapters (manual verify against real endpoints). _Adapters and fake-fetch tests done. Still pending: manual verification against real endpoints with real keys._
-- [ ] 1.12 Settings panel: provider choice, key storage in IndexedDB. (R3.2, R3.5)
-- [ ] 1.13 `<DemoBadge/>` and `useProviderMode`. Unit test. (R3.4)
+- [ ] 1.11 Anthropic, OpenAI-compatible, Ollama adapters (manual verify against real endpoints). _Adapters, fake-fetch tests and a routed e2e of the OpenAI-compatible path done. Still pending: the user verifies a real endpoint with his own key via Settings → Test connection. Keys are never shared in chat._
+- [x] 1.12 Settings panel: provider choice, key storage in IndexedDB. (R3.2, R3.5)
+- [x] 1.13 `<DemoBadge/>` and `useProviderMode`. Unit test. (R3.4)
 - [x] 1.14 UI kit: layout panes, buttons, inputs, command palette, séance timeline, approval card. (R7)
 - [x] 1.15 Reduced-motion handling in kit. (R7.5)
 - [x] 1.15a Public UI-kit gallery at `/kit/` (in `site/`, canned data), with real-browser axe (incl. contrast), palette, approval and reduced-motion e2e tests.
 - [x] 1.16 Search service over MiniSearch with persistence. PBT P6. (R4.5)
-- [ ] 1.17 Export all and wipe data actions. (R4.4) _Data layer done (`exportAll`, `wipe`, `parseExportFile`, `importExportFile`, tested). The Settings buttons ship with 1.12._
-- [ ] 1.18 Deploy and verify.
+- [x] 1.17 Export all and wipe data actions. (R4.4) Export excludes the `secrets` collection.
+- [x] 1.18 Deploy and verify.
 
 ## M2. Archive Séance (Nov 21-24)
 

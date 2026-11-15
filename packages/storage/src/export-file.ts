@@ -1,5 +1,5 @@
 import { assertCollection, assertId, cloneJson } from "./shared";
-import type { ExportFile, Storage, StoredItem } from "./types";
+import { SECRETS_COLLECTION, type ExportFile, type Storage, type StoredItem } from "./types";
 
 /** Parse and validate the text of an export file. Throws a readable Error if it is not one. */
 export function parseExportFile(text: string): ExportFile {
@@ -18,6 +18,7 @@ export function parseExportFile(text: string): ExportFile {
   }
   for (const [name, items] of Object.entries(collections)) {
     assertCollection(name);
+    if (name === SECRETS_COLLECTION) throw new Error("Export files must not contain secrets");
     if (!Array.isArray(items)) throw new Error(`Export collection "${name}" is not a list`);
     for (const item of items) assertId((item as StoredItem | null)?.id);
   }
