@@ -36,10 +36,10 @@ Exit: public URL works, CI green, `.kiro` committed.
 
 ## M1. Core, storage, providers, UI kit (Nov 18-20)
 
-- [ ] 1.1 `packages/storage`: interface, Memory adapter, contract suite. (R4.2)
-- [ ] 1.2 IndexedDB adapter (Dexie) passing the contract suite. (R4.1)
-- [ ] 1.3 File adapter passing the contract suite. (R4.2)
-- [ ] 1.4 PBT P5 for storage.
+- [x] 1.1 `packages/storage`: interface, Memory adapter, contract suite. (R4.2)
+- [x] 1.2 IndexedDB adapter (Dexie) passing the contract suite. (R4.1)
+- [x] 1.3 File adapter passing the contract suite. (R4.2)
+- [x] 1.4 PBT P5 for storage.
 - [ ] 1.5 `packages/core`: tool registry with schemas, risk, `toJsonSchema`, `toMcpTools`. (R2.2)
 - [ ] 1.6 PBT P7, P11 for registry.
 - [ ] 1.7 Agent loop with step budget, validation, event stream. (R2.1, R2.3, R2.4, R2.6)
