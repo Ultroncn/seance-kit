@@ -8,13 +8,15 @@ Record in one pass, screen capture plus voice-over. Rehearse twice. Cut anything
 
 | Time | Section | On screen | Voice-over gist |
 |---|---|---|---|
-| 0:00-0:20 | **Problem** | Scattered chat exports and a messy inbox file | Our AI history and email pile up in files we never open. Cloud tools want your data. |
-| 0:20-0:50 | **Template** | Landing page, then the tool registry code, then `pnpm new:app` | Séance Kit is a local-first template. Define typed tools, get an agent loop, approvals, storage and UI. Two apps came out of it. |
-| 0:50-1:35 | **Archive Séance** | Drag in a ChatGPT export, search, run "summarize my oldest chats", approve a tag step, resurrect one | Import, search, summarize, resurrect. Every write step waits for approval in the séance timeline. Demo-mode badge is visible. |
-| 1:35-2:05 | **Real provider** | Settings, paste own key, badge disappears, run one prompt for real | The demo runs on a scripted provider and says so. Here is the same flow with a real model, key stored only in the browser. |
-| 2:05-2:30 | **Inbox Exorcist** | Drop an mbox, classify, bulk Banish approval list, undo | Same core, different tools. Bulk deletes list every message first. Nothing is sent, nothing is lost. |
-| 2:30-2:55 | **Kiro usage** | `.kiro` folder: spec, steering, hook firing, MCP tool call from Kiro | Built with Kiro: spec-driven tasks, steering docs, hooks that run checks, and our own MCP server called from Kiro. |
-| 2:55-3:00 | Close | URL and repo | Try it at the link. (Cut this if running over.) |
+| 0:00-0:15 | **Problem** | Scattered chat exports and a messy inbox file | Our AI history and email pile up in files we never open. Cloud tools want your data. |
+| 0:15-0:40 | **Template** | Landing page, then the tool registry code, then `pnpm new:app` | Séance Kit is a local-first template. Define typed tools, get an agent loop, approvals, storage and UI. Two apps came out of it. |
+| 0:40-1:20 | **Archive Séance** | Drag in a ChatGPT export, search, run "summarize my oldest chats", approve a tag step, resurrect one | Import, search, summarize, resurrect. Every write step waits for approval in the séance timeline. Demo-mode badge is visible. |
+| 1:20-1:45 | **Real provider** | Settings, paste own key, badge disappears, run one prompt for real | The demo runs on a scripted provider and says so. Here is the same flow with a real model, key stored only in the browser. |
+| 1:45-2:10 | **Inbox Exorcist** | Drop an mbox, classify, bulk Banish approval list, undo | Same core, different tools. Bulk deletes list every message first. Nothing is sent, nothing is lost. |
+| 2:10-2:40 | **Kiro usage** | `.kiro` folder: spec, steering, hook firing, MCP tool call from Kiro | Built with Kiro: spec-driven tasks, steering docs, hooks that run checks, and our own MCP server called from Kiro. |
+| 2:40-2:45 | **Close** | URL and repo | Try it at the link. |
+
+Total 2:45, leaving 15 seconds of margin under the 3:00 limit.
 
 Checklist: Demo badge visible in Archive and Inbox segments. Real-provider segment included. Final export under 3:00.
 
