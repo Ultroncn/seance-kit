@@ -1,0 +1,51 @@
+/*
+ * Séance Kit design tokens. Single source of truth for color and type.
+ * Dark only ("candlelit"). See .kiro/steering/design-language.md.
+ * Tailwind v4 turns these into utilities: bg-bg, bg-surface, text-fg, text-muted,
+ * text-ecto, text-candle, text-blood, border-line, font-sans, font-mono.
+ */
+@theme {
+  --color-bg: #0b0a10;
+  --color-surface: #14121c;
+  --color-raised: #1d1a28;
+  --color-line: #2a2638;
+  --color-fg: #e8e6f0;
+  --color-muted: #9a96ad;
+  --color-ecto: #7cf2b6;
+  --color-candle: #f2b35e;
+  --color-blood: #e5636f;
+
+  --font-sans: ui-sans-serif, "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ecto);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

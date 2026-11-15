@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.vite/
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.local-data/
+.wrangler/
+# NOTE: .kiro/ must never be ignored. scripts/check-kiro-not-ignored.mjs enforces this.
