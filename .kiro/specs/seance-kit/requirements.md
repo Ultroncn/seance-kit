@@ -85,7 +85,7 @@ The edge over rivals is UI polish and a reusable, tested agent core. We do not b
 ### R8. Landing page
 1. The root page SHALL present the template story: "build your own agent app in an afternoon".
 2. The root page SHALL link to both apps.
-3. The root page SHALL include a visible Kiro-usage section (specs, steering, hooks, MCP) linking to `KIRO_USAGE.md`.
+3. The root page SHALL include a visible Kiro-usage section (specs, steering, MCP) linking to `KIRO_USAGE.md`.
 4. The root page SHALL link to the repo and the demo video.
 
 ### R9. MCP server

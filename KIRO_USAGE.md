@@ -10,9 +10,13 @@ Draft, started in M0. Each section gets real examples and screenshots before sub
 
 `.kiro/steering/` has `product.md`, `tech.md`, `structure.md`, `design-language.md` and `testing.md`. They hold the rules that are easy to forget mid-build: no app code in `core`, soft-delete only, the Demo-mode badge, design tokens, property-test naming.
 
-## Hooks
+## Hooks (skipped)
 
-Planned (task 0.11): typecheck on save, tests on commit.
+We planned three hooks (task 0.11): typecheck on saving a `.ts`/`.tsx` file, lint and tests after each spec task (`PostTaskExec`), and the `.kiro`-not-ignored check on saving `.gitignore`.
+
+We could not create them. Every `createHook` attempt, through several retries, was denied by workspace permission rules. That included a retry after cleaning `permissions.yaml` and fully restarting Kiro. The deny rules reappeared after each attempt and `.kiro/hooks/` was never created. We did not work around the rule.
+
+We skipped hooks on Nov 16. They are not required for submission. The same checks run in GitHub Actions on every push and pull request: the `.kiro` check, typecheck, lint, unit and property tests, build, and Playwright smoke tests.
 
 ## MCP
 

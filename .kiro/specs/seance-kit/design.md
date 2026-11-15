@@ -22,7 +22,6 @@
 .kiro/
   specs/seance-kit/        requirements.md, design.md, tasks.md, submission.md
   steering/                product, tech, structure, design-language, testing
-  hooks/                   on-save checks
   settings/mcp.json        registers packages/mcp-server
 apps/
   archive-seance/
@@ -167,7 +166,7 @@ Large files are read in chunks and imported in batches so the UI stays responsiv
 
 ## 11. Landing page (`site/`)
 
-Sections in order: hero (template story), "How an app is built" (tool registry in 3 code steps), two app cards with links, **Built with Kiro** (specs, steering, hooks, MCP, with links to `KIRO_USAGE.md` and `.kiro/`), demo video embed, footer (repo, license). Static, no JS framework needed beyond Vite + React for consistency with `packages/ui`.
+Sections in order: hero (template story), "How an app is built" (tool registry in 3 code steps), two app cards with links, **Built with Kiro** (specs, steering, MCP, with links to `KIRO_USAGE.md` and `.kiro/`), demo video embed, footer (repo, license). Static, no JS framework needed beyond Vite + React for consistency with `packages/ui`.
 
 ## 12. Deployment
 

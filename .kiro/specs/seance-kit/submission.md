@@ -13,7 +13,7 @@ Record in one pass, screen capture plus voice-over. Rehearse twice. Cut anything
 | 0:40-1:20 | **Archive Séance** | Drag in a ChatGPT export, search, run "summarize my oldest chats", approve a tag step, resurrect one | Import, search, summarize, resurrect. Every write step waits for approval in the séance timeline. Demo-mode badge is visible. |
 | 1:20-1:45 | **Real provider** | Settings, paste own key, badge disappears, run one prompt for real | The demo runs on a scripted provider and says so. Here is the same flow with a real model, key stored only in the browser. |
 | 1:45-2:10 | **Inbox Exorcist** | Drop an mbox, classify, bulk Banish approval list, undo | Same core, different tools. Bulk deletes list every message first. Nothing is sent, nothing is lost. |
-| 2:10-2:40 | **Kiro usage** | `.kiro` folder: spec, steering, hook firing, MCP tool call from Kiro | Built with Kiro: spec-driven tasks, steering docs, hooks that run checks, and our own MCP server called from Kiro. |
+| 2:10-2:40 | **Kiro usage** | `.kiro` folder: spec, `tasks.md` progress, steering, MCP tool call from Kiro | Built with Kiro: spec-driven tasks, steering docs that keep conventions, and our own MCP server called from Kiro. |
 | 2:40-2:45 | **Close** | URL and repo | Try it at the link. |
 
 Total 2:45, leaving 15 seconds of margin under the 3:00 limit.
@@ -39,7 +39,7 @@ A local-first template for building AI agent apps in an afternoon, plus two apps
 
 *How we built it.* TypeScript monorepo with a shared core, storage, provider and UI packages. Data lives in IndexedDB. Tools are defined once with zod and reused for the browser agent and an MCP server. Core invariants are covered by property-based tests (fast-check).
 
-*How we used Kiro.* A spec (requirements, design, tasks) drove the build. Steering docs kept conventions consistent. Hooks ran typecheck and tests. Our MCP server lets Kiro call the apps' own tools. Details in `KIRO_USAGE.md`.
+*How we used Kiro.* A spec (requirements, design, tasks) drove the build. Steering docs kept conventions consistent. Our MCP server lets Kiro call the apps' own tools. Details in `KIRO_USAGE.md`.
 
 *Challenges.* Gmail OAuth needs Google verification for mail scopes, so we chose file import, which also strengthens the privacy story. Keeping the core free of app-specific code needed discipline.
 

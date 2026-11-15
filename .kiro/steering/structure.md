@@ -1,7 +1,7 @@
 # Structure
 
 ```
-.kiro/                 specs, steering, hooks, settings (committed)
+.kiro/                 specs, steering, settings (committed). No hooks: see task 0.11
 apps/archive-seance/   app 1
 apps/inbox-exorcist/   app 2
 site/                  landing page (served at `/`), not part of apps/

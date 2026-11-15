@@ -25,13 +25,8 @@ const kiro = [
     href: `${REPO}/tree/main/.kiro/steering`,
   },
   {
-    title: "Hooks",
-    body: "Typecheck and tests run on save.",
-    href: `${REPO}/tree/main/.kiro`,
-  },
-  {
     title: "MCP",
-    body: "Our own MCP server lets Kiro call the apps' tools.",
+    body: "Coming next: our own MCP server so Kiro can call the apps' tools.",
     href: `${REPO}/tree/main/.kiro`,
   },
 ] as const;

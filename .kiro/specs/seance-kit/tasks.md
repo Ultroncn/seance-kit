@@ -29,8 +29,8 @@ Every milestone ends with a deployed Cloudflare Pages build.
 - [x] 0.8a `worker/index.js` provides per-app SPA fallback, with unit tests and e2e coverage. Workers static assets rejects `_redirects` SPA rewrites (error 100324), so the fallback lives in the Worker. See design.md section 12.
 - [x] 0.9 Verify the live URL serves landing and both shells, and that `/archive/` and `/inbox/` deep links show the right app (`BASE_URL=<url> pnpm e2e`). Record the URL in README.
 - [x] 0.10 Playwright smoke: three URLs load. Add to CI.
-- [ ] 0.11 Add Kiro hooks (typecheck on save, tests on commit).
-- [x] 0.12 Start `KIRO_USAGE.md` with entries for specs, steering, hooks.
+- [~] 0.11 ~~Add Kiro hooks (typecheck on save, tests on commit).~~ **Skipped** (Nov 16). `createHook` was blocked by workspace permission rules on every attempt, including after a clean `permissions.yaml` and a full restart. Not required for submission. CI already runs typecheck, lint and tests on every push. See `KIRO_USAGE.md`.
+- [x] 0.12 Start `KIRO_USAGE.md` with entries for specs, steering, hooks (hooks entry records the skip), decisions.
 
 Exit: public URL works, CI green, `.kiro` committed.
 
