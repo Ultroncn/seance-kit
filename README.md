@@ -6,7 +6,7 @@ Kiroween 2026 entry, category Skeleton Crew.
 - **Archive Séance** (`apps/archive-seance`): import, search, summarize and resurrect old AI chats.
 - **Inbox Exorcist** (`apps/inbox-exorcist`): triage `.mbox` / `.eml` email archives. Never sends mail.
 
-Live demo: _URL goes here once the Cloudflare Pages deploy is verified (task 0.9)._
+Live demo: https://seance-kit.mask988888888.workers.dev/ ([Archive Séance](https://seance-kit.mask988888888.workers.dev/archive/), [Inbox Exorcist](https://seance-kit.mask988888888.workers.dev/inbox/))
 
 > Status: scaffolding (milestone M0). The apps are shells. See `.kiro/specs/seance-kit/tasks.md`.
 
