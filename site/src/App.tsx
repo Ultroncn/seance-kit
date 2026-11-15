@@ -70,6 +70,14 @@ export function App() {
           </div>
         </section>
 
+        <p className="-mt-12 pb-20 text-sm text-muted">
+          Both apps share one UI kit.{" "}
+          <a className="text-ecto underline underline-offset-4 hover:decoration-2" href="/kit/">
+            See the components live
+          </a>
+          .
+        </p>
+
         <section aria-labelledby="kiro-heading" className="pb-20">
           <h2 id="kiro-heading" className="text-2xl font-semibold">
             Built with Kiro

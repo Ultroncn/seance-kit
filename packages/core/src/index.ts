@@ -26,3 +26,9 @@ export {
   type SearchOptions,
   type SearchServiceOptions,
 } from "./search";
+export {
+  reduceTimeline,
+  timelineFromEvents,
+  type TimelineEntry,
+  type ToolStepStatus,
+} from "./timeline";

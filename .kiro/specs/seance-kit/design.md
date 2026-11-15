@@ -26,7 +26,7 @@
 apps/
   archive-seance/
   inbox-exorcist/
-site/                      landing page (template story, app links, Kiro usage)
+site/                      landing page at / and the UI-kit gallery at /kit/
 packages/
   core/                    agent loop, tool registry, approvals, events
   llm/                     Anthropic, OpenAI-compatible, Ollama, Mock
@@ -162,6 +162,9 @@ Large files are read in chunks and imported in batches so the UI stays responsiv
 - **Signature**: the séance timeline. A vertical line with candle-glow nodes. Steps fade in. A pending approval pulses amber (static ring under reduced motion).
 - **Layout**: three panes (library, conversation or message, agent). The command palette reaches every action.
 - **Motion**: short (under 200 ms) and purposeful. No decorative loops.
+- **Timeline data flow**: `reduceTimeline` in core folds `AgentEvent`s into `TimelineEntry[]`. `@seance/ui` declares the same type for `<SeanceTimeline>` props (ui never imports core), so apps pass the reducer output straight in.
+- **Approval card**: focus moves to the card, not to Allow, so a stray Enter never approves. Esc rejects. Bulk actions pass the affected items through `describeApproval`.
+- **Kit gallery**: `/kit/` shows every component live with canned data. It is part of the template story and is covered by e2e and axe.
 - **Copy**: lightly spooky labels ("Resurrect", "Banish") over plain descriptions in tooltips. Never at the cost of clarity.
 
 ## 11. Landing page (`site/`)

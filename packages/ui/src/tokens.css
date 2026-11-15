@@ -1,9 +1,12 @@
 /*
- * Séance Kit design tokens. Single source of truth for color and type.
+ * Séance Kit design tokens. Single source of truth for color, type and motion.
  * Dark only ("candlelit"). See .kiro/steering/design-language.md.
  * Tailwind v4 turns these into utilities: bg-bg, bg-surface, text-fg, text-muted,
- * text-ecto, text-candle, text-blood, border-line, font-sans, font-mono.
+ * text-ecto, text-candle, text-blood, border-line, font-sans, font-mono, animate-candle-pulse.
  */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
 @theme {
   --color-bg: #0b0a10;
   --color-surface: #14121c;
@@ -15,8 +18,22 @@
   --color-candle: #f2b35e;
   --color-blood: #e5636f;
 
-  --font-sans: ui-sans-serif, "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  /* Self-hosted variable fonts (OFL-1.1), bundled by Vite. System fonts are the fallback. */
+  --font-sans: "Inter Variable", ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* The only looping animation: a pending approval. Reduced motion turns it into a static ring. */
+  --animate-candle-pulse: candle-pulse 1.8s ease-in-out infinite;
+
+  @keyframes candle-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-candle) 40%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-candle) 0%, transparent);
+    }
+  }
 }
 
 :root {
@@ -27,6 +44,7 @@ html {
   background: var(--color-bg);
   color: var(--color-fg);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -37,6 +55,10 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-ecto);
   outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-ecto) 30%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -4,7 +4,7 @@ import type { ToolRegistry } from "./registry";
 import type { Risk, ToolError, ToolErrorType } from "./types";
 
 export type AgentEvent =
-  | { type: "run_started"; runId: string }
+  | { type: "run_started"; runId: string; prompt: string }
   | { type: "step_started"; step: number }
   | { type: "message"; text: string }
   | { type: "tool_called"; callId: string; name: string; input: unknown; risk: Risk | null }
@@ -85,7 +85,7 @@ export class Agent {
     const maxSteps = Math.max(0, Math.floor(this.options.maxSteps ?? DEFAULT_MAX_STEPS));
     const signal = runOptions.signal ?? new AbortController().signal;
 
-    yield { type: "run_started", runId: `run-${++this.runCount}` };
+    yield { type: "run_started", runId: `run-${++this.runCount}`, prompt: userMessage };
     this.history.push({ role: "user", content: userMessage });
 
     let steps = 0;

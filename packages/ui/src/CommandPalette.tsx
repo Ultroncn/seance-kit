@@ -1,0 +1,126 @@
+import * as Dialog from "@radix-ui/react-dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Command } from "cmdk";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { Kbd } from "./primitives";
+
+export interface PaletteCommand {
+  id: string;
+  label: string;
+  /** Group heading, for example "Library" or "Agent". */
+  group?: string;
+  /** Extra words that should match, for example plain synonyms of a spooky label. */
+  keywords?: string[];
+  /** Display only, for example "⌘I". */
+  shortcut?: string;
+  hint?: ReactNode;
+  disabled?: boolean;
+  onSelect: () => void;
+}
+
+export interface CommandPaletteProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  commands: PaletteCommand[];
+  placeholder?: string;
+}
+
+/** True when the event is ⌘K on macOS or Ctrl+K elsewhere. */
+export function isPaletteHotkey(
+  e: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "shiftKey">,
+): boolean {
+  return e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey;
+}
+
+/** Toggle the palette on ⌘K / Ctrl+K anywhere on the page. */
+export function usePaletteHotkey(setOpen: (update: (open: boolean) => boolean) => void): void {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!isPaletteHotkey(e)) return;
+      e.preventDefault();
+      setOpen((open) => !open);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setOpen]);
+}
+
+/** Keyboard-first command palette. Every app action should be listed here. */
+export function CommandPalette({
+  open,
+  onOpenChange,
+  commands,
+  placeholder = "Type a command or search…",
+}: CommandPaletteProps) {
+  const groups = useMemo(() => {
+    const map = new Map<string, PaletteCommand[]>();
+    for (const c of commands) {
+      const key = c.group ?? "";
+      map.set(key, [...(map.get(key) ?? []), c]);
+    }
+    return [...map.entries()];
+  }, [commands]);
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-bg/70 backdrop-blur-[2px]" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed left-1/2 top-[18vh] z-50 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl shadow-black/60"
+        >
+          <VisuallyHidden>
+            <Dialog.Title>Command palette</Dialog.Title>
+          </VisuallyHidden>
+          <Command label="Commands" loop>
+            <div className="flex items-center gap-2 border-b border-line px-4">
+              <span
+                aria-hidden
+                className="size-1.5 rounded-full bg-ecto shadow-[0_0_10px_var(--color-ecto)]"
+              />
+              <Command.Input
+                placeholder={placeholder}
+                className="h-12 w-full bg-transparent text-sm text-fg outline-none placeholder:text-muted focus-visible:outline-none"
+              />
+              <Kbd>esc</Kbd>
+            </div>
+            <Command.List className="max-h-80 overflow-y-auto p-2">
+              <Command.Empty className="px-3 py-8 text-center text-sm text-muted">
+                Nothing matches. Try a plainer word.
+              </Command.Empty>
+              {groups.map(([heading, items]) => (
+                <Command.Group
+                  key={heading}
+                  heading={heading || undefined}
+                  className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted"
+                >
+                  {items.map((c) => (
+                    <Command.Item
+                      key={c.id}
+                      value={`${c.label} ${c.id}`}
+                      keywords={c.keywords}
+                      disabled={c.disabled}
+                      onSelect={() => {
+                        onOpenChange(false);
+                        c.onSelect();
+                      }}
+                      className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm text-fg data-[disabled=true]:cursor-default data-[disabled=true]:opacity-50 data-[selected=true]:bg-raised"
+                    >
+                      <span>{c.label}</span>
+                      {c.hint && <span className="text-xs text-muted">{c.hint}</span>}
+                      {c.shortcut && (
+                        <span className="ml-auto">
+                          <Kbd>{c.shortcut}</Kbd>
+                        </span>
+                      )}
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              ))}
+            </Command.List>
+          </Command>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
