@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { MemoryStorage, type StoredItem } from "@seance/storage";
 import { describe, expect, it } from "vitest";
-import { banishItems, isBanished, listActive, undoBanish } from "../src/index";
+import { banishItems, isBanished, listActive, restoreItems, undoBanish } from "../src/index";
 
 const NOW = new Date("2026-11-16T12:00:00Z");
 
@@ -40,6 +40,19 @@ describe("banish and undo", () => {
     expect(await undoBanish(s, first.undoToken)).toEqual({ restored: [], skipped: [] });
     expect(isBanished((await s.get("chats", "a"))!)).toBe(true);
     expect((await undoBanish(s, second.undoToken)).restored).toEqual(["a"]);
+  });
+
+  it("restores single items from a batch, and the batch undo then skips them", async () => {
+    const s = new MemoryStorage();
+    await s.put("chats", { id: "a" });
+    await s.put("chats", { id: "b" });
+    const { undoToken } = await banishItems(s, "chats", ["a", "b"], NOW);
+    expect(await restoreItems(s, "chats", ["a", "zz"])).toEqual({
+      restored: ["a"],
+      skipped: ["zz"],
+    });
+    expect(await s.get("chats", "a")).toEqual({ id: "a" });
+    expect(await undoBanish(s, undoToken)).toEqual({ restored: ["b"], skipped: ["a"] });
   });
 
   it("P10 banish then undo restores every item exactly, and banished items are never active", async () => {

@@ -98,6 +98,29 @@ describe("SearchService", () => {
     expect((await svc.search("ghost")).map((h) => h.id)).toEqual(["1"]);
   });
 
+  it("indexes derived text through extract, and rebuilds when schemaVersion changes", async () => {
+    const s = new MemoryStorage();
+    await s.put("docs", { id: "1", messages: [{ text: "ectoplasm sample" }], updatedAt: "1" });
+    const make = (schemaVersion: number) =>
+      new SearchService({
+        storage: s,
+        name: "docs",
+        collection: "docs",
+        fields: ["messages"],
+        persistDebounceMs: 0,
+        schemaVersion,
+        extract: (item, field) =>
+          field === "messages"
+            ? ((item.messages as { text: string }[]) ?? []).map((m) => m.text).join("\n")
+            : "",
+      });
+    const a = make(1);
+    expect(await a.load()).toBe("rebuilt");
+    expect((await a.search("ectoplasm")).map((h) => h.id)).toEqual(["1"]);
+    expect(await make(1).load()).toBe("restored");
+    expect(await make(2).load()).toBe("rebuilt");
+  });
+
   it("flush saves changes made through index()", async () => {
     const s = new MemoryStorage();
     const svc = makeService(s);

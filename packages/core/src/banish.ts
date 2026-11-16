@@ -102,3 +102,28 @@ export async function undoBanish(storage: Storage, undoToken: string): Promise<U
   await storage.remove(BANISH_LOG, undoToken);
   return { restored, skipped };
 }
+
+/**
+ * Restore individual items, whatever batch banished them. Used by a "Banished" view. Items that
+ * are missing or not banished are skipped. Batch records stay, and a later undo of that batch
+ * simply finds nothing left to restore for these items.
+ */
+export async function restoreItems(
+  storage: Storage,
+  collection: string,
+  ids: string[],
+): Promise<UndoResult> {
+  const restored: string[] = [];
+  const skipped: string[] = [];
+  for (const id of new Set(ids)) {
+    const item = await storage.get(collection, id);
+    if (!item || !isBanished(item)) {
+      skipped.push(id);
+      continue;
+    }
+    const { banishedAt: _a, banishToken: _t, ...rest } = item;
+    await storage.put(collection, rest as StoredItem);
+    restored.push(id);
+  }
+  return { restored, skipped };
+}

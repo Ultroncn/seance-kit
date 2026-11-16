@@ -15,6 +15,7 @@ export {
   banishItems,
   isBanished,
   listActive,
+  restoreItems,
   undoBanish,
   type BanishResult,
   type UndoResult,

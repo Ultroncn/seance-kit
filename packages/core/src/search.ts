@@ -23,6 +23,13 @@ export interface SearchServiceOptions {
   revisionOf?: (item: StoredItem) => string;
   /** Delay before changes are saved to storage. 0 disables automatic saving. Default 500. */
   persistDebounceMs?: number;
+  /**
+   * Text to index for one field of an item. Default: the field's string or string[] value.
+   * Use it for derived text, for example the joined messages of a conversation.
+   */
+  extract?: (item: Record<string, unknown>, field: string) => string;
+  /** Bump when `extract` changes meaning, so saved indexes built the old way are rebuilt. */
+  schemaVersion?: number;
 }
 
 export interface SearchOptions {
@@ -44,6 +51,7 @@ export interface SearchHit {
 
 interface PersistedIndex extends StoredItem {
   format: number;
+  schemaVersion?: number;
   fields: string[];
   signature: string;
   index: unknown;
@@ -75,14 +83,24 @@ export class SearchService {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private dirty = false;
   private readonly revisionOf: (item: StoredItem) => string;
+  private readonly extractField: (doc: Record<string, unknown>, field: string) => string;
 
   constructor(private readonly options: SearchServiceOptions) {
     this.revisionOf = options.revisionOf ?? ((i) => String(i.updatedAt ?? ""));
+    // MiniSearch also extracts the id field through this function. Never let a custom extract see it.
+    const custom = options.extract;
+    this.extractField = custom
+      ? (doc, field) => (field === "id" ? String(doc.id) : custom(doc, field))
+      : extractField;
     this.mini = this.createIndex();
   }
 
   private createIndex(): MiniSearch {
-    return new MiniSearch({ fields: this.options.fields, idField: "id", extractField });
+    return new MiniSearch({
+      fields: this.options.fields,
+      idField: "id",
+      extractField: this.extractField,
+    });
   }
 
   get size(): number {
@@ -99,13 +117,14 @@ export class SearchService {
       saved &&
       saved.format === INDEX_FORMAT &&
       saved.signature === signature &&
+      (saved.schemaVersion ?? 0) === (this.options.schemaVersion ?? 0) &&
       JSON.stringify(saved.fields) === JSON.stringify(this.options.fields)
     ) {
       try {
         this.mini = MiniSearch.loadJS(saved.index as Parameters<typeof MiniSearch.loadJS>[0], {
           fields: this.options.fields,
           idField: "id",
-          extractField,
+          extractField: this.extractField,
         });
         return "restored";
       } catch {
@@ -205,6 +224,7 @@ export class SearchService {
     const record: PersistedIndex = {
       id: this.options.name,
       format: INDEX_FORMAT,
+      schemaVersion: this.options.schemaVersion ?? 0,
       fields: this.options.fields,
       signature,
       index: this.mini.toJSON(),
