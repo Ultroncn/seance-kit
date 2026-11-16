@@ -217,7 +217,7 @@ export const kitMessages = defineMessages(
     edit: "编辑",
     delete: "删除",
     vendor: "厂商",
-    regions: { global: "国际", china: "国内", local: "本机", custom: "自定义" },
+    regions: { global: "国际", china: "中国", local: "本机", custom: "自定义" },
     customNames: {
       "custom-openai": "自定义（OpenAI 兼容）",
       "custom-anthropic": "自定义（Anthropic 兼容）",
