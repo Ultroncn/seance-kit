@@ -80,6 +80,19 @@ describe("mbox fixture", () => {
   });
 });
 
+describe("mbox splitter on sloppy files", () => {
+  it("keeps an unescaped From line inside a body when it does not follow a blank line", () => {
+    const text = "From a@x\nSubject: one\n\nI agree.\nFrom here on, though, I disagree.\n\nFrom b@x\nSubject: two\n\nOk\n";
+    const out = splitMbox(text);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toContain("From here on, though, I disagree.");
+  });
+
+  it("keeps a final message that has no trailing newline", () => {
+    expect(splitMbox("From a@x\nSubject: one\n\nlast line")).toEqual(["Subject: one\n\nlast line"]);
+  });
+});
+
 describe("htmlToText", () => {
   it("keeps structure and link targets, drops styles, scripts and entities", () => {
     expect(
