@@ -161,7 +161,7 @@ describe("inbox tools", () => {
   it("no tool can send mail", async () => {
     const { registry } = await seeded();
     const names = registry.list().map((t) => t.name);
-    expect(names).toHaveLength(6);
+    expect(names).toHaveLength(7);
     expect(names.some((n) => /send|forward|smtp/i.test(n))).toBe(false);
   });
 });

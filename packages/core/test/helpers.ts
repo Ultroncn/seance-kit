@@ -22,7 +22,10 @@ export function makeRegistry(log: RunLog): ToolRegistry {
       description: `${name} tool`,
       risk,
       input: z.object({ n: z.number().int() }),
-      output: z.object({ ok: z.literal(true), undoToken: z.string().optional() }),
+      output:
+        risk === "destructive"
+          ? z.object({ ok: z.literal(true), undoToken: z.string() })
+          : z.object({ ok: z.literal(true), undoToken: z.string().optional() }),
       async run() {
         log.entries.push(`run:${name}`);
         return risk === "destructive"

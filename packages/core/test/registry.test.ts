@@ -105,6 +105,28 @@ describe("ToolRegistry", () => {
     expect(mcp.find((t) => t.name === "explodes")?.outputSchema).toBeUndefined();
   });
 
+  it("refuses a destructive tool that does not promise an undo token (R2.7)", () => {
+    const bad = defineTool({
+      name: "wipe_all",
+      description: "Delete things",
+      risk: "destructive",
+      input: z.object({}),
+      output: z.object({ ok: z.boolean() }),
+      run: async () => ({ ok: true }),
+    });
+    expect(() => new ToolRegistry().register(bad)).toThrow(/undoToken/);
+  });
+
+  it("undo_banish brings back what a banish hid", async () => {
+    const c = ctx();
+    await c.storage.put("notes", { id: "n1" });
+    const { banishItems: banish, undoBanishTool: tool } = await import("../src/index");
+    const { undoToken } = await banish(c.storage, "notes", ["n1"], new Date());
+    const r = await new ToolRegistry().register(tool()).run("undo_banish", { undoToken }, c);
+    expect(r).toEqual({ ok: true, value: { restored: ["n1"], skipped: [] } });
+    expect(await c.storage.get("notes", "n1")).toEqual({ id: "n1" });
+  });
+
   it("marks MCP annotations from risk", () => {
     const byName = Object.fromEntries(
       fixtureRegistry()

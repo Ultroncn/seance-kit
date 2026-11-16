@@ -1,4 +1,4 @@
-import { ToolRegistry } from "@seance/core";
+import { ToolRegistry, undoBanishTool } from "@seance/core";
 import { banishConversation } from "./banish_conversation";
 import { readConversation } from "./read_conversation";
 import { resurrectConversation } from "./resurrect_conversation";
@@ -18,10 +18,12 @@ export function createArchiveRegistry(deps: ArchiveDeps): ToolRegistry {
     .register(summarizeConversation(deps))
     .register(tagConversation(deps))
     .register(banishConversation())
+    .register(undoBanishTool())
     .register(resurrectConversation());
 }
 
 export const ARCHIVE_TOOL_LABELS: Record<string, string> = {
+  undo_banish: "Undo a banish",
   search_conversations: "Search chats",
   read_conversation: "Read a chat",
   summarize_conversation: "Save a summary",

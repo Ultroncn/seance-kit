@@ -61,6 +61,14 @@ export class ToolRegistry {
     if (!RISKS.includes(tool.risk)) throw new Error(`Invalid risk for tool "${tool.name}"`);
     if (tool.description.trim() === "") throw new Error(`Tool "${tool.name}" needs a description`);
     if (this.tools.has(tool.name)) throw new Error(`Tool "${tool.name}" is already registered`);
+    if (tool.risk === "destructive") {
+      // R2.7: destructive actions must be undoable, so their output must carry an undo token.
+      const out = jsonSchemaOf(tool.output, "output");
+      const required = Array.isArray(out.required) ? out.required : [];
+      if (!required.includes("undoToken")) {
+        throw new Error(`Destructive tool "${tool.name}" must return a required undoToken`);
+      }
+    }
     this.tools.set(tool.name, tool);
     return this;
   }

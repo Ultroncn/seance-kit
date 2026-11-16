@@ -36,7 +36,7 @@ describe("Inbox Exorcist over MCP", () => {
     await Promise.all([server.connect(a), client.connect(b)]);
 
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names).toHaveLength(6);
+    expect(names).toHaveLength(7);
     expect(names.some((n) => /send|forward|smtp/i.test(n))).toBe(false);
 
     const r = await client.callTool({ name: "search_emails", arguments: { query: "boiler" } });

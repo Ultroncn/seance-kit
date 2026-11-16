@@ -34,3 +34,4 @@ export {
   type TimelineEntry,
   type ToolStepStatus,
 } from "./timeline";
+export { undoBanishTool } from "./tools";

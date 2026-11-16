@@ -1,4 +1,4 @@
-import { ToolRegistry } from "@seance/core";
+import { ToolRegistry, undoBanishTool } from "@seance/core";
 import { banishEmails } from "./banish_emails";
 import { classifyEmails } from "./classify_emails";
 import { draftReply } from "./draft_reply";
@@ -18,10 +18,12 @@ export function createInboxRegistry(deps: InboxDeps): ToolRegistry {
     .register(classifyEmails(deps))
     .register(draftReply())
     .register(labelEmail(deps))
-    .register(banishEmails());
+    .register(banishEmails())
+    .register(undoBanishTool());
 }
 
 export const INBOX_TOOL_LABELS: Record<string, string> = {
+  undo_banish: "Undo a banish",
   search_emails: "Search mail",
   read_email: "Read an email",
   classify_emails: "Sort into categories",

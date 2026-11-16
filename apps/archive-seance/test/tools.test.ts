@@ -162,7 +162,7 @@ describe("archive tools", () => {
 
   it("every tool schema converts to JSON Schema for providers and MCP", async () => {
     const { registry } = await seeded();
-    expect(registry.toJsonSchema().map((t) => t.name)).toHaveLength(6);
+    expect(registry.toJsonSchema().map((t) => t.name)).toHaveLength(7);
     for (const t of registry.toMcpTools()) expect(t.inputSchema).toMatchObject({ type: "object" });
   });
 });
