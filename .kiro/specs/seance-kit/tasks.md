@@ -85,7 +85,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 3.8 Seeded sample inbox and Mock scripts. (R6.6)
 - [x] 3.9 Drafts view (copy to clipboard, never send).
 - [x] 3.10 Playwright smoke plus axe.
-- [ ] 3.11 Deploy and verify. Real-provider manual test.
+- [x] 3.11 Deploy and verify (37 e2e tests pass against the live URL). _Real-provider manual test: pending the user's own key, see 1.11._
 
 ## M4. MCP, template, landing, a11y (Nov 29-30)
 
