@@ -8,12 +8,14 @@ import {
   EmptyState,
   IconButton,
   ProviderModeProvider,
+  ResizablePaneLayout,
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
   usePaletteHotkey,
   useProviderCommands,
   useProviderMode,
+  useResizablePaneWidths,
   useT,
   useToast,
   withReplyLanguage,
@@ -29,11 +31,14 @@ import { fetchSampleFiles, mock, registry, sampleUrl, search, storage } from "./
 import { useArchive, useImporter } from "./useArchive";
 
 const ACCEPT = ".json,.zip,.md,.markdown,.txt";
+const PANE_WIDTHS_KEY = "archive-seance-pane-widths";
 
 function Workspace() {
   const toast = useToast();
   const t = useT(archiveMessages);
   const prompts = useT(archiveDemoMessages).prompts;
+  const { leftWidth, rightWidth, saveWidths } = useResizablePaneWidths(PANE_WIDTHS_KEY);
+
   // The tab title follows the language too.
   useEffect(() => {
     document.title = t.appTitle;
@@ -202,68 +207,132 @@ function Workspace() {
 
   return (
     <>
-      <AppShell
-        title={t.appTitle}
-        actions={
-          <>
+      <div className="relative isolate flex h-screen flex-col overflow-clip bg-bg text-fg">
+        <a
+          href="#seance-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-raised focus:px-3 focus:py-2"
+        >
+          {t.skipToContent}
+        </a>
+        <header className="flex h-12 shrink-0 items-center gap-3 border-b border-line bg-bg px-3">
+          <a
+            href="/"
+            aria-label={t.home}
+            className="grid size-8 place-items-center rounded-md transition-colors duration-100 hover:bg-raised"
+          >
+            {/* BrandMark would go here */}
+          </a>
+          <h1 className="text-sm font-semibold text-fg">{t.appTitle}</h1>
+          <div className="ml-auto flex items-center gap-1.5">
             <DemoBadge onClick={() => setSettingsOpen(true)} />
             <CommandTrigger onOpen={() => setPaletteOpen(true)} />
             <IconButton aria-label={t.settings} onClick={() => setSettingsOpen(true)}>
               <Settings />
             </IconButton>
-          </>
-        }
-        library={
-          <Library
-            ref={searchInput}
-            data={data}
-            filters={filters}
-            onFilters={setFilters}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            importer={importer}
-            onPickFiles={pickFiles}
-          />
-        }
-        content={
-          empty ? (
-            <div className="flex h-full flex-col items-center justify-center">
-              <ArchiveEmpty
-                onSample={() => void loadSample()}
-                onPick={pickFiles}
-                loading={importer.busy}
-              />
-              <p className="-mt-8 text-xs text-muted">
-                {t.tryDrop}{" "}
-                <a
-                  className="text-accent underline underline-offset-4"
-                  href={sampleUrl("chatgpt-conversations.json")}
-                  download
-                >
-                  {t.downloadSample}
-                </a>
-                {t.period}
-              </p>
-            </div>
-          ) : (
-            <Reader
-              conversation={selected}
-              version={data.version}
-              onChanged={data.refresh}
-              empty={<EmptyState title={t.pickTitle}>{t.pickText}</EmptyState>}
+          </div>
+        </header>
+
+        <ResizablePaneLayout
+          left={
+            <Library
+              ref={searchInput}
+              data={data}
+              filters={filters}
+              onFilters={setFilters}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              importer={importer}
+              onPickFiles={pickFiles}
             />
-          )
-        }
-        agent={
-          <AgentPane
-            agent={agent}
-            isMock={isMock}
-            byId={data.byId}
-            hasData={!empty && data.all !== null}
-            onManageProviders={() => setSettingsOpen(true)}
-          />
-        }
+          }
+          center={
+            empty ? (
+              <div className="flex h-full flex-col items-center justify-center">
+                <ArchiveEmpty
+                  onSample={() => void loadSample()}
+                  onPick={pickFiles}
+                  loading={importer.busy}
+                />
+                <p className="-mt-8 text-xs text-muted">
+                  {t.tryDrop}{" "}
+                  <a
+                    className="text-accent underline underline-offset-4"
+                    href={sampleUrl("chatgpt-conversations.json")}
+                    download
+                  >
+                    {t.downloadSample}
+                  </a>
+                  {t.period}
+                </p>
+              </div>
+            ) : (
+              <Reader
+                conversation={selected}
+                version={data.version}
+                onChanged={data.refresh}
+                empty={<EmptyState title={t.pickTitle}>{t.pickText}</EmptyState>}
+              />
+            )
+          }
+          right={
+            <AgentPane
+              agent={agent}
+              isMock={isMock}
+              byId={data.byId}
+              hasData={!empty && data.all !== null}
+              onManageProviders={() => setSettingsOpen(true)}
+            />
+          }
+          defaultLeftWidth={leftWidth ?? 280}
+          defaultRightWidth={rightWidth ?? 320}
+          leftMinWidth={200}
+          leftMaxWidth={400}
+          rightMinWidth={200}
+          rightMaxWidth={500}
+          labels={{
+            left: t.library,
+            center: t.content,
+            right: t.agent,
+          }}
+        />
+      </div>
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept={ACCEPT}
+        multiple
+        hidden
+        data-testid="file-input"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          e.target.value = "";
+          void importer.importFiles(files);
+        }}
       />
+
+      {dragging && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/85 backdrop-blur-[2px]">
+          <div className="rounded-2xl border-2 border-dashed border-accent/70 px-12 py-10 text-center">
+            <p className="text-lg font-semibold text-accent">{t.dropTitle}</p>
+            <p className="mt-1 text-sm text-muted">{t.dropText}</p>
+          </div>
+        </div>
+      )}
+
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} commands={commands} />
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        exportName="archive-seance"
+        onAfterWipe={() => {
+          setSelectedId(null);
+          agent.reset();
+          void search.rebuild().then(data.refresh);
+        }}
+      />
+    </>
+  );
 
       <input
         ref={fileInput}

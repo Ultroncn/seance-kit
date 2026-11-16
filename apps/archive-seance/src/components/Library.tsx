@@ -14,8 +14,9 @@ import {
   useT,
   useToast,
 } from "@seance/ui";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Popover from "@radix-ui/react-popover";
-import { CalendarDays, FileCheck2, X } from "lucide-react";
+import { CalendarDays, ChevronDown, FileCheck2, Sparkles, Upload, X } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import {
   CONVERSATIONS,
@@ -28,6 +29,7 @@ import { archiveMessages } from "../messages";
 import { storage } from "../runtime";
 import type { ArchiveData, ImportState } from "../useArchive";
 import { useSearchIds } from "../useArchive";
+import { AutoImportDialog } from "./AutoImportDialog";
 import { monthYear } from "./format";
 import { SourceIcon } from "./SourceIcon";
 
@@ -95,10 +97,19 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
   useEffect(() => setPageSize(PAGE), [filters]);
   const visible = shown.slice(0, pageSize);
 
+  const [autoImportOpen, setAutoImportOpen] = useState(false);
+
   const restore = async (list: string[]) => {
     const r = await restoreItems(storage, CONVERSATIONS, list);
     data.refresh();
     toast({ text: t.restoredN(r.restored.length), tone: "ok" });
+  };
+
+  const handleAutoImportFiles = async (files: File[]) => {
+    const started = await importer.importFiles(files);
+    if (!started) {
+      toast({ text: t.importBusy });
+    }
   };
 
   return (
@@ -106,10 +117,43 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
       <PaneHeader
         title={filters.view === "banished" ? t.banished : t.library}
         actions={
-          <Button size="sm" onClick={onPickFiles} disabled={importer.busy}>
-            {t.import}
-          </Button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <Button size="sm" disabled={importer.busy}>
+                {t.import}
+                <ChevronDown className="ml-1 h-3.5 w-3.5" aria-hidden />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={6}
+                className="z-50 min-w-48 rounded-lg border border-line bg-raised p-1.5 shadow-popover"
+              >
+                <DropdownMenu.Item
+                  onSelect={() => setAutoImportOpen(true)}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors hover:bg-surface-mid focus:bg-surface-mid"
+                >
+                  <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+                  <span>一键导入</span>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onSelect={onPickFiles}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors hover:bg-surface-mid focus:bg-surface-mid"
+                >
+                  <Upload className="h-4 w-4" aria-hidden />
+                  <span>本地文件导入</span>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         }
+      />
+
+      <AutoImportDialog
+        open={autoImportOpen}
+        onClose={() => setAutoImportOpen(false)}
+        onFilesSelected={handleAutoImportFiles}
       />
 
       <div className="space-y-2 border-b border-line p-3">

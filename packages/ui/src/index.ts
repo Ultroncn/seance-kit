@@ -42,6 +42,11 @@ export {
 } from "./primitives";
 export { AppShell, EmptyState, PaneHeader, type AppShellProps } from "./AppShell";
 export {
+  ResizablePaneLayout,
+  useResizablePaneWidths,
+  type ResizablePaneLayoutProps,
+} from "./ResizablePaneLayout";
+export {
   CommandPalette,
   isPaletteHotkey,
   paletteScore,
