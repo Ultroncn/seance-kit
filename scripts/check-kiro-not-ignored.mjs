@@ -4,33 +4,36 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(import.meta.dirname, "..");
-const errors = [];
+/** Problems with `.kiro` in the repo at `root`. Empty when everything is fine. */
+export function checkKiro(root) {
+  const errors = [];
+  const kiro = resolve(root, ".kiro");
+  if (!existsSync(kiro) || !statSync(kiro).isDirectory())
+    return [".kiro/ directory is missing at the repo root."];
 
-const kiro = resolve(root, ".kiro");
-if (!existsSync(kiro) || !statSync(kiro).isDirectory()) {
-  errors.push(".kiro/ directory is missing at the repo root.");
-} else {
   const git = (...args) =>
     execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-
-  // Ignored? `git check-ignore` exits 0 when the path is ignored, 1 when not.
-  let ignored = false;
-  try {
-    git("check-ignore", "-q", ".kiro/specs/seance-kit/requirements.md");
-    ignored = true;
-  } catch {
-    ignored = false;
+  // --no-index: also test tracked files. Without it git never reports a tracked path as ignored,
+  // so a ".kiro/" rule added later would slip through. Exit 0 means "ignored".
+  for (const path of [".kiro", ".kiro/", ".kiro/specs/seance-kit/requirements.md"]) {
+    try {
+      git("check-ignore", "-q", "--no-index", path);
+      errors.push(`${path} is matched by an ignore rule (.gitignore or similar).`);
+      break;
+    } catch {
+      // Not ignored.
+    }
   }
-  if (ignored) errors.push(".kiro is matched by an ignore rule (.gitignore or similar).");
-
   const tracked = git("ls-files", ".kiro").split("\n").filter(Boolean);
   if (tracked.length === 0) errors.push("No files under .kiro/ are tracked by git.");
+  return errors;
 }
 
-if (errors.length > 0) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const errors = checkKiro(resolve(import.meta.dirname, ".."));
   for (const e of errors) console.error(`check-kiro-not-ignored: ${e}`);
-  process.exit(1);
+  if (errors.length > 0) process.exit(1);
+  console.log("check-kiro-not-ignored: ok");
 }
-console.log("check-kiro-not-ignored: ok");

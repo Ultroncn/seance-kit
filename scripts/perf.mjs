@@ -14,8 +14,12 @@ const MAILS = Number(process.env.MAILS ?? 5000);
 const dir = join(tmpdir(), "seance-perf");
 mkdirSync(dir, { recursive: true });
 
-const words = "ghost lantern candle archive spirit summon whisper attic raven moon fog hollow echo garden recipe travel invoice meeting draft".split(" ");
-const sentence = (i, n) => Array.from({ length: n }, (_, k) => words[(i * 7 + k * 3) % words.length]).join(" ");
+const words =
+  "ghost lantern candle archive spirit summon whisper attic raven moon fog hollow echo garden recipe travel invoice meeting draft".split(
+    " ",
+  );
+const sentence = (i, n) =>
+  Array.from({ length: n }, (_, k) => words[(i * 7 + k * 3) % words.length]).join(" ");
 
 function chatgpt() {
   const convs = [];
@@ -27,10 +31,21 @@ function chatgpt() {
         id: `n${k}`,
         parent: k ? `n${k - 1}` : "root",
         children: k < 11 ? [`n${k + 1}`] : [],
-        message: { author: { role: k % 2 ? "assistant" : "user" }, create_time: t + k, content: { content_type: "text", parts: [`${sentence(i + k, 60)} #${i}`] } },
+        message: {
+          author: { role: k % 2 ? "assistant" : "user" },
+          create_time: t + k,
+          content: { content_type: "text", parts: [`${sentence(i + k, 60)} #${i}`] },
+        },
       };
     }
-    convs.push({ id: `perf-${i}`, title: `Perf chat ${i}: ${sentence(i, 4)}`, create_time: t, update_time: t + 12, current_node: "n11", mapping });
+    convs.push({
+      id: `perf-${i}`,
+      title: `Perf chat ${i}: ${sentence(i, 4)}`,
+      create_time: t,
+      update_time: t + 12,
+      current_node: "n11",
+      mapping,
+    });
   }
   const path = join(dir, "conversations.json");
   writeFileSync(path, JSON.stringify(convs));
@@ -66,7 +81,11 @@ async function measure(page, { url, file, listName, reportText, query, expectCou
   const importMs = Date.now() - t0;
   // After the report, the app reloads the full list once. Time that separately from search.
   // The list's own count label ("30000 emails"), not the import report ("30000 new emails").
-  await page.waitForFunction((label) => [...document.querySelectorAll("[aria-live=polite]")].some((el) => el.textContent === label), expectTotal);
+  await page.waitForFunction(
+    (label) =>
+      [...document.querySelectorAll("[aria-live=polite]")].some((el) => el.textContent === label),
+    expectTotal,
+  );
   const ready = Date.now() - t0;
   const longest = await page.evaluate(() => Math.round(window.__longest));
 
@@ -75,15 +94,21 @@ async function measure(page, { url, file, listName, reportText, query, expectCou
   await search.fill(query);
   await page.getByRole("list", { name: listName }).getByRole("listitem").first().waitFor();
   await page.waitForFunction(
-    ([name, n]) => document.querySelector(`[aria-label="${name}"]`)?.querySelectorAll("li").length === n,
+    ([name, n]) =>
+      document.querySelector(`[aria-label="${name}"]`)?.querySelectorAll("li").length === n,
     [listName, expectCount],
   );
   const searchMs = Date.now() - t1;
-  const heap = await page.evaluate(() => Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1_048_576));
+  const heap = await page.evaluate(() =>
+    Math.round((performance.memory?.usedJSHeapSize ?? 0) / 1_048_576),
+  );
   return { importMs, ready, longest, searchMs, heap };
 }
 
-const server = spawn(process.execPath, [resolve(import.meta.dirname, "serve-dist.mjs")], { env: { ...process.env, PORT: "4199" }, stdio: "ignore" });
+const server = spawn(process.execPath, [resolve(import.meta.dirname, "serve-dist.mjs")], {
+  env: { ...process.env, PORT: "4199" },
+  stdio: "ignore",
+});
 await new Promise((r) => setTimeout(r, 500));
 try {
   const archiveFile = chatgpt();
@@ -92,17 +117,38 @@ try {
   const rows = [];
   {
     const page = await (await browser.newContext()).newPage();
-    const r = await measure(page, { url: "http://localhost:4199/archive/", file: archiveFile, listName: "Chats", reportText: `${CHATS} new chats`, query: "Perf chat 1234:", expectCount: 1, expectTotal: `${CHATS} chats` });
+    const r = await measure(page, {
+      url: "http://localhost:4199/archive/",
+      file: archiveFile,
+      listName: "Chats",
+      reportText: `${CHATS} new chats`,
+      query: "Perf chat 1234:",
+      expectCount: 1,
+      expectTotal: `${CHATS} chats`,
+    });
     rows.push([`Archive: ${CHATS} chats × 12 messages (${mb(archiveFile)})`, r]);
   }
   {
     const page = await (await browser.newContext()).newPage();
-    const r = await measure(page, { url: "http://localhost:4199/inbox/", file: inboxFile, listName: "Emails", reportText: `${MAILS} new emails`, query: "Perf mail 4321:", expectCount: 1, expectTotal: `${MAILS} emails` });
+    const r = await measure(page, {
+      url: "http://localhost:4199/inbox/",
+      file: inboxFile,
+      listName: "Emails",
+      reportText: `${MAILS} new emails`,
+      query: "Perf mail 4321:",
+      expectCount: 1,
+      expectTotal: `${MAILS} emails`,
+    });
     rows.push([`Inbox: ${MAILS} messages (${mb(inboxFile)})`, r]);
   }
   await browser.close();
-  console.log("| Import | Imported | List ready | Longest block | Search | JS heap |\n|---|---|---|---|---|---|");
-  for (const [name, r] of rows) console.log(`| ${name} | ${(r.importMs / 1000).toFixed(1)} s | ${(r.ready / 1000).toFixed(1)} s | ${r.longest} ms | ${r.searchMs} ms | ${r.heap} MB |`);
+  console.log(
+    "| Import | Imported | List ready | Longest block | Search | JS heap |\n|---|---|---|---|---|---|",
+  );
+  for (const [name, r] of rows)
+    console.log(
+      `| ${name} | ${(r.importMs / 1000).toFixed(1)} s | ${(r.ready / 1000).toFixed(1)} s | ${r.longest} ms | ${r.searchMs} ms | ${r.heap} MB |`,
+    );
 } finally {
   server.kill();
 }
