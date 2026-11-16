@@ -71,7 +71,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 2.11 Banished view with undo.
 - [x] 2.12 Playwright smoke plus axe. (R7.6)
 - [x] 2.12a `@seance/react` package with `useAgentRun`, shared by both apps and the template.
-- [ ] 2.13 Deploy and verify. Real-provider manual test.
+- [x] 2.13 Deploy and verify (28 e2e tests pass against the live URL). _Real-provider manual test: pending the user's own key, see 1.11._
 
 ## M3. Inbox Exorcist (Nov 25-28)
 
