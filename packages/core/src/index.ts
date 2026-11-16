@@ -23,6 +23,7 @@ export {
 export {
   SEARCH_INDEX_COLLECTION,
   SearchService,
+  foldTerm,
   type SearchHit,
   type SearchOptions,
   type SearchServiceOptions,

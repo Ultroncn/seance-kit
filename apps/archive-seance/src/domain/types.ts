@@ -3,8 +3,8 @@ import type { StoredItem } from "@seance/storage";
 export const CONVERSATIONS = "conversations";
 export const RESURRECTIONS = "resurrections";
 
-export type Source = "chatgpt" | "claude" | "markdown";
-export const SOURCES: readonly Source[] = ["chatgpt", "claude", "markdown"];
+export const SOURCES = ["chatgpt", "claude", "markdown"] as const;
+export type Source = (typeof SOURCES)[number];
 export const SOURCE_LABEL: Record<Source, string> = {
   chatgpt: "ChatGPT",
   claude: "Claude",

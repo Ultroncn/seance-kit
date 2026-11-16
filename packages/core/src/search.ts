@@ -5,7 +5,13 @@ import { isBanished } from "./banish";
 /** Collection that holds persisted search indexes, one record per index name. */
 export const SEARCH_INDEX_COLLECTION = "searchIndex";
 
-const INDEX_FORMAT = 1;
+// 2: terms are lower-cased and accents are folded ("café" matches "cafe").
+const INDEX_FORMAT = 2;
+
+/** Lower-case and strip accents, at index time and at query time. */
+export function foldTerm(term: string): string {
+  return term.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
 
 export interface SearchServiceOptions {
   storage: Storage;
@@ -100,6 +106,7 @@ export class SearchService {
       fields: this.options.fields,
       idField: "id",
       extractField: this.extractField,
+      processTerm: foldTerm,
     });
   }
 
@@ -125,6 +132,7 @@ export class SearchService {
           fields: this.options.fields,
           idField: "id",
           extractField: this.extractField,
+          processTerm: foldTerm,
         });
         return "restored";
       } catch {

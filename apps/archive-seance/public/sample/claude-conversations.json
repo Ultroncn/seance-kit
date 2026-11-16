@@ -1,0 +1,94 @@
+[
+  {
+    "uuid": "sample-claude-01",
+    "name": "useEffect runs twice in dev",
+    "created_at": "2024-01-09T10:00:00Z",
+    "updated_at": "2024-01-09T10:01:20.000Z",
+    "chat_messages": [
+      {
+        "uuid": "m0",
+        "sender": "human",
+        "text": "My React useEffect fetch runs twice on page load. Is that a bug?",
+        "created_at": "2024-01-09T10:00:00.000Z"
+      },
+      {
+        "uuid": "m1",
+        "sender": "assistant",
+        "text": "In development, React StrictMode mounts, unmounts and mounts components again to surface effects that do not clean up. Production runs it once. Return a cleanup function, for example an AbortController that cancels the first fetch.",
+        "created_at": "2024-01-09T10:00:40.000Z"
+      }
+    ]
+  },
+  {
+    "uuid": "sample-claude-02",
+    "name": "Budget spreadsheet: SUMIF by month",
+    "created_at": "2024-07-22T08:00:00Z",
+    "updated_at": "2024-07-22T08:01:20.000Z",
+    "chat_messages": [
+      {
+        "uuid": "m0",
+        "sender": "human",
+        "text": "In Google Sheets I have dates in column A and amounts in column B. How do I total one month?",
+        "created_at": "2024-07-22T08:00:00.000Z"
+      },
+      {
+        "uuid": "m1",
+        "sender": "assistant",
+        "text": "Use =SUMIFS(B:B, A:A, \">=\"&DATE(2024,7,1), A:A, \"<\"&DATE(2024,8,1)). Put the month start in a cell and use EDATE(cell, 1) for the end to reuse it.",
+        "created_at": "2024-07-22T08:00:40.000Z"
+      }
+    ]
+  },
+  {
+    "uuid": "sample-claude-03",
+    "name": "Interview prep: system design",
+    "created_at": "2025-02-03T17:30:00Z",
+    "updated_at": "2025-02-03T17:32:40.000Z",
+    "chat_messages": [
+      {
+        "uuid": "m0",
+        "sender": "human",
+        "text": "I have a system design interview on Friday. What should I practise?",
+        "created_at": "2025-02-03T17:30:00.000Z"
+      },
+      {
+        "uuid": "m1",
+        "sender": "assistant",
+        "text": "Pick three classics: a URL shortener, a news feed and a chat service. For each, practise requirements, rough capacity numbers, a simple design first, then bottlenecks: caching, queues, sharding. Speak your trade-offs out loud.",
+        "created_at": "2025-02-03T17:30:40.000Z"
+      },
+      {
+        "uuid": "m2",
+        "sender": "human",
+        "text": "How long should I spend on requirements?",
+        "created_at": "2025-02-03T17:31:20.000Z"
+      },
+      {
+        "uuid": "m3",
+        "sender": "assistant",
+        "text": "About five minutes. Agree on scale, read/write ratio and what can be eventually consistent before drawing any boxes.",
+        "created_at": "2025-02-03T17:32:00.000Z"
+      }
+    ]
+  },
+  {
+    "uuid": "sample-claude-04",
+    "name": "Learning Portuguese before Lisbon",
+    "created_at": "2025-06-15T06:50:00Z",
+    "updated_at": "2025-06-15T06:51:20.000Z",
+    "chat_messages": [
+      {
+        "uuid": "m0",
+        "sender": "human",
+        "text": "Teach me ten Portuguese phrases for ordering food in Lisbon.",
+        "created_at": "2025-06-15T06:50:00.000Z"
+      },
+      {
+        "uuid": "m1",
+        "sender": "assistant",
+        "text": "Bom dia (good morning). Uma bica, por favor (an espresso, please). Um pastel de nata (a custard tart). A conta, por favor (the bill, please). Obrigado / obrigada (thank you, said by a man / woman). Tem mesa para dois? (a table for two?). Sem glúten (gluten free). Água sem gás (still water). Está delicioso (it is delicious). Até logo (see you later).",
+        "created_at": "2025-06-15T06:50:40.000Z"
+      }
+    ]
+  }
+]

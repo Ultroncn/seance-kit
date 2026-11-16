@@ -34,6 +34,18 @@ describe("SearchService", () => {
     expect(await svc.search("zzzz")).toEqual([]);
   });
 
+  it("matches across accents and case in both directions", async () => {
+    const s = new MemoryStorage();
+    await s.put("docs", { id: "1", text: "Um café e um pastel de nata", updatedAt: "1" });
+    await s.put("docs", { id: "2", text: "Cafe racer motorcycles", updatedAt: "1" });
+    const svc = makeService(s);
+    await svc.load();
+    expect((await svc.search("CAFÉ", { fuzzy: 0 })).map((h) => h.id).sort()).toEqual(["1", "2"]);
+    expect((await svc.search("cafe", { fuzzy: 0, prefix: false })).map((h) => h.id).sort()).toEqual(
+      ["1", "2"],
+    );
+  });
+
   it("reflects index() and unindex() changes", async () => {
     const s = new MemoryStorage();
     const svc = makeService(s);

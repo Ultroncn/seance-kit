@@ -1,0 +1,560 @@
+[
+  {
+    "id": "sample-chatgpt-01",
+    "title": "Sourdough starter keeps dying",
+    "create_time": 1555093200,
+    "update_time": 1555093360,
+    "current_node": "n3",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1555093200,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "My sourdough starter smells like nail polish and barely rises. Day 9. What am I doing wrong?"
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": ["n2"],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1555093240,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "That acetone smell means the starter is hungry. Feed it twice a day at 1:1:1 (starter, flour, water by weight), keep it somewhere around 24–26 °C, and swap a quarter of the flour for whole rye. Rye gives the yeast more to eat."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "parent": "n1",
+        "children": ["n3"],
+        "message": {
+          "id": "n2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1555093280,
+          "content": {
+            "content_type": "text",
+            "parts": ["My kitchen is cold. Around 18 °C."]
+          },
+          "metadata": {}
+        }
+      },
+      "n3": {
+        "id": "n3",
+        "parent": "n2",
+        "children": [],
+        "message": {
+          "id": "n3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1555093320,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Then use the oven with only the light on, or a spot on top of the fridge. At 18 °C a starter can take two weeks to settle. It is not dead, just slow."
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-02",
+    "title": "Untitled chat",
+    "create_time": 1572771660,
+    "update_time": 1572771740,
+    "current_node": "n1",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1572771660,
+          "content": {
+            "content_type": "text",
+            "parts": ["test"]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": [],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1572771700,
+          "content": {
+            "content_type": "text",
+            "parts": ["Hello! How can I help you today?"]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-03",
+    "title": "Regex for dates in a log file",
+    "create_time": 1592748300,
+    "update_time": 1592748460,
+    "current_node": "n3",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1592748300,
+          "content": {
+            "content_type": "text",
+            "parts": ["I need a regex that finds dates like 2020-06-21 in a server log."]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": ["n2"],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1592748340,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Use \\b\\d{4}-\\d{2}-\\d{2}\\b. It matches four digits, a dash, two digits, a dash and two digits, as a whole word."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "parent": "n1",
+        "children": ["n3"],
+        "message": {
+          "id": "n2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1592748380,
+          "content": {
+            "content_type": "text",
+            "parts": ["It also matches 2020-13-45. Can it reject impossible months?"]
+          },
+          "metadata": {}
+        }
+      },
+      "n3": {
+        "id": "n3",
+        "parent": "n2",
+        "children": [],
+        "message": {
+          "id": "n3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1592748420,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Yes: \\b\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])\\b. It still allows 31 February, so check real dates in code if that matters."
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-04",
+    "title": "Birthday poem for Grandma Rosa",
+    "create_time": 1613334600,
+    "update_time": 1613334680,
+    "current_node": "n1",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1613334600,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Write a short, warm birthday poem for my grandmother Rosa. She is turning 90, loves her garden and makes the best plum cake."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": [],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1613334640,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Ninety summers in the garden, / ninety springs of plum and rose, / every cake a quiet kindness / only family ever knows. / Happy birthday, Grandma Rosa, / may the blossoms find you still: / the warm kitchen, the open window, / and the plums upon the sill."
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-05",
+    "title": "Lisbon trip planning",
+    "create_time": 1664523900,
+    "update_time": 1664524060,
+    "current_node": "n3",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1664523900,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Plan four days in Lisbon in late September. I like walking, viewpoints and food, not museums."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": ["n2"],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1664523940,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Day 1: Alfama on foot, Miradouro de Santa Luzia at sunset. Day 2: Belém in the morning for pastéis de nata, LX Factory in the afternoon. Day 3: day trip to Sintra, start early to beat the crowds at Pena Palace. Day 4: Bairro Alto and Príncipe Real, dinner in Cais do Sodré."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "parent": "n1",
+        "children": ["n3"],
+        "message": {
+          "id": "n2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1664523980,
+          "content": {
+            "content_type": "text",
+            "parts": ["Is tram 28 worth it?"]
+          },
+          "metadata": {}
+        }
+      },
+      "n3": {
+        "id": "n3",
+        "parent": "n2",
+        "children": [],
+        "message": {
+          "id": "n3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1664524020,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "It is charming but packed. Ride it early in the morning from Martim Moniz, or walk the same route. Buy a Viva Viagem card for trams and the metro."
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-06",
+    "title": "Tomatoes splitting on the vine",
+    "create_time": 1678291800,
+    "update_time": 1678291880,
+    "current_node": "n1",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1678291800,
+          "content": {
+            "content_type": "text",
+            "parts": ["My tomatoes keep splitting right before they ripen. Why?"]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": [],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1678291840,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Usually uneven watering: the plant dries out, then a big drink swells the fruit faster than the skin can stretch. Water deeply on a schedule, mulch the soil, and pick fruit at the first blush before heavy rain."
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-07",
+    "title": "Haunted house story for the kids",
+    "create_time": 1698519600,
+    "update_time": 1698519760,
+    "current_node": "n3",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1698519600,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Give me a not-too-scary haunted house story for a 6 and an 8 year old, for Halloween night."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": ["n2"],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1698519640,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "The ghost of Willow Lane only wanted someone to share her lantern with. Every Halloween she floated from window to window, a little lonely, until two brave children knocked on her door with an extra pumpkin. From then on, the house on Willow Lane glowed the brightest on the whole street."
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "parent": "n1",
+        "children": ["n3"],
+        "message": {
+          "id": "n2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1698519680,
+          "content": {
+            "content_type": "text",
+            "parts": ["Can you add a twist at the end?"]
+          },
+          "metadata": {}
+        }
+      },
+      "n3": {
+        "id": "n3",
+        "parent": "n2",
+        "children": [],
+        "message": {
+          "id": "n3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1698519720,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Twist: the ghost was their great-great-aunt, and the lantern had been in the family attic all along. That night they found it, dusty and warm, as if someone had just set it down."
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "sample-chatgpt-08",
+    "title": "test test 123",
+    "create_time": 1715944260,
+    "update_time": 1715944340,
+    "current_node": "n1",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": ["n0"]
+      },
+      "n0": {
+        "id": "n0",
+        "parent": "root",
+        "children": ["n1"],
+        "message": {
+          "id": "n0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1715944260,
+          "content": {
+            "content_type": "text",
+            "parts": ["test test 123"]
+          },
+          "metadata": {}
+        }
+      },
+      "n1": {
+        "id": "n1",
+        "parent": "n0",
+        "children": [],
+        "message": {
+          "id": "n1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1715944300,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "It looks like you are checking that I work. I do! What would you like to talk about?"
+            ]
+          },
+          "metadata": {}
+        }
+      }
+    }
+  }
+]
