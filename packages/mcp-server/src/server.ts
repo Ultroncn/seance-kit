@@ -36,36 +36,46 @@ export function createMcpServer(o: McpServerOptions): Server {
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: visible() }));
 
-  server.setRequestHandler(CallToolRequestSchema, async (req, extra): Promise<CallToolResult> => {
-    const name = req.params.name;
-    const def = visible().find((t) => t.name === name);
-    if (!def) {
+  // One tool call at a time. Tools read, then write; two at once could overwrite each other.
+  let queue: Promise<unknown> = Promise.resolve();
+  const serial = <T>(fn: () => Promise<T>): Promise<T> => {
+    const run = queue.then(fn, fn);
+    queue = run.catch(() => undefined);
+    return run;
+  };
+
+  server.setRequestHandler(CallToolRequestSchema, (req, extra): Promise<CallToolResult> =>
+    serial(async () => {
+      const name = req.params.name;
+      const def = visible().find((t) => t.name === name);
+      if (!def) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `UnknownTool: no tool named "${name}"${o.readOnly ? " in read-only mode" : ""}`,
+            },
+          ],
+        };
+      }
+      const out = await o.registry.run(name, req.params.arguments ?? {}, {
+        storage: o.storage,
+        signal: extra.signal,
+        now,
+      });
+      if (!out.ok)
+        return {
+          isError: true,
+          content: [{ type: "text", text: `${out.error.type}: ${out.error.message}` }],
+        };
+      const text = JSON.stringify(out.value, null, 2) ?? "null";
       return {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: `UnknownTool: no tool named "${name}"${o.readOnly ? " in read-only mode" : ""}`,
-          },
-        ],
+        content: [{ type: "text", text }],
+        ...(def.outputSchema ? { structuredContent: out.value as Record<string, unknown> } : {}),
       };
-    }
-    const out = await o.registry.run(name, req.params.arguments ?? {}, {
-      storage: o.storage,
-      signal: extra.signal,
-      now,
-    });
-    if (!out.ok)
-      return {
-        isError: true,
-        content: [{ type: "text", text: `${out.error.type}: ${out.error.message}` }],
-      };
-    const text = JSON.stringify(out.value, null, 2) ?? "null";
-    return {
-      content: [{ type: "text", text }],
-      ...(def.outputSchema ? { structuredContent: out.value as Record<string, unknown> } : {}),
-    };
-  });
+    }),
+  );
 
   return server;
 }

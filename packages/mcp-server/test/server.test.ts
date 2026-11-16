@@ -5,6 +5,10 @@ import { MemoryStorage } from "@seance/storage";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createMcpServer, parseCli } from "../src/index";
+import { acquireLock } from "../src/cli";
+import { mkdtemp, rm, writeFile as write } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 function registry() {
   return new ToolRegistry()
@@ -101,5 +105,48 @@ describe("parseCli", () => {
     expect(o.imports.map((p) => p.split("/").pop())).toEqual(["a.json", "b.mbox"]);
     expect(o.readOnly).toBe(true);
     expect(parseCli(["--data", "x"], "/repo").dataDir).toBe("/repo/x");
+  });
+});
+
+describe("MCP server safety", () => {
+  it("runs concurrent tool calls one at a time, so read-then-write updates are not lost", async () => {
+    const storage = new MemoryStorage();
+    await storage.put("counter", { id: "c", n: 0 });
+    const reg = new ToolRegistry().register(
+      defineTool({
+        name: "bump",
+        description: "Add one",
+        risk: "write",
+        input: z.object({}),
+        output: z.object({ n: z.number() }),
+        async run(_i, ctx) {
+          const cur = (await ctx.storage.get<{ id: string; n: number }>("counter", "c"))!.n;
+          await new Promise((r) => setTimeout(r, 5));
+          await ctx.storage.put("counter", { id: "c", n: cur + 1 });
+          return { n: cur + 1 };
+        },
+      }),
+    );
+    const server = createMcpServer({ name: "t", version: "1", registry: reg, storage });
+    const [a, b] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "c", version: "1" });
+    await Promise.all([server.connect(a), client.connect(b)]);
+    await Promise.all(
+      Array.from({ length: 10 }, () => client.callTool({ name: "bump", arguments: {} })),
+    );
+    expect(await storage.get("counter", "c")).toEqual({ id: "c", n: 10 });
+  });
+
+  it("refuses a data folder another running process holds, and takes over a stale lock", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "seance-lock-"));
+    try {
+      await write(join(dir, ".seance-mcp.lock"), String(process.ppid));
+      await expect(acquireLock(dir)).rejects.toThrow(/Another Séance MCP server/);
+      await write(join(dir, ".seance-mcp.lock"), "999999999");
+      const release = await acquireLock(dir);
+      await release();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

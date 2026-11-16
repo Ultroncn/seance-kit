@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { readFile, rm, writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import type { ToolRegistry } from "@seance/core";
@@ -68,6 +69,34 @@ async function isSeanceExport(path: string): Promise<string | null> {
   }
 }
 
+/**
+ * Take `<dataDir>/.seance-mcp.lock` for this process. Two servers on one folder would overwrite
+ * each other's writes. A lock left by a process that no longer runs is taken over.
+ */
+export async function acquireLock(dataDir: string): Promise<() => Promise<void>> {
+  const path = join(dataDir, ".seance-mcp.lock");
+  await mkdir(dataDir, { recursive: true });
+  try {
+    const pid = Number(await readFile(path, "utf8"));
+    if (Number.isInteger(pid) && pid > 0 && pid !== process.pid) {
+      let alive = true;
+      try {
+        process.kill(pid, 0);
+      } catch {
+        alive = false;
+      }
+      if (alive)
+        throw new Error(
+          `Another Séance MCP server (pid ${pid}) is using ${dataDir}. Stop it or use another --data folder.`,
+        );
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+  await writeFile(path, String(process.pid), "utf8");
+  return () => rm(path, { force: true });
+}
+
 /** Prepare storage and tools: imports first, then the app's setup. Exported for tests. */
 export async function prepare(app: McpApp, opts: CliOptions) {
   const storage = new FileStorage(opts.dataDir);
@@ -88,6 +117,7 @@ export async function prepare(app: McpApp, opts: CliOptions) {
     log(await tools.ingest(path));
   }
   await tools.flush?.();
+  await storage.flush();
   return { storage, ...tools };
 }
 
@@ -104,6 +134,13 @@ export async function runCli(
     log(err instanceof Error ? err.message : String(err));
     process.exit(2);
   }
+  let release: () => Promise<void>;
+  try {
+    release = await acquireLock(opts.dataDir);
+  } catch (err) {
+    log(err instanceof Error ? err.message : String(err));
+    process.exit(3);
+  }
   const { storage, registry, flush } = await prepare(app, opts);
   const server = createMcpServer({
     name: app.name,
@@ -115,8 +152,12 @@ export async function runCli(
   });
   const shutdown = async () => {
     await flush?.();
+    await storage.flush();
+    await release();
     process.exit(0);
   };
+  // Save shortly after every change too, so a killed process loses at most a moment of work.
+  process.stdin.on("end", () => void shutdown());
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
   await server.connect(new StdioServerTransport());
