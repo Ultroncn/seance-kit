@@ -267,7 +267,13 @@ export class Agent {
     }
 
     // 3. Run.
-    const result = await registry.execute(validTool, input, { storage, signal, now });
+    const { provider } = this.options;
+    const result = await registry.execute(validTool, input, {
+      storage,
+      signal,
+      now,
+      actor: { providerId: provider.id, isMock: provider.isMock },
+    });
     if (!result.ok) {
       yield fail(result.error.type, result.error.message);
       return;

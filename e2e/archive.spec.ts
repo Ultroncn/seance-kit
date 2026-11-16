@@ -94,6 +94,9 @@ test("agent summaries wait for approval, then show in the reader", async ({ page
   ).toBeVisible();
   await openChat(page, /^Sourdough starter keeps dying/);
   await expect(page.getByRole("region", { name: "Summary and tags" })).toContainText("acetone");
+  await expect(page.getByRole("region", { name: "Summary and tags" })).toContainText(
+    "scripted by demo mode",
+  );
 });
 
 test("rejecting changes nothing and the agent says so", async ({ page }) => {

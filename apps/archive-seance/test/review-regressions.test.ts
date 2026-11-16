@@ -137,3 +137,41 @@ describe("review regressions: tools", () => {
     expect(hidden).toEqual(["claude:u2"]);
   });
 });
+
+describe("review regressions: demo honesty in saved data", () => {
+  it("marks summaries written by the scripted demo, and not those written by a real model", async () => {
+    const sample = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, "../public/sample/chatgpt-conversations.json"),
+        "utf8",
+      ),
+    );
+    const { parseChatGPT } = await import("../src/importers");
+    const storage = new MemoryStorage();
+    const search = createArchiveSearch(storage, 0);
+    await importConversations(storage, search, parseChatGPT(sample).conversations);
+    const agent = createAgent({
+      provider: new MockProvider({ scripts: archiveScripts }),
+      registry: createArchiveRegistry({ search }),
+      storage,
+    });
+    for await (const _ of agent.run(DEMO_PROMPTS.summarize, { approve: () => true })) void _;
+    const summarized = (await storage.list<Conversation>(CONVERSATIONS)).filter((c) => c.summary);
+    expect(summarized.length).toBe(2);
+    expect(summarized.every((c) => c.summarizedBy === "demo")).toBe(true);
+
+    const ctx: ToolContext = {
+      storage,
+      signal: new AbortController().signal,
+      now: () => new Date(),
+      actor: { providerId: "anthropic", isMock: false },
+    };
+    const id = summarized[0]!.id;
+    await createArchiveRegistry({ search }).run(
+      "summarize_conversation",
+      { id, summary: "Real words." },
+      ctx,
+    );
+    expect((await storage.get<Conversation>(CONVERSATIONS, id))?.summarizedBy).toBe("anthropic");
+  });
+});

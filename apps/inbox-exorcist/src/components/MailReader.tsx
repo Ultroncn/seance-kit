@@ -235,7 +235,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
         >
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
-              Draft · not sent
+              Draft · not sent{d.by === "demo" && " · scripted by demo mode"}
             </p>
             <span className="text-[11px] text-muted">To {d.to}</span>
             <span className="ml-auto flex gap-1">

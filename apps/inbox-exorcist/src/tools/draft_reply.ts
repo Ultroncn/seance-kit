@@ -1,4 +1,4 @@
-import { defineTool } from "@seance/core";
+import { authorOf, defineTool } from "@seance/core";
 import { z } from "zod";
 import { DRAFTS, type Draft } from "../domain/types";
 import { replyAddress, requireEmail } from "./shared";
@@ -32,7 +32,8 @@ export const draftReply = () =>
     risk: "write",
     input,
     output,
-    async run({ id, body }, { storage, now }) {
+    async run({ id, body }, ctx) {
+      const { storage, now } = ctx;
       const e = await requireEmail(storage, id);
       const at = now();
       const draft: Draft = {
@@ -42,6 +43,7 @@ export const draftReply = () =>
         subject: replySubject(e.subject),
         body,
         createdAt: at.toISOString(),
+        by: authorOf(ctx),
       };
       await storage.put(DRAFTS, draft);
       return {

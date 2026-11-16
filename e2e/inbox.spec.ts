@@ -130,7 +130,7 @@ test("drafts: the agent drafts a reply that is saved, never sent, and opens in t
     .getByRole("button", { name: /Re: Dinner on Saturday\?/ })
     .click();
   const draft = page.getByRole("region", { name: "Draft: Re: Dinner on Saturday?" });
-  await expect(draft).toContainText("Draft · not sent");
+  await expect(draft).toContainText("Draft · not sent · scripted by demo mode");
   await expect(draft.getByRole("link", { name: "Open in mail app" })).toHaveAttribute(
     "href",
     /^mailto:maya%40example\.com\?subject=Re%3A%20Dinner/,

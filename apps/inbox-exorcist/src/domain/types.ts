@@ -61,4 +61,6 @@ export interface Draft extends StoredItem {
   subject: string;
   body: string;
   createdAt: string;
+  /** "demo" (scripted), a provider id such as "anthropic", or "user". */
+  by?: string;
 }

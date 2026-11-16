@@ -148,7 +148,7 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
           {c.summary && (
             <>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
-                Summary
+                Summary{c.summarizedBy === "demo" && " · scripted by demo mode"}
               </p>
               <p className="mt-1 text-sm leading-relaxed">{c.summary}</p>
             </>

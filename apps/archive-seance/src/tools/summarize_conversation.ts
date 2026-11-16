@@ -1,4 +1,4 @@
-import { defineTool } from "@seance/core";
+import { authorOf, defineTool } from "@seance/core";
 import { z } from "zod";
 import { saveConversation } from "../domain/store";
 import { requireConversation, type ArchiveDeps } from "./shared";
@@ -23,9 +23,15 @@ export const summarizeConversation = ({ search }: ArchiveDeps) =>
     risk: "write",
     input,
     output,
-    async run({ id, summary }, { storage, now }) {
+    async run({ id, summary }, ctx) {
+      const { storage, now } = ctx;
       const c = await requireConversation(storage, id);
-      await saveConversation(storage, search, { ...c, summary, summarizedAt: now().toISOString() });
+      await saveConversation(storage, search, {
+        ...c,
+        summary,
+        summarizedAt: now().toISOString(),
+        summarizedBy: authorOf(ctx),
+      });
       return { id, title: c.title, summary };
     },
   });

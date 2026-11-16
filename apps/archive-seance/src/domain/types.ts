@@ -40,6 +40,8 @@ export interface Conversation extends NormalizedConversation, StoredItem {
   tags: string[];
   summary?: string;
   summarizedAt?: string;
+  /** "demo" (scripted), a provider id such as "anthropic", or "user". */
+  summarizedBy?: string;
   banishedAt?: string;
   banishToken?: string;
 }

@@ -28,6 +28,7 @@ export {
   type SearchOptions,
   type SearchServiceOptions,
 } from "./search";
+export { authorOf } from "./author";
 export {
   reduceTimeline,
   timelineFromEvents,

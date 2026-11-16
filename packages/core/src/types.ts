@@ -11,6 +11,8 @@ export interface ToolContext {
   storage: Storage;
   signal: AbortSignal;
   now(): Date;
+  /** Who asked for this call. Tools record it, so scripted demo output is never mistaken for a model's. */
+  actor?: { providerId: string; isMock: boolean };
 }
 
 export interface Tool<I, O> {

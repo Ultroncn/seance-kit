@@ -187,3 +187,28 @@ describe("review regressions: zip", () => {
     await expect(run()).rejects.toThrow(/over 500 MB\. Unzip it/);
   });
 });
+
+describe("review regressions: demo honesty in drafts", () => {
+  it("marks drafts written by the scripted demo", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const bytes = new Uint8Array(
+      readFileSync(resolve(import.meta.dirname, "../public/sample/inbox.mbox")),
+    );
+    const storage = new MemoryStorage();
+    const search = createInboxSearch(storage, 0);
+    async function* all() {
+      for await (const ev of readEmails(fileFrom("inbox.mbox", bytes)))
+        if (ev.kind === "email") yield ev.email;
+    }
+    await importEmails(storage, search, all());
+    const agent = createAgent({
+      provider: new MockProvider({ scripts: inboxScripts }),
+      registry: createInboxRegistry({ search }),
+      storage,
+    });
+    for await (const _ of agent.run(DEMO_PROMPTS.draft, { approve: () => true })) void _;
+    const [d] = await storage.list<Draft>(DRAFTS);
+    expect(d?.by).toBe("demo");
+  });
+});
