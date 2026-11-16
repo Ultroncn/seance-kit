@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TimelineDemo } from "./TimelineDemo";
 
 const REPO = "https://github.com/Ultroncn/seance-kit";
 /** Set once the demo video is uploaded (task 5.3). The section stays hidden until then. */
@@ -60,7 +61,24 @@ const agent = useAgentRun({ provider, registry, storage });`,
   actions={<DemoBadge />}
   library={<NoteList />}
   content={<NoteView />}
-  agent={<AgentPanel {...agent} onRun={agent.run} />}
+  agent={
+    <AgentPanel
+      entries={agent.entries}
+      busy={agent.busy}
+      onRun={agent.run}
+      onApprove={agent.approve}
+      onReject={agent.reject}
+      onStop={agent.stop}
+      onReset={agent.reset}
+      suggestions={["Tidy my notes"]}
+      isMock={isMock}
+      hasData
+      emptyTitle="Ask your notebook"
+      emptyText="It asks before changing anything."
+      promptLabel="Ask your notebook"
+      placeholder="Ask about your notes…"
+    />
+  }
 />`,
   },
 ];
@@ -181,6 +199,14 @@ export function App() {
             No sign-up. The demo runs without a key, on sample data, and says so.
           </p>
         </section>
+
+        <Section
+          id="demo-heading"
+          title="Every change waits for you"
+          intro="The séance timeline shows each step the agent takes. Anything that writes or hides data stops for your Allow. Try it."
+        >
+          <TimelineDemo />
+        </Section>
 
         <Section id="apps-heading" title="Two apps built with it">
           <div className="grid gap-4 sm:grid-cols-2">

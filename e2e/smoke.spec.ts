@@ -41,3 +41,14 @@ test("inbox shell loads", async ({ page }) => {
   await page.goto("/inbox/");
   await expect(page.getByRole("heading", { level: 1, name: "Inbox Exorcist" })).toBeVisible();
 });
+
+test("landing demo: the approval gate works without stealing focus on load", async ({ page }) => {
+  await page.goto("/");
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  const card = page.getByRole("group", { name: /Allow Hide chats/ });
+  await expect(card).not.toBeFocused();
+  await card.getByRole("button", { name: "Allow" }).click();
+  await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
+  await page.getByRole("button", { name: "Replay" }).click();
+  await expect(page.getByRole("group", { name: /Allow Hide chats/ })).toBeVisible();
+});

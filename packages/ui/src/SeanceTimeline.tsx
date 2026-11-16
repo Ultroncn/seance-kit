@@ -23,6 +23,8 @@ export interface SeanceTimelineProps {
   describeApproval?: (step: ToolEntry) => ApprovalCopy | undefined;
   /** Plain labels for tool names, for example { banish_emails: "Hide emails" }. */
   toolLabels?: Record<string, string>;
+  /** Move focus to a new approval card. Default true. Turn off for decorative timelines. */
+  autoFocusApprovals?: boolean;
   /** Shown when there are no entries yet. */
   empty?: ReactNode;
 }
@@ -110,6 +112,7 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
         details={copy?.details}
         onApprove={() => props.onDecided(() => props.onApprove(step.id))}
         onReject={() => props.onDecided(() => props.onReject(step.id))}
+        autoFocus={props.autoFocusApprovals ?? true}
       />
     );
   }
