@@ -176,6 +176,8 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
                   <p className="text-muted">
                     {plural(r.counts.added, "new chat")}, {r.counts.updated} updated,{" "}
                     {r.counts.unchanged} already here.
+                    {r.counts.older > 0 &&
+                      ` Kept the newer copy of ${plural(r.counts.older, "chat")}.`}
                   </p>
                 )
               )}

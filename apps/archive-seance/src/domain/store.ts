@@ -55,6 +55,8 @@ export interface ImportCounts {
   added: number;
   updated: number;
   unchanged: number;
+  /** The file had an older copy than the one already stored. The stored copy was kept. */
+  older: number;
 }
 
 const contentKey = (c: NormalizedConversation) =>
@@ -71,11 +73,16 @@ export async function importConversations(
   items: NormalizedConversation[],
   onProgress?: (done: number, total: number) => void,
 ): Promise<ImportCounts> {
-  const counts: ImportCounts = { added: 0, updated: 0, unchanged: 0 };
+  const counts: ImportCounts = { added: 0, updated: 0, unchanged: 0, older: 0 };
   // One export can list the same chat twice. The last version wins, so re-importing the same
   // file never flips the stored chat between versions (P3 counterexample, kept as a test).
+  // On equal dates the later entry wins, so a file that lists a chat twice still imports stably.
   const latest = new Map<string, NormalizedConversation>();
-  for (const n of items) latest.set(conversationId(n.source, n.sourceId), n);
+  for (const n of items) {
+    const id = conversationId(n.source, n.sourceId);
+    const seen = latest.get(id);
+    if (!seen || n.updatedAt >= seen.updatedAt) latest.set(id, n);
+  }
   const unique = [...latest.values()];
   for (const [i, n] of unique.entries()) {
     const id = conversationId(n.source, n.sourceId);
@@ -85,6 +92,9 @@ export async function importConversations(
       await storage.put(CONVERSATIONS, c);
       search.index(c);
       counts.added++;
+    } else if (n.updatedAt < existing.updatedAt) {
+      // An older export never overwrites a newer copy (ISO dates compare as strings).
+      counts.older++;
     } else if (contentKey(existing) !== contentKey(n)) {
       await saveConversation(storage, search, { ...existing, ...n, id });
       counts.updated++;

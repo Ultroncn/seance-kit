@@ -20,7 +20,7 @@ export const archiveMcp: McpApp = {
         const name = basename(path);
         const parsed = await parseFile(new File([new Uint8Array(await readFile(path))], name));
         const c = await importConversations(storage, search, parsed.conversations);
-        return `${name}: ${c.added} new, ${c.updated} updated, ${c.unchanged} already here, ${parsed.skipped.length} skipped`;
+        return `${name}: ${c.added} new, ${c.updated} updated, ${c.unchanged} already here, ${c.older} older than stored, ${parsed.skipped.length} skipped`;
       },
     };
   },

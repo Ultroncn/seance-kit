@@ -6,7 +6,12 @@ import { MemoryStorage } from "@seance/storage";
 import { describe, expect, it } from "vitest";
 import { normalizeConversation, type RawConversation } from "../src/domain/normalize";
 import { createArchiveSearch, importConversations } from "../src/domain/store";
-import { CONVERSATIONS, type NormalizedConversation, type Source } from "../src/domain/types";
+import {
+  CONVERSATIONS,
+  type Conversation,
+  type NormalizedConversation,
+  type Source,
+} from "../src/domain/types";
 import {
   ImportError,
   parseChatGPT,
@@ -297,15 +302,44 @@ describe("importer properties", () => {
       added: 1,
       updated: 0,
       unchanged: 0,
+      older: 0,
     });
     const first = await storage.list(CONVERSATIONS);
     expect(await importConversations(storage, search, [a, b])).toEqual({
       added: 0,
       updated: 0,
       unchanged: 1,
+      older: 0,
     });
     expect(await storage.list(CONVERSATIONS)).toEqual(first);
     expect(first[0]).toMatchObject({ messages: b.messages, rev: 1 });
+  });
+
+  it("an older export never overwrites a newer copy of a chat", async () => {
+    const storage = new MemoryStorage();
+    const search = createArchiveSearch(storage, 0);
+    const newer = normalizeConversation({
+      source: "chatgpt",
+      sourceId: "c",
+      title: "Trip",
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-03-01T00:00:00Z",
+      messages: [1, 2, 3, 4].map((n) => ({ role: n % 2 ? "user" : "assistant", text: `m${n}` })),
+    });
+    const older = {
+      ...newer,
+      updatedAt: "2024-02-01T00:00:00.000Z",
+      messages: newer.messages.slice(0, 2),
+    };
+    await importConversations(storage, search, [newer]);
+    const counts = await importConversations(storage, search, [older]);
+    expect(counts).toMatchObject({ added: 0, updated: 0, older: 1 });
+    expect((await storage.get<Conversation>(CONVERSATIONS, "chatgpt:c"))?.messages).toHaveLength(4);
+
+    // Within one batch the newest version wins, whatever the order.
+    const fresh = new MemoryStorage();
+    await importConversations(fresh, createArchiveSearch(fresh, 0), [newer, older]);
+    expect((await fresh.get<Conversation>(CONVERSATIONS, "chatgpt:c"))?.messages).toHaveLength(4);
   });
 
   it("P3 a re-import keeps tags, summary and banished state, and updates changed content", async () => {
@@ -336,6 +370,7 @@ describe("importer properties", () => {
       added: 0,
       updated: 1,
       unchanged: 0,
+      older: 0,
     });
     expect(await storage.get(CONVERSATIONS, "claude:x")).toMatchObject({
       title: "New",
