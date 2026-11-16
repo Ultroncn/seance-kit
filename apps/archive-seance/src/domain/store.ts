@@ -86,11 +86,12 @@ export async function importConversations(
     } else {
       counts.unchanged++;
     }
-    if ((i + 1) % 25 === 0 || i === items.length - 1) {
+    if ((i + 1) % 25 === 0) {
       onProgress?.(i + 1, items.length);
-      // Let the page paint between batches on big imports.
+      // Let the page paint between batches on big imports. Small imports never wait.
       await new Promise((r) => setTimeout(r, 0));
     }
   }
+  if (items.length % 25 !== 0) onProgress?.(items.length, items.length);
   return counts;
 }
