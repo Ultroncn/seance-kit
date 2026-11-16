@@ -57,6 +57,8 @@ export const inboxMessages = defineMessages(
     notSortedYet: "Not sorted yet",
     label: "Label",
     allLabels: "All labels",
+    mailboxLabel: "Mailbox",
+    allMailboxes: (n: number) => `All ${n} mailboxes`,
     clearFilters: "Clear filters",
     reading: (file: string, done: string, total: string, added: number) =>
       `Reading ${file}: ${done} of ${total} · ${added} new ${plural(added, "email", "emails")}`,
@@ -190,6 +192,8 @@ export const inboxMessages = defineMessages(
     notSortedYet: "尚未分类",
     label: "标签",
     allLabels: "全部标签",
+    mailboxLabel: "邮箱",
+    allMailboxes: (n: number) => `全部 ${n} 个邮箱`,
     clearFilters: "清除筛选",
     reading: (file: string, done: string, total: string, added: number) =>
       `正在读取 ${file}：${done} / ${total} · 新增 ${added} 封邮件`,

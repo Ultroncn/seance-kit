@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.11 Several mailboxes: each email keeps the mailbox it was delivered to (Delivered-To, else the file's main address), a mailbox filter when there is more than one, `mailbox` in `search_emails`, and an export guide for Gmail, Outlook, Yahoo, iCloud, QQ and 163. Direct sign-in stays cut: browsers cannot speak IMAP, and Gmail's read scope needs Google's security review.
 - [x] R.10 Providers like CC Switch: saved profiles, header and ⌘K switch, presets for international and Chinese vendors with checked browser access, custom URLs for both protocols, model list loading. P12 property test.
 - [x] R.9 Language switch: EN / 中文 on every page, typed dictionaries checked by `tsc`, scripted demo replies in both languages, unit tests for the i18n layer and the Chinese scripts, a zh e2e smoke test with axe.
 

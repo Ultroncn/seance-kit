@@ -1,6 +1,6 @@
 import { SearchService } from "@seance/core";
 import type { Storage } from "@seance/storage";
-import { emailId } from "./normalize";
+import { MailboxTally, emailId } from "./normalize";
 import { EMAILS, type Address, type Email, type NormalizedEmail } from "./types";
 
 const who = (a: unknown) => {
@@ -51,6 +51,10 @@ export interface ImportCounts {
  * Store imported emails. A message is identified by its Message-ID, or by a content hash when it
  * has none, so importing the same file again adds nothing (P3). Mail content never changes after
  * import, so a duplicate keeps the stored copy with its labels, category and banished state.
+ *
+ * Each call is one file, so one mailbox. Mail keeps its Delivered-To address as its mailbox; mail
+ * without one (sent mail, some exports) gets the file's main address once the file is read, and so
+ * do stored copies imported before mailboxes existed.
  */
 export async function importEmails(
   storage: Storage,
@@ -59,20 +63,40 @@ export async function importEmails(
   onStored?: (counts: ImportCounts) => void,
 ): Promise<ImportCounts> {
   const counts: ImportCounts = { added: 0, duplicates: 0 };
+  const tally = new MailboxTally();
+  const unassigned: string[] = [];
   let n = 0;
   for await (const e of emails) {
     const id = emailId(e);
-    if (await getEmail(storage, id)) {
+    tally.add(e);
+    const existing = await getEmail(storage, id);
+    if (existing) {
       counts.duplicates++;
+      if (!existing.mailbox) unassigned.push(id);
     } else {
-      const stored: Email = { ...e, id, rev: 1, labels: [] };
+      const stored: Email = {
+        ...e,
+        id,
+        rev: 1,
+        labels: [],
+        ...(e.deliveredTo ? { mailbox: e.deliveredTo } : {}),
+      };
       await storage.put(EMAILS, stored);
       search.index(stored);
       counts.added++;
+      if (!e.deliveredTo) unassigned.push(id);
     }
     if (++n % 50 === 0) {
       onStored?.({ ...counts });
       await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+  const mailbox = tally.best;
+  if (mailbox) {
+    for (const id of unassigned) {
+      // Read again: the agent may have labelled or banished it while the file was importing.
+      const fresh = await getEmail(storage, id);
+      if (fresh && !fresh.mailbox) await storage.put(EMAILS, { ...fresh, mailbox });
     }
   }
   onStored?.({ ...counts });

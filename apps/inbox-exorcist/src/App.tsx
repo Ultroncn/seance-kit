@@ -21,6 +21,7 @@ import {
 } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPane } from "./components/AgentPane";
+import { ExportGuide } from "./components/ExportGuide";
 import { EMPTY_FILTERS, MailList, type Filters } from "./components/MailList";
 import { InboxEmpty, MailReader } from "./components/MailReader";
 import { CATEGORIES } from "./domain/types";
@@ -241,7 +242,7 @@ function Workspace() {
         }
         content={
           empty ? (
-            <div className="flex h-full flex-col items-center justify-center">
+            <div className="flex min-h-full flex-col items-center justify-center py-8">
               <InboxEmpty
                 onSample={() => void loadSample()}
                 onPick={pickFiles}
@@ -254,6 +255,7 @@ function Workspace() {
                 </a>
                 {t.period}
               </p>
+              <ExportGuide />
             </div>
           ) : (
             <MailReader

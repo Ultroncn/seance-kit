@@ -166,3 +166,25 @@ test("travel: labels flight and hotel mail, and the label filter finds them", as
   await page.getByLabel("Label", { exact: true }).selectOption("travel");
   await expect(emails(page)).toHaveCount(3);
 });
+
+test("two mailboxes: each import keeps its own mailbox, and the mailbox filter separates them", async ({
+  page,
+}) => {
+  await page.goto("/inbox/");
+  await page.getByRole("button", { name: "Load the sample inbox" }).click();
+  const rows = page.getByRole("list", { name: "Emails" }).getByRole("listitem");
+  await expect(rows).toHaveCount(18);
+  // One mailbox: no filter to clutter the pane.
+  await expect(page.getByRole("combobox", { name: "Mailbox", exact: true })).toHaveCount(0);
+  await page.getByTestId("file-input").setInputFiles(FIXTURE);
+  const filter = page.getByRole("combobox", { name: "Mailbox", exact: true });
+  await expect(filter).toBeVisible();
+  const total = await rows.count();
+  await filter.selectOption("alex@example.com");
+  await expect(rows).toHaveCount(18);
+  await filter.selectOption("you@example.com");
+  await expect(rows).toHaveCount(total - 18);
+  await rows.first().getByRole("button").click();
+  await expect(page.locator("dl")).toContainText("you@example.com");
+  await expectAccessible(page);
+});

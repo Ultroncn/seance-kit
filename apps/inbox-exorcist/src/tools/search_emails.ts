@@ -16,6 +16,13 @@ const input = z.object({
     .optional()
     .describe("Only mail in this category."),
   label: z.string().max(40).optional().describe("Only mail with this label."),
+  mailbox: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      "Only mail from this mailbox: the address it was delivered to. See `mailbox` in results.",
+    ),
   from: z.string().max(100).optional().describe("Part of the sender's name or address."),
   after: day.optional().describe("Only mail sent on or after this day."),
   before: day.optional().describe("Only mail sent on or before this day."),
@@ -36,6 +43,7 @@ const output = z.object({
       date: z.string(),
       category: z.enum(CATEGORIES).optional(),
       labels: z.array(z.string()),
+      mailbox: z.string().optional(),
       snippet: z.string(),
     }),
   ),
@@ -45,7 +53,7 @@ export const searchEmails = ({ search }: InboxDeps) =>
   defineTool({
     name: "search_emails",
     description:
-      "Find emails in the user's imported inbox. Returns ids, senders, subjects, dates and a snippet. Banished mail is never returned.",
+      "Find emails in the user's imported inbox, which may hold several mailboxes. Returns ids, senders, subjects, dates, the mailbox and a snippet. Banished mail is never returned.",
     risk: "read",
     input,
     output,
@@ -62,12 +70,14 @@ export const searchEmails = ({ search }: InboxDeps) =>
       }
       const from = i.from?.toLowerCase();
       const label = i.label ? normalizeLabel(i.label) : "";
+      const mailbox = i.mailbox?.trim().toLowerCase();
       const filtered = items.filter((e) => {
         const d = e.date.slice(0, 10);
         return (
           (!i.category ||
             (i.category === "uncategorized" ? !e.category : e.category === i.category)) &&
           (!label || e.labels.includes(label)) &&
+          (!mailbox || e.mailbox === mailbox) &&
           (!from || `${e.from.name} ${e.from.address}`.toLowerCase().includes(from)) &&
           (!i.after || d >= i.after) &&
           (!i.before || d <= i.before)
@@ -85,6 +95,7 @@ export const searchEmails = ({ search }: InboxDeps) =>
           date: e.date,
           ...(e.category ? { category: e.category } : {}),
           labels: e.labels,
+          ...(e.mailbox ? { mailbox: e.mailbox } : {}),
           snippet: snippetFor(e, query),
         })),
       };

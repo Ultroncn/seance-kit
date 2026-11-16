@@ -47,6 +47,9 @@ export async function parseMessage(bytes: Uint8Array): Promise<NormalizedEmail> 
     date: e.date,
     text,
     attachments: e.attachments?.length ?? 0,
+    // The topmost Delivered-To is the final mailbox when mail was forwarded along the way.
+    deliveredTo: e.headers.find((h) => /^(delivered-to|x-original-to|envelope-to)$/i.test(h.key))
+      ?.value,
   });
 }
 

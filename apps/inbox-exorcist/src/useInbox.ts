@@ -14,6 +14,8 @@ export interface InboxData {
   drafts: Draft[];
   byId: Map<string, Email>;
   labels: string[];
+  /** Every mailbox address seen, sorted. More than one means mail from several accounts. */
+  mailboxes: string[];
   version: number;
   refresh: () => void;
 }
@@ -48,6 +50,7 @@ export function useInbox(): InboxData {
       drafts,
       byId: new Map(list.map((e) => [e.id, e])),
       labels: [...new Set(list.flatMap((e) => e.labels))].sort(),
+      mailboxes: [...new Set(list.flatMap((e) => (e.mailbox ? [e.mailbox] : [])))].sort(),
       version,
       refresh,
     };

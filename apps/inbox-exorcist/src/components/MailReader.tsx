@@ -122,7 +122,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
         <h2 id="mail-subject" className="text-2xl font-semibold leading-tight">
           {e.subject}
         </h2>
-        <dl className="mt-3 grid grid-cols-[3rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+        <dl className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
           <dt className="text-muted">{t.from}</dt>
           <dd className="truncate">{formatAddress(e.from) || t.unknownSender}</dd>
           {e.to.length > 0 && (
@@ -139,6 +139,12 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
           )}
           <dt className="text-muted">{t.date}</dt>
           <dd>{fullDate(e.date)}</dd>
+          {e.mailbox && (
+            <>
+              <dt className="text-muted">{t.mailboxLabel}</dt>
+              <dd className="truncate">{e.mailbox}</dd>
+            </>
+          )}
         </dl>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

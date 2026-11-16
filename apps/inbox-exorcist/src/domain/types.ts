@@ -32,6 +32,8 @@ export interface NormalizedEmail {
   /** Plain text body. HTML-only mail is converted to text. */
   text: string;
   attachments: number;
+  /** The mailbox the server delivered this copy to (Delivered-To), lower-case, or null. */
+  deliveredTo: string | null;
 }
 
 /** A stored email: imported content plus what the user and agent added. */
@@ -39,6 +41,8 @@ export interface Email extends NormalizedEmail, StoredItem {
   id: string;
   rev: number;
   labels: string[];
+  /** Which of the user's mailboxes this came from, an address. Set on import. */
+  mailbox?: string;
   category?: Category;
   categorizedAt?: string;
   banishedAt?: string;

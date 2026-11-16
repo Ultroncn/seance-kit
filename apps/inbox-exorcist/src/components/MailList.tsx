@@ -17,10 +17,18 @@ export interface Filters {
   query: string;
   category: Category | "all" | "uncategorized";
   label: string;
+  /** A mailbox address, or "" for all mailboxes. */
+  mailbox: string;
   view: View;
 }
 
-export const EMPTY_FILTERS: Filters = { query: "", category: "all", label: "", view: "inbox" };
+export const EMPTY_FILTERS: Filters = {
+  query: "",
+  category: "all",
+  label: "",
+  mailbox: "",
+  view: "inbox",
+};
 
 interface Props {
   data: InboxData;
@@ -54,7 +62,8 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
       (e) =>
         (filters.category === "all" ||
           (filters.category === "uncategorized" ? !e.category : e.category === filters.category)) &&
-        (!filters.label || e.labels.includes(filters.label)),
+        (!filters.label || e.labels.includes(filters.label)) &&
+        (!filters.mailbox || e.mailbox === filters.mailbox),
     );
   }, [data, ids, filters]);
 
@@ -69,7 +78,11 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
     toast({ text: t.restoredN(r.restored.length), tone: "ok" });
   };
 
-  const filtering = filters.query !== "" || filters.category !== "all" || filters.label !== "";
+  const filtering =
+    filters.query !== "" ||
+    filters.category !== "all" ||
+    filters.label !== "" ||
+    filters.mailbox !== "";
   const title =
     filters.view === "drafts" ? t.drafts : filters.view === "banished" ? t.banished : t.inbox;
 
@@ -94,6 +107,26 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
             value={filters.query}
             onChange={(e) => set({ query: e.target.value })}
           />
+          {data.mailboxes.length > 1 && (
+            <>
+              <label className="sr-only" htmlFor="filter-mailbox">
+                {t.mailboxLabel}
+              </label>
+              <select
+                id="filter-mailbox"
+                value={filters.mailbox}
+                onChange={(e) => set({ mailbox: e.target.value })}
+                className="h-8 w-full rounded-md border border-edge bg-surface px-2 text-xs text-fg"
+              >
+                <option value="">{t.allMailboxes(data.mailboxes.length)}</option>
+                {data.mailboxes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="filter-category">
               {t.categoryLabel}
