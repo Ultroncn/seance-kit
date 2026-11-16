@@ -196,4 +196,77 @@ describe("Demo-mode badge and settings", () => {
     expect(await storage.get("secrets", "provider")).toBeUndefined();
     await waitFor(() => expect(badge()).not.toBeNull());
   });
+
+  it("keeps each provider's key separate, so a saved key never fills another provider's form", async () => {
+    const storage = new MemoryStorage();
+    await storage.put("secrets", {
+      id: "provider",
+      kind: "anthropic",
+      apiKey: "sk-ant-secret",
+      model: "m",
+    });
+    render(
+      <SeanceProvider>
+        <ProviderModeProvider storage={storage} mock={mock} createReal={fakeReal}>
+          <SettingsDialog open onOpenChange={() => {}} />
+        </ProviderModeProvider>
+      </SeanceProvider>,
+    );
+    await waitFor(() =>
+      expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("sk-ant-secret"),
+    );
+    await userEvent.click(screen.getByRole("radio", { name: "OpenAI-compatible" }));
+    expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("");
+    expect((screen.getByLabelText("Model") as HTMLInputElement).value).toBe("");
+    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
+    expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("sk-ant-secret");
+  });
+
+  it("refuses plain-http base URLs except for local servers", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await userEvent.click(badge()!);
+    await userEvent.click(screen.getByRole("radio", { name: "OpenAI-compatible" }));
+    const url = screen.getByLabelText("Base URL");
+    await userEvent.clear(url);
+    await userEvent.type(url, "http://llm.example.com/v1");
+    await userEvent.type(screen.getByLabelText("API key"), "sk-x");
+    await userEvent.type(screen.getByLabelText("Model"), "m");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByRole("status").textContent).toMatch(/https/);
+    expect(badge()).not.toBeNull();
+
+    await userEvent.clear(url);
+    await userEvent.type(url, "http://localhost:1234/v1");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(badge()).toBeNull());
+  });
+
+  it("keeps the Saved message visible after saving", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await userEvent.click(badge()!);
+    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
+    await userEvent.type(screen.getByLabelText("API key"), "sk-test");
+    await userEvent.type(screen.getByLabelText("Model"), "m");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(badge()).toBeNull());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getByRole("status").textContent).toMatch(/^Saved/);
+  });
+
+  it("moves focus to Cancel when asking to confirm a wipe, and back when cancelled", async () => {
+    render(
+      <SeanceProvider>
+        <ProviderModeProvider storage={new MemoryStorage()} mock={mock} createReal={fakeReal}>
+          <SettingsDialog open onOpenChange={() => {}} />
+        </ProviderModeProvider>
+      </SeanceProvider>,
+    );
+    const trigger = screen.getByRole("button", { name: "Delete all local data…" });
+    await userEvent.click(trigger);
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+    await userEvent.keyboard("{Enter}");
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Delete all local data…" }),
+    );
+  });
 });

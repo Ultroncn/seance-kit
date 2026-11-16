@@ -1,43 +1,55 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ProviderConfig, ProviderKind } from "@seance/llm";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn } from "./cn";
 import { Button, Input } from "./primitives";
 import { useProviderMode } from "./ProviderMode";
 
 type Choice = "demo" | ProviderKind;
 
+type Kind = Exclude<Choice, "demo">;
+
+/**
+ * Keys and model names are kept per provider. A key typed for one provider is never shown in,
+ * tested against, or saved for another one.
+ */
 interface Form {
   choice: Choice;
-  apiKey: string;
-  model: string;
+  keys: Record<"anthropic" | "openai-compatible", string>;
+  models: Record<Kind, string>;
   baseUrl: string;
   host: string;
 }
 
 const EMPTY: Form = {
   choice: "demo",
-  apiKey: "",
-  model: "",
+  keys: { anthropic: "", "openai-compatible": "" },
+  models: { anthropic: "", "openai-compatible": "", ollama: "" },
   baseUrl: "https://api.openai.com/v1",
   host: "",
 };
 
 function formFrom(config: ProviderConfig | null): Form {
   if (!config) return EMPTY;
+  const models = { ...EMPTY.models, [config.kind]: config.model };
   switch (config.kind) {
     case "anthropic":
-      return { ...EMPTY, choice: "anthropic", apiKey: config.apiKey, model: config.model };
+      return {
+        ...EMPTY,
+        choice: "anthropic",
+        keys: { ...EMPTY.keys, anthropic: config.apiKey },
+        models,
+      };
     case "openai-compatible":
       return {
         ...EMPTY,
         choice: "openai-compatible",
-        apiKey: config.apiKey,
-        model: config.model,
+        keys: { ...EMPTY.keys, "openai-compatible": config.apiKey },
+        models,
         baseUrl: config.baseUrl,
       };
     case "ollama":
-      return { ...EMPTY, choice: "ollama", model: config.model, host: config.host ?? "" };
+      return { ...EMPTY, choice: "ollama", models, host: config.host ?? "" };
   }
 }
 
@@ -47,28 +59,44 @@ function configFrom(f: Form): ProviderConfig | null {
     case "demo":
       return null;
     case "anthropic":
-      return { kind: "anthropic", apiKey: t(f.apiKey), model: t(f.model) };
+      return { kind: "anthropic", apiKey: t(f.keys.anthropic), model: t(f.models.anthropic) };
     case "openai-compatible":
       return {
         kind: "openai-compatible",
-        apiKey: t(f.apiKey),
-        model: t(f.model),
+        apiKey: t(f.keys["openai-compatible"]),
+        model: t(f.models["openai-compatible"]),
         baseUrl: t(f.baseUrl),
       };
     case "ollama":
-      return { kind: "ollama", model: t(f.model), ...(t(f.host) ? { host: t(f.host) } : {}) };
+      return {
+        kind: "ollama",
+        model: t(f.models.ollama),
+        ...(t(f.host) ? { host: t(f.host) } : {}),
+      };
   }
+}
+
+/** Keys travel only over https. Plain http is allowed for servers on this machine. */
+export function isAllowedEndpoint(raw: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    return false;
+  }
+  if (url.protocol === "https:") return true;
+  return url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
 }
 
 /** Ready-to-save settings, or a plain reason why not. */
 function validate(f: Form): string | null {
   if (f.choice === "demo") return null;
-  if (f.choice !== "ollama" && f.apiKey.trim() === "") return "Enter your API key.";
-  if (f.model.trim() === "") return "Enter a model name.";
-  if (f.choice === "openai-compatible" && !/^https?:\/\//.test(f.baseUrl.trim()))
-    return "Enter a base URL starting with https://.";
-  if (f.choice === "ollama" && f.host.trim() !== "" && !/^https?:\/\//.test(f.host.trim()))
-    return "Enter a host URL starting with http://.";
+  if (f.choice !== "ollama" && f.keys[f.choice].trim() === "") return "Enter your API key.";
+  if (f.models[f.choice].trim() === "") return "Enter a model name.";
+  if (f.choice === "openai-compatible" && !isAllowedEndpoint(f.baseUrl))
+    return "Enter a base URL starting with https:// (http:// only for localhost).";
+  if (f.choice === "ollama" && f.host.trim() !== "" && !/^https?:\/\/\S+$/.test(f.host.trim()))
+    return "Enter a host URL such as http://localhost:11434.";
   return null;
 }
 
@@ -153,22 +181,45 @@ export function SettingsDialog({
   const [testing, setTesting] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const groupName = useId();
+  const wasOpen = useRef(false);
+  const dirty = useRef(false);
+  const wipeTrigger = useRef<HTMLButtonElement>(null);
+  const wipeCancel = useRef<HTMLButtonElement>(null);
 
+  // Reset when the dialog opens. While it stays open, only fill in settings that finish
+  // loading, and only if the user has not started editing. Status messages are never wiped.
   useEffect(() => {
-    if (open) {
-      setForm(formFrom(config));
+    const opening = open && !wasOpen.current;
+    wasOpen.current = open;
+    if (!open) return;
+    if (opening) {
+      dirty.current = false;
+      setConfirmWipe(false);
       setStatus(
         configError
           ? { tone: "error", text: `Saved settings could not be used: ${configError}` }
           : null,
       );
-      setConfirmWipe(false);
     }
+    if (opening || !dirty.current) setForm(formFrom(config));
   }, [open, config, configError]);
 
+  useEffect(() => {
+    if (confirmWipe) wipeCancel.current?.focus();
+  }, [confirmWipe]);
+
   const set = (patch: Partial<Form>) => {
+    dirty.current = true;
     setForm((f) => ({ ...f, ...patch }));
     setStatus(null);
+  };
+  const kind: Kind | null = form.choice === "demo" ? null : form.choice;
+  const setKey = (v: string) =>
+    kind && kind !== "ollama" && set({ keys: { ...form.keys, [kind]: v } });
+  const setModel = (v: string) => kind && set({ models: { ...form.models, [kind]: v } });
+  const cancelWipe = () => {
+    setConfirmWipe(false);
+    setTimeout(() => wipeTrigger.current?.focus(), 0);
   };
   const invalid = validate(form);
 
@@ -291,8 +342,8 @@ export function SettingsDialog({
                       type="password"
                       autoComplete="off"
                       spellCheck={false}
-                      value={form.apiKey}
-                      onChange={(e) => set({ apiKey: e.target.value })}
+                      value={kind && kind !== "ollama" ? form.keys[kind] : ""}
+                      onChange={(e) => setKey(e.target.value)}
                     />
                   )}
                 </Field>
@@ -314,8 +365,8 @@ export function SettingsDialog({
                 {(id) => (
                   <Input
                     id={id}
-                    value={form.model}
-                    onChange={(e) => set({ model: e.target.value })}
+                    value={kind ? form.models[kind] : ""}
+                    onChange={(e) => setModel(e.target.value)}
                     spellCheck={false}
                   />
                 )}
@@ -361,6 +412,7 @@ export function SettingsDialog({
               <Button onClick={onExport}>Export all data</Button>
               {!confirmWipe && (
                 <Button
+                  ref={wipeTrigger}
                   variant="ghost"
                   className="text-blood hover:text-blood"
                   onClick={() => setConfirmWipe(true)}
@@ -382,7 +434,7 @@ export function SettingsDialog({
                   <Button variant="danger" size="sm" onClick={onWipe}>
                     Delete everything
                   </Button>
-                  <Button size="sm" onClick={() => setConfirmWipe(false)}>
+                  <Button ref={wipeCancel} size="sm" onClick={cancelWipe}>
                     Cancel
                   </Button>
                 </div>
