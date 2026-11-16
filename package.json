@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "check:kiro": "node scripts/check-kiro-not-ignored.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "new:app": "node scripts/new-app.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4",

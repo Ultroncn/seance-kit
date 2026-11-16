@@ -11,7 +11,7 @@ packages/llm/          providers incl. Mock
 packages/storage/      Storage interface + IndexedDB, memory, file adapters
 packages/ui/           tokens, components, timeline, palette, DemoBadge
 packages/mcp-server/   stdio MCP server over a registry
-templates/app/         starter used by `pnpm new:app`
+templates/app/         starter used by `pnpm new:app` (a workspace package, so CI type-checks and tests it)
 scripts/               repo scripts
 worker/                Cloudflare Worker: per-app SPA fallback (JS, no build step)
 ```

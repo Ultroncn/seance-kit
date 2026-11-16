@@ -26,3 +26,22 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Smoke tests
         run: pnpm e2e
+
+  template:
+    # R10.2: an app generated from the template installs, typechecks, passes its tests and builds
+    # with no manual edits.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Generate an app from the template
+        run: pnpm new:app ci-check-app
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm --filter @seance/ci-check-app typecheck
+      - run: pnpm exec vitest run apps/ci-check-app
+      - run: pnpm --filter @seance/ci-check-app build
