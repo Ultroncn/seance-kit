@@ -190,7 +190,8 @@ export class SearchService {
     if (limit <= 0 || query.trim() === "") return [];
     const raw = this.mini.search(query, {
       prefix,
-      fuzzy: fuzzy > 0 ? fuzzy : false,
+      // Typos are tolerated in words, never in numbers or codes: "LX4821" must not find "LX4831".
+      fuzzy: (term: string) => (fuzzy > 0 && !/\d/.test(term) ? fuzzy : false),
       combineWith: "AND",
     });
     const hits: SearchHit[] = [];

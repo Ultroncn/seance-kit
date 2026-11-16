@@ -72,7 +72,12 @@ export async function importConversations(
   onProgress?: (done: number, total: number) => void,
 ): Promise<ImportCounts> {
   const counts: ImportCounts = { added: 0, updated: 0, unchanged: 0 };
-  for (const [i, n] of items.entries()) {
+  // One export can list the same chat twice. The last version wins, so re-importing the same
+  // file never flips the stored chat between versions (P3 counterexample, kept as a test).
+  const latest = new Map<string, NormalizedConversation>();
+  for (const n of items) latest.set(conversationId(n.source, n.sourceId), n);
+  const unique = [...latest.values()];
+  for (const [i, n] of unique.entries()) {
     const id = conversationId(n.source, n.sourceId);
     const existing = await getConversation(storage, id);
     if (!existing) {
@@ -87,11 +92,11 @@ export async function importConversations(
       counts.unchanged++;
     }
     if ((i + 1) % 25 === 0) {
-      onProgress?.(i + 1, items.length);
+      onProgress?.(i + 1, unique.length);
       // Let the page paint between batches on big imports. Small imports never wait.
       await new Promise((r) => setTimeout(r, 0));
     }
   }
-  if (items.length % 25 !== 0) onProgress?.(items.length, items.length);
+  if (unique.length % 25 !== 0) onProgress?.(unique.length, unique.length);
   return counts;
 }

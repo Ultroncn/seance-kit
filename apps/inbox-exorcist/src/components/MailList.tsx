@@ -1,12 +1,14 @@
 import { restoreItems } from "@seance/core";
 import { Badge, Button, Input, PaneHeader, cn, useToast } from "@seance/ui";
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import { CATEGORIES, CATEGORY_LABEL, EMAILS, type Category, type Email } from "../domain/types";
 import { storage } from "../runtime";
 import type { ImportState, InboxData } from "../useInbox";
 import { useSearchIds } from "../useInbox";
 import { CategoryBadge } from "./CategoryBadge";
 import { listDate, megabytes, plural } from "./format";
+
+const PAGE = 300;
 
 export type View = "inbox" | "drafts" | "banished";
 
@@ -53,6 +55,11 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
         (!filters.label || e.labels.includes(filters.label)),
     );
   }, [data, ids, filters]);
+
+  // Render a page of rows at a time: tens of thousands of rows would make every keystroke slow.
+  const [pageSize, setPageSize] = useState(PAGE);
+  useEffect(() => setPageSize(PAGE), [filters]);
+  const visible = shown.slice(0, pageSize);
 
   const restore = async (list: string[]) => {
     const r = await restoreItems(storage, EMAILS, list);
@@ -231,7 +238,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
             className="flex-1 overflow-y-auto px-2 pb-3"
             aria-label={filters.view === "banished" ? "Banished emails" : "Emails"}
           >
-            {shown.map((e) => (
+            {visible.map((e) => (
               <li key={e.id}>
                 <button
                   type="button"
@@ -263,6 +270,19 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               </li>
             ))}
           </ul>
+          {shown.length > visible.length && (
+            <div className="px-3 pb-3">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setPageSize((n) => n + PAGE)}
+              >
+                Show {Math.min(PAGE, shown.length - visible.length)} more of{" "}
+                {shown.length - visible.length}
+              </Button>
+            </div>
+          )}
           {data.all && shown.length === 0 && (
             <p className="px-5 py-8 text-center text-sm text-muted">
               {filters.view === "banished"

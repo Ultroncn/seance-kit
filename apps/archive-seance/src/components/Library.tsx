@@ -1,6 +1,6 @@
 import { restoreItems } from "@seance/core";
 import { Badge, Button, Input, PaneHeader, cn, useToast } from "@seance/ui";
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import {
   CONVERSATIONS,
   SOURCES,
@@ -12,6 +12,8 @@ import { storage } from "../runtime";
 import type { ArchiveData, ImportState } from "../useArchive";
 import { useSearchIds } from "../useArchive";
 import { monthYear, plural } from "./format";
+
+const PAGE = 300;
 
 export interface Filters {
   query: string;
@@ -68,6 +70,11 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
 
   const filtering =
     filters.query !== "" || filters.source !== "all" || filters.from !== "" || filters.to !== "";
+
+  // Render a page of rows at a time: tens of thousands of rows would make every keystroke slow.
+  const [pageSize, setPageSize] = useState(PAGE);
+  useEffect(() => setPageSize(PAGE), [filters]);
+  const visible = shown.slice(0, pageSize);
 
   const restore = async (list: string[]) => {
     const r = await restoreItems(storage, CONVERSATIONS, list);
@@ -222,7 +229,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
         className="flex-1 overflow-y-auto px-2 pb-3"
         aria-label={filters.view === "banished" ? "Banished chats" : "Chats"}
       >
-        {shown.map((c) => (
+        {visible.map((c) => (
           <li key={c.id}>
             <button
               type="button"
@@ -253,6 +260,19 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
           </li>
         ))}
       </ul>
+      {shown.length > visible.length && (
+        <div className="px-3 pb-3">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setPageSize((n) => n + PAGE)}
+          >
+            Show {Math.min(PAGE, shown.length - visible.length)} more of{" "}
+            {shown.length - visible.length}
+          </Button>
+        </div>
+      )}
 
       <div className="border-t border-line p-2">
         <Button

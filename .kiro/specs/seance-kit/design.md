@@ -214,6 +214,17 @@ Per-app SPA fallback lives in `worker/index.js`, not in `_redirects`. The Worker
 
 GitHub Actions runs checks. Cloudflare's Git integration builds and deploys `main` (build command `pnpm install --frozen-lockfile && pnpm build`, deploy command `npx wrangler deploy`). Deployment is proven on day one (task group 0).
 
+## 12a. Performance (measured Nov 16, Chromium, `node scripts/perf.mjs`)
+
+| Import | Imported | List ready | Longest block | Search | JS heap |
+|---|---|---|---|---|---|
+| Archive, 2,000 chats × 12 messages (13 MB) | 1.3 s | 1.3 s | 0 ms | 157 ms | 87 MB |
+| Inbox, 5,000 messages (5 MB) | 1.8 s | 1.9 s | 0 ms | 150 ms | 78 MB |
+| Archive, 10,000 chats (67 MB) | 4.6 s | 4.6 s | 163 ms | 159 ms | 368 MB |
+| Inbox, 30,000 messages (31 MB) | 9.3 s | 10.6 s | 329 ms | 158 ms | 290 MB |
+
+"Search" includes the 120 ms typing debounce. The search engine alone takes about 18 ms on 30,000 messages. Lists render 300 rows at a time, with a "Show more" button. Known limits: each app keeps every item in memory, about 37 KB per 12-message chat. A large `conversations.json` is parsed on the main thread in one block (about 165 ms at 67 MB). Moving parsing to a worker and keeping a light list index are the next steps if archives grow past about 10,000 chats.
+
 ## 13. Testing
 
 ### Property-based (fast-check)

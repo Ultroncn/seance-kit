@@ -280,6 +280,34 @@ describe("importer properties", () => {
     );
   });
 
+  it("P3 regression: one batch listing the same chat twice stays stable across re-imports", async () => {
+    // Shrunk counterexample from fast-check, kept as an example test.
+    const a = {
+      source: "chatgpt" as const,
+      sourceId: "ke",
+      title: "Untitled chat",
+      createdAt: "2015-01-01T00:00:00.000Z",
+      updatedAt: "2015-01-01T00:00:00.000Z",
+      messages: [],
+    };
+    const b = { ...a, messages: [{ role: "user" as const, text: "## User" }] };
+    const storage = new MemoryStorage();
+    const search = createArchiveSearch(storage, 0);
+    expect(await importConversations(storage, search, [a, b])).toEqual({
+      added: 1,
+      updated: 0,
+      unchanged: 0,
+    });
+    const first = await storage.list(CONVERSATIONS);
+    expect(await importConversations(storage, search, [a, b])).toEqual({
+      added: 0,
+      updated: 0,
+      unchanged: 1,
+    });
+    expect(await storage.list(CONVERSATIONS)).toEqual(first);
+    expect(first[0]).toMatchObject({ messages: b.messages, rev: 1 });
+  });
+
   it("P3 a re-import keeps tags, summary and banished state, and updates changed content", async () => {
     const storage = new MemoryStorage();
     const search = createArchiveSearch(storage, 0);

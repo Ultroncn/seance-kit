@@ -96,8 +96,8 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 4.5 README "afternoon path" in under ten steps. (R10.3)
 - [x] 4.5a Shared `AgentPanel` in `packages/ui`, used by both apps and the template.
 - [x] 4.6 Landing page content: template story, tool-registry code walkthrough, app cards, Built with Kiro section, video slot (shown once VIDEO_URL is set in site/src/App.tsx), footer. (R8)
-- [ ] 4.7 Full axe pass, keyboard walk-through, contrast audit. (R7.4, R7.6, R7.7)
-- [ ] 4.8 Performance pass on a large mbox and a large conversations.json.
+- [x] 4.7 Full axe pass, keyboard walk-through, contrast audit. (R7.4, R7.6, R7.7) Axe with contrast runs on every main screen and open dialog. `e2e/keyboard.spec.ts` drives the primary flows with the keyboard only.
+- [x] 4.8 Performance pass on a large mbox and a large conversations.json. Results and limits in design.md section 12a.
 - [ ] 4.9 Deploy and verify.
 
 ## M5. Video, write-up, Devpost (Dec 1)

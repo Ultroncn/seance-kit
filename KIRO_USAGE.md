@@ -59,3 +59,11 @@ Running the agent from React (events into the timeline, approval promises, stop,
 - **A 12-second test** was a real bug. Toasts sat over the library's Inbox, Drafts and Banished buttons and blocked clicks for six seconds. Toasts moved to the bottom centre.
 - **A flaky test** was a real bug too. cmdk's fuzzy matching let "api key" highlight "Draft a reply to Maya about dinner" about 3 times in 4, so Enter could start an agent run. The palette now uses a predictable filter (`paletteScore`) with its own unit tests. The full e2e suite then passed five runs in a row.
 - **A slow property was a slow import.** The Archive P3 property timed out under full-suite load because `importConversations` paused for the event loop after every import, even tiny ones. It now pauses only every 25 items. The property went from about 4.6 s to 22 ms.
+
+### Tests that caught real problems in M4
+
+- **Defaulted inputs were sent as required** to models and MCP clients. The bug was in core's schema conversion. Fixed, with a regression test.
+- **A random P3 run found an idempotency bug.** One export listing the same chat twice made every re-import flip the stored chat between the two versions. Within one import, the last version now wins. The shrunk counterexample is kept as a test, as the testing steering doc asks.
+- **Numbers were matched with typo tolerance.** A performance check searching for "1234" found 1224, 1233, 1235 and more, so in real data "LX4821" would also find "LX4831". Fuzzy matching now applies to words only.
+- **Our own measurement was wrong once.** A 1.1 s inbox search turned out to overlap with the one-time list reload after a 30,000-message import. A CPU profile showed 163 ms. We fixed the measurement and recorded both numbers in design.md section 12a.
+- **Axe on the landing page** flagged code samples that scrolled but could not be focused. They are now focusable and labelled.

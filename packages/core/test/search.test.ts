@@ -34,6 +34,16 @@ describe("SearchService", () => {
     expect(await svc.search("zzzz")).toEqual([]);
   });
 
+  it("tolerates typos in words but not in numbers or codes", async () => {
+    const s = new MemoryStorage();
+    await s.put("docs", { id: "1", text: "booking LX4821 confirmed", updatedAt: "1" });
+    await s.put("docs", { id: "2", text: "booking LX4831 cancelled", updatedAt: "1" });
+    const svc = makeService(s);
+    await svc.load();
+    expect((await svc.search("LX4821")).map((h) => h.id)).toEqual(["1"]);
+    expect((await svc.search("bookng")).map((h) => h.id).sort()).toEqual(["1", "2"]);
+  });
+
   it("matches across accents and case in both directions", async () => {
     const s = new MemoryStorage();
     await s.put("docs", { id: "1", text: "Um café e um pastel de nata", updatedAt: "1" });
