@@ -32,6 +32,7 @@ export { AppShell, EmptyState, PaneHeader, type AppShellProps } from "./AppShell
 export {
   CommandPalette,
   isPaletteHotkey,
+  paletteScore,
   usePaletteHotkey,
   type CommandPaletteProps,
   type PaletteCommand,

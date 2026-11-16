@@ -77,7 +77,17 @@ export function ApprovalCard({
       </p>
       {label && <p className="mt-0.5 font-mono text-[11px] text-muted">{toolName}</p>}
       <p className="mt-1 text-sm text-muted">{summary ?? DEFAULT_SUMMARY[risk]}</p>
-      {details && <div className="mt-3 max-h-48 overflow-y-auto text-sm">{details}</div>}
+      {details && (
+        // Long batches scroll. tabIndex lets keyboard users scroll the list they are approving.
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Details"
+          className="mt-3 max-h-48 overflow-y-auto rounded text-sm"
+        >
+          {details}
+        </div>
+      )}
       <details className="mt-3 text-xs">
         <summary className="cursor-pointer text-muted hover:text-fg">Exact input</summary>
         <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-bg p-2 font-mono text-[11px] leading-relaxed text-fg">

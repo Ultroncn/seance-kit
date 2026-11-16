@@ -5,6 +5,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import { Kbd } from "./primitives";
 
 export interface PaletteCommand {
+  /** React key. Labels must be unique too: the palette matches and selects by label. */
   id: string;
   label: string;
   /** Group heading, for example "Library" or "Agent". */
@@ -23,6 +24,26 @@ export interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
   commands: PaletteCommand[];
   placeholder?: string;
+}
+
+const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/**
+ * Predictable ranking for the palette. 1: the whole query appears in the label or a keyword.
+ * 0.8: every query word starts a word there. 0.5: every query word appears somewhere.
+ * 0: no match. Unlike cmdk's default, scattered letters never match: "api key" must not
+ * pick "Draft a reply to Maya about dinner".
+ */
+export function paletteScore(value: string, search: string, keywords: string[] = []): number {
+  const q = fold(search).trim();
+  if (q === "") return 1;
+  const hay = fold([value, ...keywords].join(" "));
+  if (hay.includes(q)) return 1;
+  const terms = q.split(/\s+/);
+  const words = hay.split(/[^\p{L}\p{N}]+/u);
+  if (terms.every((t) => words.some((w) => w.startsWith(t)))) return 0.8;
+  if (terms.every((t) => hay.includes(t))) return 0.5;
+  return 0;
 }
 
 /** True when the event is ⌘K on macOS or Ctrl+K elsewhere. */
@@ -72,7 +93,7 @@ export function CommandPalette({
           <VisuallyHidden>
             <Dialog.Title>Command palette</Dialog.Title>
           </VisuallyHidden>
-          <Command label="Commands" loop>
+          <Command label="Commands" loop filter={paletteScore}>
             <div className="flex items-center gap-2 border-b border-line px-4">
               <span
                 aria-hidden
@@ -97,7 +118,7 @@ export function CommandPalette({
                   {items.map((c) => (
                     <Command.Item
                       key={c.id}
-                      value={`${c.label} ${c.id}`}
+                      value={c.label}
                       keywords={c.keywords}
                       disabled={c.disabled}
                       onSelect={() => {

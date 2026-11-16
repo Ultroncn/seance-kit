@@ -40,7 +40,12 @@ test("kit: ⌘K / Ctrl+K opens the palette and a destructive approval lists the 
   await page.keyboard.press("ControlOrMeta+k");
   const dialog = page.getByRole("dialog", { name: "Command palette" });
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("combobox")).toBeFocused();
   await page.keyboard.type("delete");
+  await expect(page.getByRole("option", { name: "Show a destructive approval" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveCount(0);
   const card = page.getByRole("group", { name: /Allow Hide chats/ });

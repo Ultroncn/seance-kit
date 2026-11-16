@@ -26,7 +26,10 @@ interface Toast extends ToastInput {
 
 const Ctx = createContext<((t: ToastInput) => void) | null>(null);
 
-/** Short notices at the bottom of the screen, announced politely to screen readers. */
+/**
+ * Short notices at the bottom centre, announced politely to screen readers. Centre on purpose: the
+ * side panes keep controls at the bottom (view switches, the agent's Send button) that a toast must not cover.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const next = useRef(1);
@@ -51,7 +54,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 left-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed bottom-4 left-1/2 z-50 flex w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 flex-col gap-2"
       >
         <AnimatePresence initial={false}>
           {toasts.map((t) => (

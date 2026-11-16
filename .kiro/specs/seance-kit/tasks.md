@@ -75,16 +75,16 @@ Exit: public URL works, CI green, `.kiro` committed.
 
 ## M3. Inbox Exorcist (Nov 25-28)
 
-- [ ] 3.1 Fixtures: small mbox (including `From ` in body) and eml files.
-- [ ] 3.2 mbox splitter and eml parser with `postal-mime`. PBT P4. (R6.1)
-- [ ] 3.3 Dedup by Message-ID with hash fallback. PBT P3 for email. (R6.2)
-- [ ] 3.4 Import UI with chunked reading and progress.
-- [ ] 3.5 Inbox list, filters, message reader.
-- [ ] 3.6 Tools: search, read, classify, draft_reply, label, banish_emails. (R6.3, R6.4)
-- [ ] 3.7 Bulk Banish approval card listing affected messages. (R6.5)
-- [ ] 3.8 Seeded sample inbox and Mock scripts. (R6.6)
-- [ ] 3.9 Drafts view (copy to clipboard, never send).
-- [ ] 3.10 Playwright smoke plus axe.
+- [x] 3.1 Fixtures: small mbox (including `From ` in body) and eml files.
+- [x] 3.2 mbox splitter and eml parser with `postal-mime`. PBT P4. (R6.1)
+- [x] 3.3 Dedup by Message-ID with hash fallback. PBT P3 for email. (R6.2)
+- [x] 3.4 Import UI with chunked reading and progress.
+- [x] 3.5 Inbox list, filters, message reader.
+- [x] 3.6 Tools: search, read, classify (as `classify_emails`, batched), draft_reply, label, banish_emails. No tool can send. (R6.3, R6.4)
+- [x] 3.7 Bulk Banish approval card listing affected messages. (R6.5)
+- [x] 3.8 Seeded sample inbox and Mock scripts. (R6.6)
+- [x] 3.9 Drafts view (copy to clipboard, never send).
+- [x] 3.10 Playwright smoke plus axe.
 - [ ] 3.11 Deploy and verify. Real-provider manual test.
 
 ## M4. MCP, template, landing, a11y (Nov 29-30)

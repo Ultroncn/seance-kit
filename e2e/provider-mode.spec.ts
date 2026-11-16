@@ -64,7 +64,17 @@ for (const app of [
     test("export never contains the API key, and settings pass axe", async ({ page }) => {
       await page.goto(app.path);
       await page.keyboard.press("ControlOrMeta+k");
+      // Typing before the palette input has focus loses keystrokes, and Enter would run another command.
+      await expect(
+        page.getByRole("dialog", { name: "Command palette" }).getByRole("combobox"),
+      ).toBeFocused();
       await page.keyboard.type("api key");
+      // cmdk moves the highlight one render after filtering. Press Enter once it sits on the
+      // command, as a person would after seeing it highlighted.
+      await expect(page.getByRole("option", { name: "Open settings" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
       await page.keyboard.press("Enter");
       const dialog = page.getByRole("dialog", { name: "Settings" });
       await dialog.getByRole("radio", { name: "Anthropic" }).check();

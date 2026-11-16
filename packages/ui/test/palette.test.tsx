@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   CommandPalette,
   isPaletteHotkey,
+  paletteScore,
   usePaletteHotkey,
   type PaletteCommand,
 } from "../src/index";
@@ -34,7 +35,47 @@ describe("isPaletteHotkey", () => {
   });
 });
 
+describe("paletteScore", () => {
+  it("ranks whole phrases, then word starts, then substrings, and never scattered letters", () => {
+    expect(paletteScore("Open settings", "api key", ["provider", "api key"])).toBe(1);
+    expect(paletteScore("Open settings", "op set")).toBe(0.8);
+    expect(paletteScore("Open settings", "pen ings")).toBe(0.5);
+    expect(paletteScore("Draft a reply to Maya about dinner", "api key")).toBe(0);
+    expect(paletteScore("Résumé helper", "resume")).toBe(1);
+  });
+});
+
 describe("CommandPalette", () => {
+  it("highlights the right command for a multi-word keyword, not a fuzzy look-alike", async () => {
+    const settings = vi.fn();
+    const draft = vi.fn();
+    render(
+      <Harness
+        commands={[
+          {
+            id: "draft",
+            label: "Draft a reply to Maya about dinner",
+            group: "Agent",
+            onSelect: draft,
+          },
+          {
+            id: "settings",
+            label: "Open settings",
+            group: "App",
+            keywords: ["provider", "api key"],
+            onSelect: settings,
+          },
+        ]}
+      />,
+    );
+    await userEvent.keyboard("{Control>}k{/Control}");
+    await userEvent.keyboard("api key");
+    expect(screen.queryByText("Draft a reply to Maya about dinner")).toBeNull();
+    await userEvent.keyboard("{Enter}");
+    expect(settings).toHaveBeenCalledOnce();
+    expect(draft).not.toHaveBeenCalled();
+  });
+
   it("opens on Ctrl+K, filters by label and keywords, and runs the chosen command", async () => {
     const banish = vi.fn();
     const importFile = vi.fn();

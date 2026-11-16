@@ -45,3 +45,12 @@ The first draft stored the API key with other settings, which meant "Export all 
 ### A shared React layer
 
 Running the agent from React (events into the timeline, approval promises, stop, undo) is identical in both apps and the template. We added `@seance/react` with `useAgentRun` instead of copying it, so `core` stays framework-free and `ui` stays presentational. The steering file `structure.md` records the rule.
+
+### Tests that caught real problems in M3
+
+- **mbox splitting (P4) had a blind spot.** A mutation check removed the rule that `From ` only starts a message after a blank line, and P4 still passed: a correct writer escapes every such line, so the property never sees one. Real exports are not always correct, so we added a test with an unescaped `From here on…` line in a body. It catches the mutation.
+- **Header-less junk imported as mail.** `postal-mime` reads text without headers as a body. The fixture's junk entry became an email. Entries with no headers are now reported as skipped.
+- **Double-spaced lists.** HTML newsletters came out with blank lines between list items. The fixture test showed it, and `htmlToText` was fixed.
+- **Axe in a real browser** found that a long approval list (18 emails to sort) scrolled but could not be focused, so keyboard users could not read what they were approving. The details region is now focusable and labelled.
+- **A 12-second test** was a real bug. Toasts sat over the library's Inbox, Drafts and Banished buttons and blocked clicks for six seconds. Toasts moved to the bottom centre.
+- **A flaky test** was a real bug too. cmdk's fuzzy matching let "api key" highlight "Draft a reply to Maya about dinner" about 3 times in 4, so Enter could start an agent run. The palette now uses a predictable filter (`paletteScore`) with its own unit tests. The full e2e suite then passed five runs in a row.
