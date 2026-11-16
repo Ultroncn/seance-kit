@@ -1,3 +1,5 @@
+import { useT } from "./i18n";
+import { kitMessages } from "./messages";
 import { Tooltip } from "./primitives";
 import { useProviderMode } from "./ProviderMode";
 
@@ -7,9 +9,10 @@ import { useProviderMode } from "./ProviderMode";
  */
 export function DemoBadge({ onClick }: { onClick?: () => void }) {
   const { isMock } = useProviderMode();
+  const t = useT(kitMessages);
   if (!isMock) return null;
   return (
-    <Tooltip content="Replies are scripted, not from a real model. Add your own key in Settings to use one.">
+    <Tooltip content={t.demoTooltip}>
       <button
         type="button"
         onClick={onClick}
@@ -17,8 +20,8 @@ export function DemoBadge({ onClick }: { onClick?: () => void }) {
         className="inline-flex items-center gap-1.5 rounded-full border border-candle/50 bg-candle/10 px-2.5 py-1 text-xs font-semibold text-candle hover:bg-candle/20"
       >
         <span aria-hidden className="size-1.5 rounded-full bg-candle" />
-        Demo mode
-        <span className="sr-only">: replies are scripted. Open settings to use a real model.</span>
+        {t.demoMode}
+        <span className="sr-only">{t.demoSr}</span>
       </button>
     </Tooltip>
   );

@@ -1,5 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { EmptyState, PaneHeader } from "./AppShell";
+import { useT } from "./i18n";
+import { kitMessages } from "./messages";
 import { Button, TextArea } from "./primitives";
 import { SeanceTimeline, type ApprovalCopy } from "./SeanceTimeline";
 import type { TimelineEntry, ToolEntry } from "./timeline-types";
@@ -35,6 +37,7 @@ export interface AgentPanelProps {
  * Pass `useAgentRun()` state from `@seance/react`. Enter sends, Shift+Enter adds a line.
  */
 export function AgentPanel(p: AgentPanelProps) {
+  const t = useT(kitMessages);
   const [prompt, setPrompt] = useState("");
 
   const submit = (ev?: FormEvent) => {
@@ -48,11 +51,11 @@ export function AgentPanel(p: AgentPanelProps) {
   return (
     <div className="flex h-full flex-col">
       <PaneHeader
-        title="Séance"
+        title={t.seance}
         actions={
           p.entries.length > 0 && (
             <Button size="sm" variant="ghost" onClick={p.onReset} disabled={p.busy}>
-              New séance
+              {t.newSeance}
             </Button>
           )
         }
@@ -72,7 +75,7 @@ export function AgentPanel(p: AgentPanelProps) {
 
       <div className="border-t border-line p-3">
         {p.suggestions.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1.5" role="group" aria-label="Suggested prompts">
+          <div className="mb-2 flex flex-wrap gap-1.5" role="group" aria-label={t.suggested}>
             {p.suggestions.map((s) => (
               <button
                 key={s}
@@ -86,12 +89,7 @@ export function AgentPanel(p: AgentPanelProps) {
             ))}
           </div>
         )}
-        {p.isMock && (
-          <p className="mb-2 text-[11px] text-muted">
-            Demo mode scripts these prompts. The tools, approvals and changes are real and run on
-            your data.
-          </p>
-        )}
+        {p.isMock && <p className="mb-2 text-[11px] text-muted">{t.demoNote}</p>}
         <form onSubmit={submit} className="flex items-end gap-2">
           <label htmlFor="agent-prompt" className="sr-only">
             {p.promptLabel}
@@ -111,10 +109,10 @@ export function AgentPanel(p: AgentPanelProps) {
             }}
           />
           {p.busy ? (
-            <Button onClick={p.onStop}>Stop</Button>
+            <Button onClick={p.onStop}>{t.stop}</Button>
           ) : (
             <Button type="submit" variant="primary" disabled={prompt.trim() === ""}>
-              Send
+              {t.send}
             </Button>
           )}
         </form>

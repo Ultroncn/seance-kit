@@ -21,7 +21,9 @@
   --color-blood: #e5636f;
 
   /* Self-hosted variable fonts (OFL-1.1), bundled by Vite. System fonts are the fallback. */
-  --font-sans: "Inter Variable", ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+  --font-sans:
+    "Inter Variable", ui-sans-serif, "Segoe UI", system-ui, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* The only looping animation: a pending approval. Reduced motion turns it into a static ring. */

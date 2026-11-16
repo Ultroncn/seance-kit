@@ -20,6 +20,6 @@ export type TimelineEntry =
       durationMs?: number;
       undoToken?: string;
     }
-  | { kind: "notice"; id: string; tone: "error" | "info"; text: string };
+  | { kind: "notice"; id: string; tone: "error" | "info"; text: string; code?: string };
 
 export type ToolEntry = Extract<TimelineEntry, { kind: "tool" }>;

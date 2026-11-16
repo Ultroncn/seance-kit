@@ -56,4 +56,19 @@ describe("MockProvider", () => {
       }),
     );
   });
+  it("matches any phrasing in a list, and reads a dynamic fallback on every reply", async () => {
+    let lang = "en";
+    const p = new MockProvider({
+      scripts: [{ match: ["Banish my tests", "隐藏测试对话"], steps: [{ text: "ok" }] }],
+      unknownPromptText: () => (lang === "en" ? "unknown" : "不认识"),
+    });
+    const ask = (content: string) =>
+      p.complete({ messages: [{ role: "user", content }], tools: [] });
+    expect((await ask("请隐藏测试对话")).text).toBe("ok");
+    expect((await ask("banish my tests now")).text).toBe("ok");
+    expect((await ask("hello")).text).toBe("unknown");
+    lang = "zh";
+    expect((await ask("hello")).text).toBe("不认识");
+    expect(p.suggestions).toEqual(["Banish my tests"]);
+  });
 });

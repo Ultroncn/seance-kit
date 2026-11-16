@@ -2,6 +2,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import type { ProviderConfig, ProviderKind } from "@seance/llm";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn } from "./cn";
+import { useT } from "./i18n";
+import { kitMessages } from "./messages";
 import { Button, Input } from "./primitives";
 import { useProviderMode } from "./ProviderMode";
 
@@ -89,39 +91,17 @@ export function isAllowedEndpoint(raw: string): boolean {
 }
 
 /** Ready-to-save settings, or a plain reason why not. */
-function validate(f: Form): string | null {
+function validate(f: Form, t: (typeof kitMessages)["en"]): string | null {
   if (f.choice === "demo") return null;
-  if (f.choice !== "ollama" && f.keys[f.choice].trim() === "") return "Enter your API key.";
-  if (f.models[f.choice].trim() === "") return "Enter a model name.";
-  if (f.choice === "openai-compatible" && !isAllowedEndpoint(f.baseUrl))
-    return "Enter a base URL starting with https:// (http:// only for localhost).";
+  if (f.choice !== "ollama" && f.keys[f.choice].trim() === "") return t.errKey;
+  if (f.models[f.choice].trim() === "") return t.errModel;
+  if (f.choice === "openai-compatible" && !isAllowedEndpoint(f.baseUrl)) return t.errBaseUrl;
   if (f.choice === "ollama" && f.host.trim() !== "" && !/^https?:\/\/\S+$/.test(f.host.trim()))
-    return "Enter a host URL such as http://localhost:11434.";
+    return t.errHost;
   return null;
 }
 
-const CHOICES: { value: Choice; label: string; note: string }[] = [
-  {
-    value: "demo",
-    label: "Demo (scripted)",
-    note: "No key needed. Replies are scripted and the Demo-mode badge stays on.",
-  },
-  {
-    value: "anthropic",
-    label: "Anthropic",
-    note: "Your browser calls api.anthropic.com directly with your key.",
-  },
-  {
-    value: "openai-compatible",
-    label: "OpenAI-compatible",
-    note: "OpenAI or any server with the same API. It must allow requests from this page (CORS).",
-  },
-  {
-    value: "ollama",
-    label: "Ollama (local)",
-    note: "Runs on your machine. Start Ollama with OLLAMA_ORIGINS set to this site's address.",
-  },
-];
+const CHOICES: readonly Choice[] = ["demo", "anthropic", "openai-compatible", "ollama"];
 
 function Field({
   label,
@@ -176,6 +156,7 @@ export function SettingsDialog({
   download = defaultDownload,
 }: SettingsDialogProps) {
   const { config, save, build, storage, reload, isMock, error: configError } = useProviderMode();
+  const t = useT(kitMessages);
   const [form, setForm] = useState<Form>(() => formFrom(config));
   const [status, setStatus] = useState<Status>(null);
   const [testing, setTesting] = useState(false);
@@ -195,13 +176,11 @@ export function SettingsDialog({
     if (opening) {
       dirty.current = false;
       setConfirmWipe(false);
-      setStatus(
-        configError
-          ? { tone: "error", text: `Saved settings could not be used: ${configError}` }
-          : null,
-      );
+      setStatus(configError ? { tone: "error", text: t.savedUnusable(configError) } : null);
     }
     if (opening || !dirty.current) setForm(formFrom(config));
+    // t is read only when the dialog opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, config, configError]);
 
   useEffect(() => {
@@ -221,7 +200,7 @@ export function SettingsDialog({
     setConfirmWipe(false);
     setTimeout(() => wipeTrigger.current?.focus(), 0);
   };
-  const invalid = validate(form);
+  const invalid = validate(form, t);
 
   const onSave = async () => {
     if (invalid) return setStatus({ tone: "error", text: invalid });
@@ -229,10 +208,7 @@ export function SettingsDialog({
       await save(configFrom(form));
       setStatus({
         tone: "ok",
-        text:
-          form.choice === "demo"
-            ? "Back in demo mode. Your key was removed."
-            : "Saved. The agent now uses this model.",
+        text: form.choice === "demo" ? t.savedDemo : t.savedReal,
       });
     } catch (err) {
       setStatus({ tone: "error", text: err instanceof Error ? err.message : String(err) });
@@ -241,18 +217,17 @@ export function SettingsDialog({
 
   const onTest = async () => {
     const next = configFrom(form);
-    if (!next || invalid)
-      return setStatus({ tone: "error", text: invalid ?? "Pick a real provider to test." });
+    if (!next || invalid) return setStatus({ tone: "error", text: invalid ?? t.errPickReal });
     setTesting(true);
-    setStatus({ tone: "info", text: "Testing…" });
+    setStatus({ tone: "info", text: t.testing });
     try {
       const reply = await build(next).complete({
         messages: [{ role: "user", content: "Reply with the single word OK." }],
         tools: [],
         signal: AbortSignal.timeout(20_000),
       });
-      const said = reply.text.trim().slice(0, 80) || "(empty reply)";
-      setStatus({ tone: "ok", text: `Connected. The model replied: ${said}` });
+      const said = reply.text.trim().slice(0, 80) || t.emptyReply;
+      setStatus({ tone: "ok", text: t.connected(said) });
     } catch (err) {
       setStatus({ tone: "error", text: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -263,7 +238,7 @@ export function SettingsDialog({
   const onExport = async () => {
     const day = new Date().toISOString().slice(0, 10);
     download(await storage.exportAll(), `${exportName}-export-${day}.json`);
-    setStatus({ tone: "ok", text: "Export downloaded. It does not include your API key." });
+    setStatus({ tone: "ok", text: t.exported });
   };
 
   const onWipe = async () => {
@@ -272,32 +247,32 @@ export function SettingsDialog({
     onAfterWipe?.();
     setConfirmWipe(false);
     setForm(EMPTY);
-    setStatus({ tone: "ok", text: "All local data was deleted." });
+    setStatus({ tone: "ok", text: t.wiped });
   };
 
-  const choice = CHOICES.find((c) => c.value === form.choice);
+  const choice = t.choice[form.choice];
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-bg/70 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(34rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-line bg-surface p-6 shadow-2xl shadow-black/60">
-          <Dialog.Title className="text-lg font-semibold">Settings</Dialog.Title>
+          <Dialog.Title className="text-lg font-semibold">{t.settings}</Dialog.Title>
           <Dialog.Description className="mt-1 text-sm text-muted">
-            Everything here is stored only in this browser.
+            {t.settingsIntro}
           </Dialog.Description>
 
           <fieldset className="mt-6">
             <legend className="text-xs font-semibold uppercase tracking-wider text-muted">
-              Model provider
+              {t.provider}
             </legend>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {CHOICES.map((c) => (
                 <label
-                  key={c.value}
+                  key={c}
                   className={cn(
                     "flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm",
-                    form.choice === c.value
+                    form.choice === c
                       ? "border-ecto bg-raised text-fg"
                       : "border-line text-muted hover:border-muted",
                   )}
@@ -305,22 +280,22 @@ export function SettingsDialog({
                   <input
                     type="radio"
                     name={groupName}
-                    value={c.value}
-                    checked={form.choice === c.value}
-                    onChange={() => set({ choice: c.value })}
+                    value={c}
+                    checked={form.choice === c}
+                    onChange={() => set({ choice: c })}
                     className="accent-[var(--color-ecto)]"
                   />
-                  {c.label}
+                  {t.choice[c].label}
                 </label>
               ))}
             </div>
-            {choice && <p className="mt-2 text-xs text-muted">{choice.note}</p>}
+            <p className="mt-2 text-xs text-muted">{choice.note}</p>
           </fieldset>
 
           {form.choice !== "demo" && (
             <div className="mt-5 space-y-4">
               {form.choice === "openai-compatible" && (
-                <Field label="Base URL">
+                <Field label={t.baseUrl}>
                   {(id) => (
                     <Input
                       id={id}
@@ -332,10 +307,7 @@ export function SettingsDialog({
                 </Field>
               )}
               {form.choice !== "ollama" && (
-                <Field
-                  label="API key"
-                  hint="Saved in this browser's IndexedDB. Sent only to the provider above. Never exported."
-                >
+                <Field label={t.apiKey} hint={t.apiKeyHint}>
                   {(id) => (
                     <Input
                       id={id}
@@ -349,7 +321,7 @@ export function SettingsDialog({
                 </Field>
               )}
               {form.choice === "ollama" && (
-                <Field label="Host" hint="Leave empty for http://localhost:11434.">
+                <Field label={t.host} hint={t.hostHint}>
                   {(id) => (
                     <Input
                       id={id}
@@ -361,7 +333,7 @@ export function SettingsDialog({
                   )}
                 </Field>
               )}
-              <Field label="Model" hint="The exact model name your provider lists.">
+              <Field label={t.model} hint={t.modelHint}>
                 {(id) => (
                   <Input
                     id={id}
@@ -376,16 +348,14 @@ export function SettingsDialog({
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <Button variant="primary" onClick={onSave}>
-              Save
+              {t.save}
             </Button>
             {form.choice !== "demo" && (
               <Button onClick={onTest} disabled={testing}>
-                Test connection
+                {t.testConnection}
               </Button>
             )}
-            <span className="ml-auto text-xs text-muted">
-              {isMock ? "Now: demo mode" : "Now: real model"}
-            </span>
+            <span className="ml-auto text-xs text-muted">{isMock ? t.nowDemo : t.nowReal}</span>
           </div>
           <p
             role="status"
@@ -406,10 +376,10 @@ export function SettingsDialog({
               id={`${groupName}-data`}
               className="text-xs font-semibold uppercase tracking-wider text-muted"
             >
-              Your data
+              {t.yourData}
             </h3>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={onExport}>Export all data</Button>
+              <Button onClick={onExport}>{t.exportAll}</Button>
               {!confirmWipe && (
                 <Button
                   ref={wipeTrigger}
@@ -417,7 +387,7 @@ export function SettingsDialog({
                   className="text-blood hover:text-blood"
                   onClick={() => setConfirmWipe(true)}
                 >
-                  Delete all local data…
+                  {t.deleteAll}
                 </Button>
               )}
             </div>
@@ -426,16 +396,13 @@ export function SettingsDialog({
                 role="alert"
                 className="mt-3 rounded-md border border-blood/60 bg-raised p-3 text-sm"
               >
-                <p>
-                  This permanently deletes everything this app stored in this browser, including
-                  your saved key. Export first if you want a copy.
-                </p>
+                <p>{t.deleteWarning}</p>
                 <div className="mt-3 flex gap-2">
                   <Button variant="danger" size="sm" onClick={onWipe}>
-                    Delete everything
+                    {t.deleteEverything}
                   </Button>
                   <Button ref={wipeCancel} size="sm" onClick={cancelWipe}>
-                    Cancel
+                    {t.cancel}
                   </Button>
                 </div>
               </div>
@@ -447,7 +414,7 @@ export function SettingsDialog({
               variant="ghost"
               size="sm"
               className="absolute right-3 top-3"
-              aria-label="Close settings"
+              aria-label={t.closeSettings}
             >
               ✕
             </Button>

@@ -3,6 +3,8 @@ import { useRef, type ReactNode } from "react";
 import { ApprovalCard } from "./ApprovalCard";
 import { cn } from "./cn";
 import { formatDuration, formatJson } from "./format";
+import { getLocale, tNow, useT } from "./i18n";
+import { kitMessages } from "./messages";
 import { Badge, Button, type BadgeTone } from "./primitives";
 import type { StepRisk, TimelineEntry, ToolEntry, ToolStepStatus } from "./timeline-types";
 
@@ -29,19 +31,12 @@ export interface SeanceTimelineProps {
   empty?: ReactNode;
 }
 
-const riskBadge: Record<StepRisk, { tone: BadgeTone; label: string }> = {
-  read: { tone: "neutral", label: "reads" },
-  write: { tone: "candle", label: "writes" },
-  destructive: { tone: "blood", label: "hides" },
+const riskTone: Record<StepRisk, BadgeTone> = {
+  read: "neutral",
+  write: "candle",
+  destructive: "blood",
 };
-
-const statusText: Record<ToolStepStatus, string> = {
-  running: "Running",
-  awaiting_approval: "Waiting for you",
-  rejected: "Rejected",
-  done: "Done",
-  failed: "Failed",
-};
+type Kit = (typeof kitMessages)["en"];
 
 function nodeClass(entry: TimelineEntry): string {
   if (entry.kind === "user") return "border border-muted bg-bg";
@@ -69,15 +64,16 @@ function nodeClass(entry: TimelineEntry): string {
 export function timelineStatus(
   entries: TimelineEntry[],
   labels: Record<string, string> = {},
+  t: Kit = tNow(kitMessages),
 ): string {
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i];
     if (e?.kind === "message" && i === entries.length - 1)
-      return `Agent: ${e.text.length > 200 ? `${e.text.slice(0, 199)}…` : e.text}`;
+      return t.announceReply(e.text.length > 200 ? `${e.text.slice(0, 199)}…` : e.text);
     if (e?.kind !== "tool") continue;
     const name = labels[e.name] ?? e.name;
-    if (e.status === "awaiting_approval") return `Waiting for your approval: ${name}`;
-    if (e.status === "running") return `Running ${name}`;
+    if (e.status === "awaiting_approval") return t.announceWaiting(name);
+    if (e.status === "running") return t.announceRunning(name);
   }
   return "";
 }
@@ -93,11 +89,12 @@ function JsonBlock({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-type InnerProps = SeanceTimelineProps & { onDecided: (decide: () => void) => void };
+type InnerProps = SeanceTimelineProps & { onDecided: (decide: () => void) => void; t: Kit };
 
 function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
   const label = props.toolLabels?.[step.name];
-  const risk = step.risk ? riskBadge[step.risk] : null;
+  const { t } = props;
+  const risk = step.risk ? { tone: riskTone[step.risk], label: t.risk[step.risk] } : null;
   const restored = step.undoToken !== undefined && props.undone?.has(step.undoToken);
 
   if (step.status === "awaiting_approval" && step.risk && step.risk !== "read") {
@@ -133,7 +130,7 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
                 : "text-muted",
           )}
         >
-          {restored ? "Restored" : statusText[step.status]}
+          {restored ? t.restored : t.status[step.status as ToolStepStatus]}
         </span>
         {step.durationMs !== undefined && (
           <span className="ml-auto font-mono text-[11px] text-muted">
@@ -147,8 +144,8 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
         </p>
       )}
       <div className="mt-2 space-y-1.5">
-        <JsonBlock label="Input" value={step.input} />
-        {step.status === "done" && <JsonBlock label="Output" value={step.output} />}
+        <JsonBlock label={t.input} value={step.input} />
+        {step.status === "done" && <JsonBlock label={t.output} value={step.output} />}
       </div>
       {step.status === "done" && step.undoToken && props.onUndo && !restored && (
         <Button
@@ -157,19 +154,26 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
           className="mt-2 -ml-3"
           onClick={() => props.onUndo?.(step.undoToken as string)}
         >
-          Undo
+          {t.undo}
         </Button>
       )}
     </div>
   );
 }
 
+/** Notices from the agent loop are English. Known codes get the reader's language. */
+function noticeText(entry: Extract<TimelineEntry, { kind: "notice" }>, t: Kit): string {
+  if (getLocale() === "en" || !entry.code) return entry.text;
+  return t.notice[entry.code] ?? entry.text;
+}
 function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }) {
   switch (entry.kind) {
     case "user":
       return (
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">You</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+            {props.t.you}
+          </p>
           <p className="mt-0.5 whitespace-pre-wrap text-sm">{entry.text}</p>
         </div>
       );
@@ -181,7 +185,7 @@ function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }
           role={entry.tone === "error" ? "alert" : undefined}
           className={cn("text-sm", entry.tone === "error" ? "text-blood" : "text-muted")}
         >
-          {entry.text}
+          {noticeText(entry, props.t)}
         </p>
       );
     case "tool":
@@ -194,6 +198,7 @@ function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }
  * and replies. Pass `reduceTimeline` output from `@seance/core` as `entries`.
  */
 export function SeanceTimeline(props: SeanceTimelineProps) {
+  const t = useT(kitMessages);
   const listRef = useRef<HTMLOListElement>(null);
   // The approval card disappears after a decision. Keep keyboard focus in the timeline instead
   // of letting it fall to <body>. A new pending card takes focus itself.
@@ -204,9 +209,9 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
       if (!active || active === document.body || !active.isConnected) listRef.current?.focus();
     });
   };
-  const inner: InnerProps = { ...props, onDecided };
+  const inner: InnerProps = { ...props, onDecided, t };
   const { entries, empty, toolLabels } = props;
-  const status = timelineStatus(entries, toolLabels);
+  const status = timelineStatus(entries, toolLabels, t);
 
   return (
     <div>
@@ -224,7 +229,7 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
           <ol
             ref={listRef}
             tabIndex={-1}
-            aria-label="Agent run"
+            aria-label={t.agentRun}
             className="relative space-y-4 py-4 pl-4 pr-4 outline-none"
           >
             {entries.map((entry) => (

@@ -16,8 +16,11 @@ export interface MockStepContext {
 export type MockStep = MockReply | ((ctx: MockStepContext) => MockReply);
 
 export interface MockScript {
-  /** Matched against the latest user message. Strings match case-insensitively as substrings. */
-  match: string | RegExp;
+  /**
+   * Matched against the latest user message. Strings match case-insensitively as substrings.
+   * A list matches if any entry does, for example the same prompt in two languages.
+   */
+  match: string | readonly string[] | RegExp;
   /** One entry per model turn. After the last step the mock replies with `finalText`. */
   steps: MockStep[];
   finalText?: string;
@@ -25,17 +28,17 @@ export interface MockScript {
 
 export interface MockProviderOptions {
   scripts: MockScript[];
-  /** Reply for prompts no script matches. */
-  unknownPromptText?: string;
+  /** Reply for prompts no script matches. A function is read on every reply, so it can follow the UI language. */
+  unknownPromptText?: string | (() => string);
 }
 
 const DEFAULT_UNKNOWN =
   "Demo mode only understands a few scripted prompts. Pick one of the suggestions, or switch to a real provider in Settings.";
 
-function matches(match: string | RegExp, text: string): boolean {
-  return typeof match === "string"
-    ? text.toLowerCase().includes(match.toLowerCase())
-    : match.test(text);
+function matches(match: MockScript["match"], text: string): boolean {
+  if (typeof match === "string") return text.toLowerCase().includes(match.toLowerCase());
+  if (match instanceof RegExp) return match.test(text);
+  return match.some((m) => matches(m, text));
 }
 
 /**
@@ -50,18 +53,24 @@ export class MockProvider implements Provider {
 
   /** Prompts the mock understands. The UI can offer these as suggestion chips. */
   get suggestions(): string[] {
-    return this.options.scripts.flatMap((s) => (typeof s.match === "string" ? [s.match] : []));
+    return this.options.scripts.flatMap((s) =>
+      typeof s.match === "string" ? [s.match] : Array.isArray(s.match) ? s.match.slice(0, 1) : [],
+    );
+  }
+
+  private unknown(): string {
+    const t = this.options.unknownPromptText;
+    return (typeof t === "function" ? t() : t) ?? DEFAULT_UNKNOWN;
   }
 
   async complete(request: CompleteRequest): Promise<ProviderReply> {
     const { messages } = request;
     const lastUser = findLastIndex(messages, (m) => m.role === "user");
-    if (lastUser < 0)
-      return { text: this.options.unknownPromptText ?? DEFAULT_UNKNOWN, toolCalls: [] };
+    if (lastUser < 0) return { text: this.unknown(), toolCalls: [] };
 
     const userText = (messages[lastUser] as { content: string }).content;
     const script = this.options.scripts.find((s) => matches(s.match, userText));
-    if (!script) return { text: this.options.unknownPromptText ?? DEFAULT_UNKNOWN, toolCalls: [] };
+    if (!script) return { text: this.unknown(), toolCalls: [] };
 
     const turn = messages.slice(lastUser + 1);
     const stepIndex = turn.filter((m) => m.role === "assistant").length;

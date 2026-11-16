@@ -55,3 +55,19 @@ export { DemoBadge } from "./DemoBadge";
 export { SettingsDialog, type SettingsDialogProps } from "./SettingsDialog";
 export { ToastProvider, useToast, type ToastInput } from "./Toast";
 export { AgentPanel, type AgentPanelProps } from "./AgentPanel";
+export {
+  LOCALES,
+  defineMessages,
+  formatDate,
+  getLocale,
+  plural,
+  setLocale,
+  tNow,
+  useLocale,
+  useT,
+  withReplyLanguage,
+  type Locale,
+  type Messages,
+} from "./i18n";
+export { kitMessages } from "./messages";
+export { LanguageSwitch } from "./LanguageSwitch";

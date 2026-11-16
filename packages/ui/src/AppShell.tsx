@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "./cn";
+import { useT } from "./i18n";
+import { LanguageSwitch } from "./LanguageSwitch";
+import { kitMessages } from "./messages";
 
 export interface AppShellProps {
   /** App name, rendered as the page's h1. */
@@ -30,21 +33,26 @@ export function AppShell({
   agent,
   labels = {},
 }: AppShellProps) {
+  const t = useT(kitMessages);
   return (
     <div className="flex h-screen flex-col bg-bg text-fg">
       <a
         href="#seance-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-raised focus:px-3 focus:py-2"
       >
-        Skip to content
+        {t.skipToContent}
       </a>
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line px-4">
-        <a href="/" className="text-sm text-muted hover:text-fg" aria-label="Séance Kit home">
+        <a href="/" className="text-sm text-muted hover:text-fg" aria-label={t.home}>
           ←
         </a>
         {mark}
         <h1 className="text-base font-semibold tracking-tight">{title}</h1>
-        <div className="ml-auto flex items-center gap-2">{actions}</div>
+        <div className="ml-auto flex items-center gap-2">
+          {actions}
+          <span aria-hidden className="mx-1 h-5 w-px bg-line" />
+          <LanguageSwitch />
+        </div>
       </header>
       <div
         className={cn(
@@ -54,16 +62,16 @@ export function AppShell({
         )}
       >
         <nav
-          aria-label={labels.library ?? "Library"}
+          aria-label={labels.library ?? t.library}
           className={cn(pane, "border-r border-line bg-surface")}
         >
           {library}
         </nav>
-        <main id="seance-content" aria-label={labels.content ?? "Content"} className={pane}>
+        <main id="seance-content" aria-label={labels.content ?? t.content} className={pane}>
           {content}
         </main>
         <aside
-          aria-label={labels.agent ?? "Agent"}
+          aria-label={labels.agent ?? t.agent}
           className={cn(
             pane,
             "col-span-2 border-t border-line bg-surface lg:col-span-1 lg:border-t-0 lg:border-l",

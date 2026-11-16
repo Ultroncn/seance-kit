@@ -23,7 +23,7 @@ export type TimelineEntry =
       durationMs?: number;
       undoToken?: string;
     }
-  | { kind: "notice"; id: string; tone: "error" | "info"; text: string };
+  | { kind: "notice"; id: string; tone: "error" | "info"; text: string; code?: string };
 
 type ToolEntry = Extract<TimelineEntry, { kind: "tool" }>;
 
@@ -76,7 +76,13 @@ export function reduceTimeline(entries: TimelineEntry[], event: AgentEvent): Tim
     case "error":
       return [
         ...entries,
-        { kind: "notice", id: `n${entries.length}`, tone: "error", text: event.message },
+        {
+          kind: "notice",
+          id: `n${entries.length}`,
+          tone: "error",
+          text: event.message,
+          code: event.code,
+        },
       ];
     case "step_started":
     case "run_finished":

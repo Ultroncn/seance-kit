@@ -2,6 +2,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Command } from "cmdk";
 import { useEffect, useMemo, type ReactNode } from "react";
+import { useT } from "./i18n";
+import { kitMessages } from "./messages";
 import { Kbd } from "./primitives";
 
 export interface PaletteCommand {
@@ -71,12 +73,8 @@ export function usePaletteHotkey(setOpen: (update: (open: boolean) => boolean) =
 }
 
 /** Keyboard-first command palette. Every app action should be listed here. */
-export function CommandPalette({
-  open,
-  onOpenChange,
-  commands,
-  placeholder = "Type a command or search…",
-}: CommandPaletteProps) {
+export function CommandPalette({ open, onOpenChange, commands, placeholder }: CommandPaletteProps) {
+  const t = useT(kitMessages);
   const groups = useMemo(() => {
     const map = new Map<string, PaletteCommand[]>();
     for (const c of commands) {
@@ -95,23 +93,23 @@ export function CommandPalette({
           className="fixed left-1/2 top-[18vh] z-50 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl shadow-black/60"
         >
           <VisuallyHidden>
-            <Dialog.Title>Command palette</Dialog.Title>
+            <Dialog.Title>{t.commandPalette}</Dialog.Title>
           </VisuallyHidden>
-          <Command label="Commands" loop filter={paletteScore}>
+          <Command label={t.commands} loop filter={paletteScore}>
             <div className="flex items-center gap-2 border-b border-line px-4">
               <span
                 aria-hidden
                 className="size-1.5 rounded-full bg-ecto shadow-[0_0_10px_var(--color-ecto)]"
               />
               <Command.Input
-                placeholder={placeholder}
+                placeholder={placeholder ?? t.paletteSearch}
                 className="h-12 w-full bg-transparent text-sm text-fg outline-none placeholder:text-muted focus-visible:outline-none"
               />
               <Kbd>esc</Kbd>
             </div>
             <Command.List className="max-h-80 overflow-y-auto p-2">
               <Command.Empty className="px-3 py-8 text-center text-sm text-muted">
-                Nothing matches. Try a plainer word.
+                {t.paletteEmpty}
               </Command.Empty>
               {groups.map(([heading, items]) => (
                 <Command.Group
