@@ -51,10 +51,26 @@ export function toAnthropicMessages(messages: ChatMessage[]): WireMessage[] {
       for (const c of m.toolCalls ?? []) {
         blocks.push({ type: "tool_use", id: c.id, name: c.name, input: c.input });
       }
-      out.push({ role: "assistant", content: blocks.length > 0 ? blocks : "" });
+      // An empty assistant turn is rejected by the API anywhere but last, so it is dropped.
+      if (blocks.length > 0) out.push({ role: "assistant", content: blocks });
     }
   }
   flush();
+  return mergeSameRole(out);
+}
+
+const asBlocks = (c: string | Block[]): Block[] =>
+  typeof c === "string" ? [{ type: "text", text: c }] : c;
+
+/** Turns must alternate. Join neighbours with the same role, e.g. tool results then a new prompt. */
+function mergeSameRole(messages: WireMessage[]): WireMessage[] {
+  const out: WireMessage[] = [];
+  for (const m of messages) {
+    const prev = out[out.length - 1];
+    if (prev && prev.role === m.role)
+      prev.content = [...asBlocks(prev.content), ...asBlocks(m.content)];
+    else out.push({ ...m });
+  }
   return out;
 }
 

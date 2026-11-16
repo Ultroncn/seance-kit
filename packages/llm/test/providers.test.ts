@@ -61,6 +61,36 @@ describe("Anthropic provider", () => {
     });
   });
 
+  it("never sends empty content, and keeps user and assistant turns alternating", () => {
+    const wire = toAnthropicMessages([
+      { role: "user", content: "first" },
+      { role: "assistant", content: "" },
+      { role: "user", content: "second" },
+      { role: "assistant", content: "", toolCalls: [{ id: "t9", name: "search", input: {} }] },
+      { role: "tool", toolCallId: "t9", name: "search", content: "{}" },
+      { role: "assistant", content: "" },
+      { role: "user", content: "third" },
+    ]);
+    for (const m of wire) {
+      expect(m.content === "" || (Array.isArray(m.content) && m.content.length === 0)).toBe(false);
+    }
+    for (let i = 1; i < wire.length; i++) expect(wire[i]!.role).not.toBe(wire[i - 1]!.role);
+    expect(wire[0]).toEqual({
+      role: "user",
+      content: [
+        { type: "text", text: "first" },
+        { type: "text", text: "second" },
+      ],
+    });
+    expect(wire[2]).toEqual({
+      role: "user",
+      content: [
+        { type: "tool_result", tool_use_id: "t9", content: "{}" },
+        { type: "text", text: "third" },
+      ],
+    });
+  });
+
   it("sends the key and browser header, and parses text and tool_use blocks", async () => {
     const { impl, calls } = fakeFetch({
       content: [
