@@ -1,5 +1,5 @@
 import { isBanished } from "@seance/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importConversations, type ImportCounts } from "./domain/store";
 import { CONVERSATIONS, type Conversation } from "./domain/types";
 import { ImportError, parseFile, type FileLike, type SkippedItem } from "./importers";
@@ -60,7 +60,9 @@ export function useSearchIds(query: string, version: number): string[] | null {
     let live = true;
     const t = setTimeout(() => {
       void searchReady
-        .then(() => search.search(q, { limit: 500 }))
+        // Banished chats are filtered by the caller. Skip the per-hit check and keep every hit,
+        // so source and date filters see all matches, not just the top few hundred.
+        .then(() => search.search(q, { limit: 100_000, includeBanished: true }))
         .then((hits) => {
           if (live) setIds(hits.map((h) => h.id));
         });
@@ -84,7 +86,8 @@ export interface ImportState {
   busy: boolean;
   progress: { done: number; total: number } | null;
   reports: FileReport[] | null;
-  importFiles: (files: FileLike[]) => Promise<void>;
+  /** False when nothing was imported because another import is still running. */
+  importFiles: (files: FileLike[]) => Promise<boolean>;
   clearReports: () => void;
 }
 
@@ -94,35 +97,49 @@ export function useImporter(onDone: () => void): ImportState {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [reports, setReports] = useState<FileReport[] | null>(null);
 
+  const running = useRef(false);
   const importFiles = useCallback(
     async (files: FileLike[]) => {
-      if (files.length === 0) return;
+      // One import at a time. Drag-and-drop or the palette can ask while one is running.
+      if (files.length === 0 || running.current) return false;
+      running.current = true;
       setBusy(true);
       setReports(null);
-      await searchReady;
       const out: FileReport[] = [];
-      for (const file of files) {
-        try {
-          const parsed = await parseFile(file);
-          setProgress({ done: 0, total: parsed.conversations.length });
-          const counts = await importConversations(
-            storage,
-            search,
-            parsed.conversations,
-            (done, total) => setProgress({ done, total }),
-          );
-          out.push({ fileName: file.name, counts, skipped: parsed.skipped });
-        } catch (err) {
-          const message =
-            err instanceof ImportError || err instanceof Error ? err.message : String(err);
-          out.push({ fileName: file.name, skipped: [], error: message });
+      try {
+        await searchReady;
+        for (const file of files) {
+          try {
+            const parsed = await parseFile(file);
+            setProgress({ done: 0, total: parsed.conversations.length });
+            const counts = await importConversations(
+              storage,
+              search,
+              parsed.conversations,
+              (done, total) => setProgress({ done, total }),
+            );
+            out.push({ fileName: file.name, counts, skipped: parsed.skipped });
+          } catch (err) {
+            const message =
+              err instanceof ImportError || err instanceof Error ? err.message : String(err);
+            out.push({ fileName: file.name, skipped: [], error: message });
+          }
         }
+        await search.flush().catch((err: unknown) =>
+          out.push({
+            fileName: "Search index",
+            skipped: [],
+            error: `Could not be saved: ${err instanceof Error ? err.message : String(err)}`,
+          }),
+        );
+      } finally {
+        running.current = false;
+        setProgress(null);
+        setReports(out);
+        setBusy(false);
+        onDone();
       }
-      await search.flush();
-      setProgress(null);
-      setReports(out);
-      setBusy(false);
-      onDone();
+      return true;
     },
     [onDone],
   );

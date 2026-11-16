@@ -16,6 +16,9 @@ export const DEMO_PROMPTS = {
 } as const;
 
 const NOISE = /^(untitled chat|test( test)*( 123)?)$/i;
+/** An empty test chat: a throwaway title and almost nothing said. Real untitled chats are kept. */
+const isEmptyTest = (r: { title: string; snippet?: string }) =>
+  NOISE.test(r.title) && (r.snippet ?? "").trim().length <= 40;
 
 const CANNED_SUMMARIES: Record<string, string> = {
   "Sourdough starter keeps dying":
@@ -29,7 +32,7 @@ const CANNED_SUMMARIES: Record<string, string> = {
 };
 
 interface SearchOut {
-  results: { id: string; title: string; createdAt: string }[];
+  results: { id: string; title: string; createdAt: string; snippet?: string }[];
 }
 interface ReadOut {
   id: string;
@@ -89,6 +92,11 @@ export const archiveScripts: MockScript[] = [
           parts.push(
             `Saved summaries for ${titles(saved)}. You'll see them at the top of each chat.`,
           );
+        const reads = outputs<ReadOut>(ctx, "read_conversation");
+        if (reads.some((r) => !CANNED_SUMMARIES[r.title]))
+          parts.push(
+            "Demo mode can only quote the first message of chats outside the sample. A real model writes real summaries.",
+          );
         if (no > 0)
           parts.push(
             `You rejected ${no === 1 ? "one summary" : `${no} summaries`}, so I left ${no === 1 ? "that chat" : "those chats"} alone.`,
@@ -126,7 +134,7 @@ export const archiveScripts: MockScript[] = [
       { toolCalls: [{ name: "search_conversations", input: { query: "test", limit: 20 } }] },
       (ctx) => {
         const noise = (outputs<SearchOut>(ctx, "search_conversations")[0]?.results ?? []).filter(
-          (r) => NOISE.test(r.title),
+          (r) => isEmptyTest(r),
         );
         if (noise.length === 0) return { text: "I found no empty test chats to banish." };
         return {

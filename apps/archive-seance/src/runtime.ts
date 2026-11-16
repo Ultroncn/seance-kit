@@ -11,8 +11,11 @@ export const search = createArchiveSearch(storage);
 export const registry = createArchiveRegistry({ search });
 export const mock = new MockProvider({ scripts: archiveScripts });
 
-/** Resolves once the saved search index is restored or rebuilt. */
-export const searchReady = search.load();
+/** Resolves once the saved search index is restored or rebuilt. Never rejects: the list must load. */
+export const searchReady: Promise<unknown> = search.load().catch((err: unknown) => {
+  console.error("Search index could not be loaded, rebuilding", err);
+  return search.rebuild().catch((e: unknown) => console.error("Search index rebuild failed", e));
+});
 
 // Save pending index changes when the tab goes away.
 if (typeof window !== "undefined") {

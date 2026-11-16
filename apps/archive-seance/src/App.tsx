@@ -48,10 +48,17 @@ function Workspace() {
   const searchInput = useRef<HTMLInputElement>(null);
   usePaletteHotkey(setPaletteOpen);
 
+  // Stable refs, so the window drag-and-drop listeners are added once, not on every render.
+  const importRef = useRef(importer.importFiles);
+  importRef.current = importer.importFiles;
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+
   const pickFiles = useCallback(() => fileInput.current?.click(), []);
   const loadSample = useCallback(async () => {
     try {
-      await importer.importFiles(await fetchSampleFiles());
+      if (!(await importer.importFiles(await fetchSampleFiles())))
+        toast({ text: "An import is still running. Try again when it finishes." });
     } catch (err) {
       toast({ text: err instanceof Error ? err.message : String(err), tone: "error" });
     }
@@ -98,7 +105,10 @@ function Workspace() {
       e.preventDefault();
       depth = 0;
       setDragging(false);
-      void importer.importFiles(Array.from(e.dataTransfer?.files ?? []));
+      void importRef.current(Array.from(e.dataTransfer?.files ?? [])).then((started) => {
+        if (!started)
+          toastRef.current({ text: "An import is still running. Try again when it finishes." });
+      });
     };
     window.addEventListener("dragenter", enter);
     window.addEventListener("dragleave", leave);
@@ -110,7 +120,7 @@ function Workspace() {
       window.removeEventListener("dragover", over);
       window.removeEventListener("drop", drop);
     };
-  }, [importer]);
+  }, []);
 
   const selected = selectedId ? data.byId.get(selectedId) : undefined;
   const empty = data.all !== null && data.all.length === 0;

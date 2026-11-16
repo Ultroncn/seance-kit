@@ -14,7 +14,7 @@ export async function requireConversation(storage: Storage, id: string): Promise
   return c;
 }
 
-/** Lower-case, hyphenated, letters and digits only. "Baking Ideas!" → "baking-ideas". */
+/** Lower-case, hyphenated, letters and digits of any script. "Baking Ideas!" → "baking-ideas", "料理" → "料理". */
 export function normalizeTag(raw: string): string {
   return raw
     .toLowerCase()
@@ -22,9 +22,10 @@ export function normalizeTag(raw: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
+    .replace(/[^\p{L}\p{N}-]/gu, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
+    .normalize("NFC")
     .slice(0, 32);
 }
 

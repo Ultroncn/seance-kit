@@ -3,7 +3,7 @@ import { AgentPanel, type ToolEntry } from "@seance/ui";
 import { DEMO_PROMPTS } from "../demo/scripts";
 import { ARCHIVE_TOOL_LABELS } from "../tools";
 import type { Conversation } from "../domain/types";
-import { plural } from "./format";
+import { monthYear, plural } from "./format";
 
 interface Props {
   agent: AgentRunState;
@@ -18,6 +18,11 @@ const strs = (v: unknown) =>
 
 export function AgentPane({ agent, isMock, byId, hasData }: Props) {
   const titleOf = (id: string) => byId.get(id)?.title ?? id;
+  /** Title plus date and source, so chats with the same title can be told apart. */
+  const describe = (id: string) => {
+    const c = byId.get(id);
+    return c ? `${c.title} (${monthYear(c.createdAt)}, ${c.messages.length} messages)` : id;
+  };
 
   const describeApproval = (step: ToolEntry) => {
     const input = (step.input ?? {}) as Record<string, unknown>;
@@ -29,7 +34,7 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
           details: (
             <ul className="list-disc space-y-1 pl-5 text-fg">
               {ids.map((id) => (
-                <li key={id}>{titleOf(id)}</li>
+                <li key={id}>{describe(id)}</li>
               ))}
             </ul>
           ),
@@ -60,6 +65,9 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       case "resurrect_conversation":
         return {
           summary: `Write a resurrection prompt for “${titleOf(str(input.id))}” and save it with the chat.`,
+          ...(str(input.note)
+            ? { details: <p className="text-fg">Note added to the prompt: “{str(input.note)}”</p> }
+            : {}),
         };
       default:
         return undefined;

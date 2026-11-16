@@ -138,19 +138,22 @@ describe("parseFile", () => {
     );
   });
 
-  it("reads conversations.json and Markdown straight from an export zip", async () => {
-    const zip = zipSync({
+  it("reads conversations.json straight from an export zip, and a zip of Markdown notes", async () => {
+    const exportZip = zipSync({
       "export/conversations.json": strToU8(fixture("chatgpt-small.json")),
       "export/chat.html": strToU8("<html></html>"),
-      "notes/tomatoes.md": strToU8(fixture("notes.md")),
     });
-    const r = await parseFile(fakeFile("chatgpt-export.zip", zip));
+    const r = await parseFile(fakeFile("chatgpt-export.zip", exportZip));
     expect(r.format).toBe("zip");
     expect(r.conversations.map((c) => c.title).sort()).toEqual([
       "Starter questions",
-      "Tomato notes",
       "Untitled chat",
     ]);
+
+    const notes = await parseFile(
+      fakeFile("notes.zip", zipSync({ "notes/tomatoes.md": strToU8(fixture("notes.md")) })),
+    );
+    expect(notes.conversations.map((c) => c.title)).toEqual(["Tomato notes"]);
   });
 
   it("explains unusable files", async () => {

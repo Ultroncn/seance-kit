@@ -49,6 +49,8 @@ test("sample archive: search, filters, reader, persistence and axe", async ({ pa
 
   await page.getByRole("searchbox", { name: "Search chats" }).fill("sourdough");
   await expect(chats(page)).toHaveCount(1);
+  await page.getByRole("searchbox", { name: "Search chats" }).fill("qqzzxx");
+  await expect(page.getByText("No chats match.")).toBeVisible();
   await page.getByRole("searchbox", { name: "Search chats" }).fill("");
   await page.getByLabel("Source").selectOption("claude");
   await expect(chats(page)).toHaveCount(4);

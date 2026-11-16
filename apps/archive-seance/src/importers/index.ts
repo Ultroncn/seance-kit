@@ -37,6 +37,14 @@ function parseJsonExport(text: string, where: string): ImportResult {
   );
 }
 
+/** One Markdown or text chat. A file with no text is reported as skipped, not imported empty. */
+function markdownResult(text: string, fileName: string, lastModified?: number): ImportResult {
+  const c = parseMarkdown(text, { fileName, lastModified });
+  return c.messages.length === 0
+    ? { conversations: [], skipped: [{ where: fileName, reason: "empty file" }] }
+    : { conversations: [c], skipped: [] };
+}
+
 function merge(results: ImportResult[]): ImportResult {
   return {
     conversations: results.flatMap((r) => r.conversations),
@@ -61,35 +69,33 @@ export async function parseFile(
     } catch {
       throw new ImportError(`${name} could not be opened as a zip file.`);
     }
+    // macOS adds __MACOSX/ and "._" files to zips; dotfiles are never chats.
+    const usable = Object.entries(entries).filter(([entry]) => {
+      const base = entry.split("/").pop() ?? entry;
+      return !/(^|\/)__MACOSX\//.test(entry) && !base.startsWith(".");
+    });
+    const hasExport = usable.some(([entry]) => !TEXT_EXT.test(entry));
     const results: ImportResult[] = [];
-    for (const [entry, bytes] of Object.entries(entries)) {
-      const text = strFromU8(bytes);
-      results.push(
-        TEXT_EXT.test(entry)
-          ? {
-              conversations: [
-                parseMarkdown(text, {
-                  fileName: entry.split("/").pop(),
-                  lastModified: file.lastModified,
-                }),
-              ],
-              skipped: [],
-            }
-          : parseJsonExport(text, entry),
-      );
+    for (const [entry, bytes] of usable) {
+      const base = entry.split("/").pop() ?? entry;
+      if (!TEXT_EXT.test(entry)) {
+        results.push(parseJsonExport(strFromU8(bytes), entry));
+      } else if (hasExport) {
+        // Next to a conversations.json, text files are attachments, not chats.
+        results.push({
+          conversations: [],
+          skipped: [{ where: base, reason: "attachment next to conversations.json, not a chat" }],
+        });
+      } else {
+        results.push(markdownResult(strFromU8(bytes), base, file.lastModified));
+      }
     }
     if (results.length === 0)
       throw new ImportError(`${name} has no conversations.json or Markdown files inside.`);
     return { ...merge(results), format: "zip" };
   }
   if (TEXT_EXT.test(name)) {
-    return {
-      conversations: [
-        parseMarkdown(await file.text(), { fileName: name, lastModified: file.lastModified }),
-      ],
-      skipped: [],
-      format: "markdown",
-    };
+    return { ...markdownResult(await file.text(), name, file.lastModified), format: "markdown" };
   }
   if (/\.json$/i.test(name)) {
     const result = parseJsonExport(await file.text(), name);

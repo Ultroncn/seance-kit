@@ -45,11 +45,12 @@ export const searchConversations = ({ search }: ArchiveDeps) =>
       const query = i.query.trim();
       let items: Conversation[];
       if (query !== "") {
-        const hits = await search.search(query, { limit: 500 });
-        const found = await Promise.all(
-          hits.map((h) => storage.get<Conversation>(CONVERSATIONS, h.id)),
+        // Rank everything, then filter, then cut: a source or date filter must see every match.
+        const hits = await search.search(query, { limit: 100_000, includeBanished: true });
+        const byId = new Map(
+          (await listActive<Conversation>(storage, CONVERSATIONS)).map((c) => [c.id, c]),
         );
-        items = found.filter((c): c is Conversation => c !== undefined);
+        items = hits.map((h) => byId.get(h.id)).filter((c): c is Conversation => c !== undefined);
       } else {
         items = await listActive<Conversation>(storage, CONVERSATIONS);
       }

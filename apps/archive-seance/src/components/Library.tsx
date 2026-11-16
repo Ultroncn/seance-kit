@@ -194,15 +194,6 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
                       </li>
                     ))}
                   </ul>
-                  {data.all && shown.length === 0 && (
-                    <p className="px-5 py-8 text-center text-sm text-muted">
-                      {filters.view === "banished"
-                        ? "Nothing is banished."
-                        : data.active.length === 0
-                          ? "No chats yet."
-                          : "No chats match."}
-                    </p>
-                  )}
                 </details>
               )}
             </div>
@@ -262,6 +253,15 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
           </li>
         ))}
       </ul>
+      {data.all && shown.length === 0 && (
+        <p className="px-5 py-8 text-center text-sm text-muted">
+          {filters.view === "banished"
+            ? "Nothing is banished."
+            : data.active.length === 0
+              ? "No chats yet."
+              : "No chats match."}
+        </p>
+      )}
       {shown.length > visible.length && (
         <div className="px-3 pb-3">
           <Button
