@@ -31,14 +31,22 @@ function contrast(a: string, b: string): number {
 
 describe("design tokens", () => {
   const t = readTokens();
-  const backgrounds: ColorTokenName[] = ["bg", "surface", "raised"];
-  const texts: ColorTokenName[] = ["fg", "muted", "ecto", "candle", "blood"];
-
+  const backgrounds: ColorTokenName[] = ["bg", "surface", "raised", "surface-3"];
+  const texts: ColorTokenName[] = ["fg", "fg-2", "muted", "accent", "warn", "danger", "success"];
   for (const bg of backgrounds) {
     for (const fg of texts) {
       it(`${fg} on ${bg} meets WCAG AA (4.5:1)`, () => {
         expect(contrast(t[fg], t[bg])).toBeGreaterThanOrEqual(4.5);
       });
     }
+    it(`form field borders on ${bg} meet 3:1 (WCAG 1.4.11)`, () => {
+      expect(contrast(t.edge, t[bg])).toBeGreaterThanOrEqual(3);
+    });
   }
+  it("white text on the solid accent meets WCAG AA", () => {
+    expect(contrast("#ffffff", t["accent-solid"])).toBeGreaterThanOrEqual(4.5);
+  });
+  it("dark text on the danger fill meets WCAG AA", () => {
+    expect(contrast(t.bg, t.danger)).toBeGreaterThanOrEqual(4.5);
+  });
 });

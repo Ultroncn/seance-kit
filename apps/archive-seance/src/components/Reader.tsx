@@ -1,5 +1,6 @@
 import { banishItems, restoreItems, undoBanish } from "@seance/core";
 import { Badge, Button, EmptyState, Tooltip, useT, useToast } from "@seance/ui";
+import { Copy, EyeOff, Sparkles, User } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   CONVERSATIONS,
@@ -12,6 +13,7 @@ import { toMarkdown } from "../importers";
 import { archiveMessages } from "../messages";
 import { registry, storage, toolContext } from "../runtime";
 import { shortDate } from "./format";
+import { SourceIcon } from "./SourceIcon";
 
 /** Plain text with ``` fenced code blocks rendered as code. */
 function MessageText({ text }: { text: string }) {
@@ -96,9 +98,9 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
   };
 
   return (
-    <article className="mx-auto max-w-3xl px-8 py-8" aria-labelledby="reader-title">
+    <article className="mx-auto max-w-[720px] px-10 py-8" aria-labelledby="reader-title">
       {c.banishedAt && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-blood/50 bg-raised px-4 py-3 text-sm">
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-line bg-danger-soft px-4 py-3 text-sm text-fg">
           <span className="flex-1">{t.banishedNote}</span>
           <Button size="sm" onClick={() => void restore()}>
             {t.restore}
@@ -110,29 +112,25 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
         <h2 id="reader-title" className="text-2xl font-semibold leading-tight">
           {c.title}
         </h2>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 flex items-center gap-1.5 text-meta text-muted">
+          <SourceIcon source={c.source} />
           {SOURCE_LABEL[c.source]} · {shortDate(c.createdAt)} · {t.messages(c.messages.length)}
         </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2">
           <Tooltip content={t.resurrectTip}>
-            <Button variant="primary" size="sm" onClick={() => void resurrect()}>
+            <Button variant="primary" onClick={() => void resurrect()}>
+              <Sparkles aria-hidden />
               {t.resurrect}
             </Button>
           </Tooltip>
-          <Button
-            size="sm"
-            onClick={() => copy(toMarkdown(c), () => toast({ text: t.copiedMarkdown }))}
-          >
+          <Button onClick={() => copy(toMarkdown(c), () => toast({ text: t.copiedMarkdown }))}>
+            <Copy aria-hidden />
             {t.copyMarkdown}
           </Button>
           {!c.banishedAt && (
             <Tooltip content={t.banishTip}>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-blood hover:text-blood"
-                onClick={() => void banish()}
-              >
+              <Button variant="danger-ghost" className="ml-auto" onClick={() => void banish()}>
+                <EyeOff aria-hidden />
                 {t.banish}
               </Button>
             </Tooltip>
@@ -147,7 +145,7 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
         >
           {c.summary && (
             <>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
+              <p className="text-xs font-semibold text-accent">
                 {t.summary}
                 {c.summarizedBy === "demo" && t.byDemo}
               </p>
@@ -157,7 +155,7 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
           {c.tags.length > 0 && (
             <div className={c.summary ? "mt-3 flex flex-wrap gap-1.5" : "flex flex-wrap gap-1.5"}>
               {c.tags.map((tag) => (
-                <Badge key={tag} tone="ecto">
+                <Badge key={tag} tone="accent">
                   {tag}
                 </Badge>
               ))}
@@ -169,13 +167,11 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
       {resurrection && (
         <section
           aria-label={t.resurrectionPrompt}
-          className="mt-4 rounded-lg border border-ecto/40 bg-surface p-4"
+          className="mt-4 rounded-lg border border-accent/40 bg-surface p-4"
         >
           <div className="flex items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
-              {t.resurrectionPrompt}
-            </p>
-            <span className="text-[11px] text-muted">{shortDate(resurrection.createdAt)}</span>
+            <p className="text-xs font-semibold text-accent">{t.resurrectionPrompt}</p>
+            <span className="text-xs text-muted">{shortDate(resurrection.createdAt)}</span>
             <Button
               size="sm"
               variant="ghost"
@@ -191,19 +187,20 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
         </section>
       )}
 
-      <ol className="mt-8 space-y-6" aria-label={t.messagesList}>
+      <ol className="mt-8 space-y-6 border-t border-line pt-8" aria-label={t.messagesList}>
         {c.messages.map((m, i) => (
-          <li key={i} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4">
-            <span
-              className={
-                m.role === "user"
-                  ? "pt-0.5 text-xs font-semibold text-muted"
-                  : "pt-0.5 text-xs font-semibold text-ecto"
-              }
-            >
+          <li key={i} className={m.role === "user" ? "rounded-lg bg-surface px-4 py-3" : "px-4"}>
+            <p className="mb-1.5 flex items-center gap-2 text-meta font-semibold text-fg-2">
+              {m.role === "user" ? (
+                <span className="grid size-4 place-items-center rounded-full bg-surface-3 text-fg-2">
+                  <User aria-hidden className="size-3" />
+                </span>
+              ) : (
+                <SourceIcon source={c.source} />
+              )}
               {m.role === "user" ? t.you : assistant}
-            </span>
-            <div className="space-y-2 text-sm leading-relaxed">
+            </p>
+            <div className="space-y-3 text-md text-fg">
               <MessageText text={m.text} />
             </div>
           </li>

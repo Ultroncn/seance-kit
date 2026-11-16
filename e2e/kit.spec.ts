@@ -57,25 +57,20 @@ test("kit: ⌘K / Ctrl+K opens the palette and a destructive approval lists the 
 });
 
 test.describe("reduced motion", () => {
-  const animationName = (page: Page) =>
-    page
-      .getByRole("group", { name: /Allow Add tags/ })
-      .evaluate((el) => getComputedStyle(el).animationName);
-
-  test("pending approval pulses by default", async ({ page }) => {
+  const dot = (page: Page) => page.locator("[data-pending-dot]").first();
+  const style = (page: Page, prop: "animationName" | "boxShadow") =>
+    dot(page).evaluate((el, p) => getComputedStyle(el)[p], prop);
+  test("a pending approval's dot pulses by default", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/kit/");
-    expect(await animationName(page)).toBe("candle-pulse");
+    expect(await style(page, "animationName")).toBe("pulse-dot");
   });
-
-  test("pending approval shows a static ring when the user prefers reduced motion", async ({
+  test("the dot holds still with a static ring when the user prefers reduced motion", async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/kit/");
-    const card = page.getByRole("group", { name: /Allow Add tags/ });
-    expect(await animationName(page)).toBe("none");
-    const ring = await card.evaluate((el) => getComputedStyle(el).boxShadow);
-    expect(ring).not.toBe("none");
+    expect(await style(page, "animationName")).toBe("none");
+    expect(await style(page, "boxShadow")).not.toBe("none");
   });
 });

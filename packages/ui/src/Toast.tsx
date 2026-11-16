@@ -79,9 +79,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               className={cn(
                 "pointer-events-auto flex items-center gap-3 rounded-lg border bg-raised px-4 py-3 text-sm shadow-lg shadow-black/40",
                 t.tone === "error"
-                  ? "border-blood/60"
+                  ? "border-danger/60"
                   : t.tone === "ok"
-                    ? "border-ecto/40"
+                    ? "border-accent/40"
                     : "border-line",
               )}
             >
@@ -90,7 +90,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-ecto"
+                  className="text-accent"
                   onClick={() => {
                     t.action?.onClick();
                     dismiss(t.id);

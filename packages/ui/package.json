@@ -16,12 +16,15 @@
     "@fontsource-variable/jetbrains-mono": "^5",
     "@radix-ui/react-dialog": "^1",
     "@radix-ui/react-dropdown-menu": "^2",
+    "@radix-ui/react-popover": "^1",
     "@radix-ui/react-tooltip": "^1",
     "@radix-ui/react-visually-hidden": "^1",
     "@seance/llm": "workspace:*",
     "@seance/storage": "workspace:*",
     "cmdk": "^1.1",
-    "motion": "^14"
+    "lucide-react": "^1.73.0",
+    "motion": "^14",
+    "tailwind-merge": "^3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4",

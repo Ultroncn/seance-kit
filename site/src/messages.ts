@@ -5,6 +5,12 @@ export const siteMessages = defineMessages(
   {
     nav: "Site",
     uiKit: "UI kit",
+    navTry: "Try the demo",
+    shotAlt: [
+      "Archive Séance: the chat library, a chat open in the reader, and the agent asking before it hides two chats.",
+      "Inbox Exorcist: the mail list, an email open, and the agent asking before it files 18 emails into categories.",
+    ],
+    stepsLabel: "Steps",
     eyebrow: "A local-first agent template",
     headline: "Build your own agent app in an afternoon.",
     lede: "Define typed tools. Séance Kit brings the agent loop, approval gates, browser storage, search and a polished dark UI. Two apps are built with it. Your data stays on your device.",
@@ -112,6 +118,12 @@ export const siteMessages = defineMessages(
   {
     nav: "网站",
     uiKit: "UI 组件",
+    navTry: "试用演示",
+    shotAlt: [
+      "对话降灵：左侧是对话资料库，中间打开了一段对话，右侧 Agent 在隐藏两段对话前请求批准。",
+      "收件箱驱魔：左侧是邮件列表，中间打开了一封邮件，右侧 Agent 在把 18 封邮件归类前请求批准。",
+    ],
+    stepsLabel: "步骤",
     eyebrow: "本地优先的 Agent 模板",
     headline: "一个下午，做出你自己的 Agent 应用。",
     lede: "定义带类型的工具，其余交给 Séance Kit：Agent 循环、审批关卡、浏览器存储、搜索，以及精致的暗色界面。我们用它做了两个应用。你的数据始终留在你的设备上。",

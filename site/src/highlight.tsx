@@ -17,11 +17,11 @@ export function highlight(code: string): ReactNode[] {
     const tone = comment
       ? "text-muted italic"
       : str
-        ? "text-candle"
+        ? "text-warn"
         : keyword
-          ? "text-ecto"
+          ? "text-accent"
           : tag
-            ? "text-blood"
+            ? "text-danger"
             : "text-fg";
     out.push(
       <span key={at} className={tone}>

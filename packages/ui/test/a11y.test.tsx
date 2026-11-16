@@ -29,7 +29,7 @@ describe("accessibility (axe, jsdom)", () => {
       <SeanceProvider>
         <AppShell
           title="Archive Séance"
-          actions={<Badge tone="candle">Demo mode</Badge>}
+          actions={<Badge tone="warn">Demo mode</Badge>}
           library={
             <>
               <PaneHeader title="Library" actions={<Button size="sm">Import</Button>} />

@@ -98,7 +98,7 @@ export function TimelineDemo() {
     <SeanceProvider>
       <div
         ref={stage}
-        className="relative min-h-[23rem] max-w-2xl overflow-hidden rounded-2xl border border-line bg-surface/80 shadow-[0_30px_80px_-40px_black] backdrop-blur"
+        className="relative min-h-[23rem] overflow-hidden rounded-xl border border-line bg-surface"
       >
         <SeanceTimeline
           entries={entries}

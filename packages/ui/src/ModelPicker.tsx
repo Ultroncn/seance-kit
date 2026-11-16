@@ -5,6 +5,7 @@ import {
   type ProviderProfile,
   type ReasoningLevel,
 } from "@seance/llm";
+import { Check as CheckIcon, ChevronDown, Settings2 } from "lucide-react";
 import { cn } from "./cn";
 import { useT } from "./i18n";
 import { kitMessages } from "./messages";
@@ -49,22 +50,20 @@ export function withModelChoice(
 }
 
 const item =
-  "flex cursor-pointer select-none items-center gap-2 rounded px-2 py-1.5 text-sm text-fg outline-none data-[disabled]:cursor-default data-[disabled]:opacity-50 data-[highlighted]:bg-raised";
-const panel =
-  "z-50 min-w-56 rounded-lg border border-line bg-surface p-1 shadow-xl shadow-black/50";
-const heading = "px-2 pb-1 pt-2 text-[11px] font-semibold text-muted";
+  "flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm text-fg outline-none data-[disabled]:cursor-default data-[disabled]:text-disabled data-[highlighted]:bg-surface-3";
+const heading = "px-2 pb-1 pt-2 text-xs font-medium text-muted";
 
-function Dot() {
+function Check() {
   return (
-    <Menu.ItemIndicator className="ml-auto">
-      <span aria-hidden className="block size-1.5 rounded-full bg-ecto" />
+    <Menu.ItemIndicator className="ml-auto text-accent">
+      <CheckIcon aria-hidden className="size-4" />
     </Menu.ItemIndicator>
   );
 }
 
 /**
- * Choose the model and its reasoning level next to the prompt box. Models are grouped under each
- * saved provider; reasoning levels are the ones the chosen model offers, or none.
+ * The model and its reasoning level, chosen from the composer. One menu, no submenus: models
+ * grouped under each saved provider, then the levels the chosen model offers.
  */
 export function ModelPicker({ onManage }: { onManage?: () => void }) {
   const { profiles, activeId, activate, saveProfile } = useProviderMode();
@@ -74,7 +73,7 @@ export function ModelPicker({ onManage }: { onManage?: () => void }) {
   const level = active ? levelOf(active.config) : undefined;
   const current = active ? key(active.id, active.config.model) : DEMO;
   const summary = active
-    ? [active.name, active.config.model, level ? t.levels[level] : null].filter(Boolean).join(" · ")
+    ? [active.config.model, level ? t.levels[level] : null].filter(Boolean).join(" · ")
     : t.demoChoice;
 
   const pickModel = (value: string) => {
@@ -95,89 +94,65 @@ export function ModelPicker({ onManage }: { onManage?: () => void }) {
     <Menu.Root>
       <Menu.Trigger
         aria-label={`${t.modelMenu}: ${summary}`}
-        className="inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted hover:bg-raised hover:text-fg focus-visible:ring-2 focus-visible:ring-ecto"
+        className="inline-flex h-7 min-w-0 max-w-[16rem] items-center gap-1.5 rounded-md px-2 text-xs font-medium text-fg-2 transition-colors duration-100 hover:bg-surface-3 hover:text-fg data-[state=open]:bg-surface-3"
       >
         <span
           aria-hidden
-          className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-ecto" : "bg-candle")}
+          className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent" : "bg-warn")}
         />
         <span className="truncate">{summary}</span>
-        <span aria-hidden>▾</span>
+        <ChevronDown aria-hidden className="size-3.5 shrink-0 text-muted" />
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content side="top" align="start" sideOffset={6} className={panel}>
-          <Menu.Sub>
-            <Menu.SubTrigger className={item}>
-              {t.menuModel}
-              <span className="ml-auto max-w-40 truncate text-xs text-muted">
-                {active ? active.config.model : t.demoChoice}
-              </span>
-              <span aria-hidden className="text-muted">
-                ›
-              </span>
-            </Menu.SubTrigger>
-            <Menu.Portal>
-              <Menu.SubContent sideOffset={6} className={cn(panel, "max-h-[60vh] overflow-y-auto")}>
-                <Menu.RadioGroup value={current} onValueChange={pickModel}>
-                  <Menu.Label className={heading}>{t.demoGroup}</Menu.Label>
-                  <Menu.RadioItem value={DEMO} className={item}>
-                    {t.demoChoice}
-                    <Dot />
+        <Menu.Content
+          side="top"
+          align="start"
+          sideOffset={6}
+          className="z-50 max-h-[min(28rem,70vh)] w-72 overflow-y-auto rounded-lg border border-line bg-raised p-1 shadow-popover"
+        >
+          <Menu.Label className={heading}>{t.menuModel}</Menu.Label>
+          <Menu.RadioGroup value={current} onValueChange={pickModel}>
+            <Menu.RadioItem value={DEMO} className={item}>
+              <span className="truncate">{t.demoChoice}</span>
+              <Check />
+            </Menu.RadioItem>
+            {profiles.map((p) => (
+              <Menu.Group key={p.id}>
+                <Menu.Label className={cn(heading, "pt-2.5")}>{p.name}</Menu.Label>
+                {modelsOf(p).map((m) => (
+                  <Menu.RadioItem key={m} value={key(p.id, m)} className={item}>
+                    <span className="truncate font-mono text-meta">{m}</span>
+                    <Check />
                   </Menu.RadioItem>
-                  {profiles.map((p) => (
-                    <Menu.Group key={p.id}>
-                      <Menu.Separator className="my-1 h-px bg-line" />
-                      <Menu.Label className={heading}>{p.name}</Menu.Label>
-                      {modelsOf(p).map((m) => (
-                        <Menu.RadioItem
-                          key={m}
-                          value={key(p.id, m)}
-                          className={cn(item, "font-mono text-xs")}
-                        >
-                          {m}
-                          <Dot />
-                        </Menu.RadioItem>
-                      ))}
-                    </Menu.Group>
-                  ))}
-                </Menu.RadioGroup>
-              </Menu.SubContent>
-            </Menu.Portal>
-          </Menu.Sub>
-          <Menu.Sub>
-            <Menu.SubTrigger className={item} disabled={!opts}>
-              {t.menuReasoning}
-              <span className="ml-auto text-xs text-muted">
-                {!opts ? t.notSupported : level ? t.levels[level] : t.levelDefault}
-              </span>
-              <span aria-hidden className="text-muted">
-                ›
-              </span>
-            </Menu.SubTrigger>
-            <Menu.Portal>
-              <Menu.SubContent sideOffset={6} className={panel}>
-                <Menu.RadioGroup value={level ?? ""} onValueChange={pickLevel}>
-                  <Menu.RadioItem value="" className={item}>
-                    {t.levelDefault}
-                    <Dot />
-                  </Menu.RadioItem>
-                  {opts?.levels.map((l) => (
-                    <Menu.RadioItem key={l} value={l} className={item}>
-                      {t.levels[l]}
-                      <Dot />
-                    </Menu.RadioItem>
-                  ))}
-                </Menu.RadioGroup>
-              </Menu.SubContent>
-            </Menu.Portal>
-          </Menu.Sub>
-          {!opts && active && (
-            <p className="px-2 pb-1 text-[11px] text-muted">{t.notSupportedNote}</p>
+                ))}
+              </Menu.Group>
+            ))}
+          </Menu.RadioGroup>
+          <Menu.Separator className="my-1 h-px bg-line" />
+          <Menu.Label className={heading}>{t.menuReasoning}</Menu.Label>
+          {opts ? (
+            <Menu.RadioGroup value={level ?? ""} onValueChange={pickLevel}>
+              <Menu.RadioItem value="" className={item}>
+                {t.levelDefault}
+                <Check />
+              </Menu.RadioItem>
+              {opts.levels.map((l) => (
+                <Menu.RadioItem key={l} value={l} className={item}>
+                  {t.levels[l]}
+                  <Check />
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
+          ) : (
+            <p className="px-2 pb-2 text-meta text-muted">
+              {active ? t.notSupportedNote : t.reasoningDemoNote}
+            </p>
           )}
           {onManage && (
             <>
               <Menu.Separator className="my-1 h-px bg-line" />
               <Menu.Item className={item} onSelect={onManage}>
+                <Settings2 aria-hidden className="size-4 text-muted" />
                 {t.manageProviders}
               </Menu.Item>
             </>

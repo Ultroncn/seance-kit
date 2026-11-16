@@ -46,7 +46,7 @@ export function AgentPane({ agent, isMock, byId, hasData, onManageProviders }: P
         return {
           summary: t.approveSummary(titleOf(str(input.id))),
           details: (
-            <blockquote className="border-l-2 border-candle/60 pl-3 text-fg">
+            <blockquote className="border-l-2 border-warn/60 pl-3 text-fg">
               {str(input.summary)}
             </blockquote>
           ),

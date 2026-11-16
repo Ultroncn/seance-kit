@@ -25,31 +25,22 @@ async function fakeEndpoint(page: Page) {
 const badge = (page: Page) => page.getByTestId("demo-badge");
 
 /**
- * Open a submenu of the model menu by keyboard (Enter, arrows), the way the menu is built to be
- * used without a mouse.
+ * Open the model menu by keyboard (focus, Enter), the way it is built to be used without a mouse.
+ * The pointer is parked first: resting over the menu, it would move the highlight.
  */
-async function openSubmenu(page: Page, sub: "Model" | "Reasoning") {
-  // A pointer resting over the menu (left there by the last click) opens whichever submenu it
-  // hovers, and fights the keyboard. Park it away from the menu first.
+async function openModelMenu(page: Page) {
   await page.mouse.move(0, 0);
   await page.getByRole("button", { name: /^Model and reasoning:/ }).focus();
   await page.keyboard.press("Enter");
-  await page.getByRole("menuitem", { name: new RegExp(`^${sub}`) }).focus();
-  await page.keyboard.press("ArrowRight");
-  return page.getByRole("menu").last();
+  return page.getByRole("menu");
 }
-async function closeMenus(page: Page) {
-  await page.keyboard.press("Escape");
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("menu")).toHaveCount(0);
-}
-async function choose(page: Page, sub: "Model" | "Reasoning", name: string) {
-  const menu = await openSubmenu(page, sub);
+async function choose(page: Page, name: string) {
+  const menu = await openModelMenu(page);
   await menu.getByRole("menuitemradio", { name, exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("menu")).toHaveCount(0);
 }
-const pickModel = (page: Page, name: string) => choose(page, "Model", name);
+const pickModel = choose;
 
 for (const app of [
   { path: "/archive/", title: "Archive Séance" },
@@ -194,30 +185,25 @@ test("model picker: models grouped by provider, reasoning levels per model, sent
   await dialog.getByRole("button", { name: "Save and use" }).click();
   await page.keyboard.press("Escape");
 
-  // Both loaded models sit under the provider's name, after the demo entry.
-  const models = await openSubmenu(page, "Model");
-  await expect(models.getByRole("menuitemradio")).toHaveText([
+  // One menu: demo, then the provider's loaded models under its name, then the levels this
+  // model documents (DeepSeek: off, low, high, max).
+  const menu = await openModelMenu(page);
+  await expect(menu.getByRole("menuitemradio")).toHaveText([
     "Demo (scripted)",
     "deepseek-v4-flash",
     "deepseek-v4-pro",
-  ]);
-  await expect(models).toContainText("DeepSeek");
-  await closeMenus(page);
-  await choose(page, "Model", "deepseek-v4-pro");
-
-  // DeepSeek documents these levels; the list comes from the model, not a global setting.
-  const levels = await openSubmenu(page, "Reasoning");
-  await expect(levels.getByRole("menuitemradio")).toHaveText([
     "Default",
     "Off",
     "Low",
     "High",
     "Max",
   ]);
-  await closeMenus(page);
-  await choose(page, "Reasoning", "Low");
+  await expect(menu).toContainText("DeepSeek");
+  await page.keyboard.press("Escape");
+  await choose(page, "deepseek-v4-pro");
+  await choose(page, "Low");
   await expect(page.getByRole("button", { name: /^Model and reasoning:/ })).toContainText(
-    "DeepSeek · deepseek-v4-pro · Low",
+    "deepseek-v4-pro · Low",
   );
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(

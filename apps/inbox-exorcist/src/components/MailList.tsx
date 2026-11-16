@@ -4,12 +4,16 @@ import {
   Button,
   GhostItem,
   GhostList,
+  IconButton,
   Input,
   PaneHeader,
+  Segmented,
+  Select,
   cn,
   useT,
   useToast,
 } from "@seance/ui";
+import { FileCheck2, X } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { CATEGORIES, EMAILS, type Category, type Email } from "../domain/types";
 import { inboxMessages } from "../messages";
@@ -107,6 +111,18 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
         }
       />
 
+      <div className={cn("px-3 pt-3", filters.view !== "inbox" && "border-b border-line pb-3")}>
+        <Segmented
+          label={t.views}
+          value={filters.view}
+          onChange={(view) => onFilters({ ...EMPTY_FILTERS, view })}
+          items={[
+            { value: "inbox", label: t.inbox, count: data.active.length },
+            { value: "drafts", label: t.drafts, count: data.drafts.length },
+            { value: "banished", label: t.banished, count: data.banished.length },
+          ]}
+        />
+      </div>
       {filters.view === "inbox" && (
         <div className="space-y-2 border-b border-line p-3">
           <Input
@@ -122,11 +138,12 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               <label className="sr-only" htmlFor="filter-mailbox">
                 {t.mailboxLabel}
               </label>
-              <select
+              <Select
+                size="sm"
                 id="filter-mailbox"
                 value={filters.mailbox}
                 onChange={(e) => set({ mailbox: e.target.value })}
-                className="h-8 w-full rounded-md border border-edge bg-surface px-2 text-xs text-fg"
+                className="w-full"
               >
                 <option value="">{t.allMailboxes(data.mailboxes.length)}</option>
                 {data.mailboxes.map((m) => (
@@ -134,18 +151,19 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                     {m}
                   </option>
                 ))}
-              </select>
+              </Select>
             </>
           )}
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="filter-category">
               {t.categoryLabel}
             </label>
-            <select
+            <Select
+              size="sm"
               id="filter-category"
               value={filters.category}
               onChange={(e) => set({ category: e.target.value as Filters["category"] })}
-              className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
+              className="min-w-0 flex-1"
             >
               <option value="all">{t.allCategories}</option>
               {CATEGORIES.map((c) => (
@@ -154,15 +172,16 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                 </option>
               ))}
               <option value="uncategorized">{t.notSortedYet}</option>
-            </select>
+            </Select>
             <label className="sr-only" htmlFor="filter-label">
               {t.label}
             </label>
-            <select
+            <Select
+              size="sm"
               id="filter-label"
               value={filters.label}
               onChange={(e) => set({ label: e.target.value })}
-              className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
+              className="min-w-0 flex-1"
             >
               <option value="">{t.allLabels}</option>
               {data.labels.map((l) => (
@@ -170,7 +189,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {filtering && (
             <Button
@@ -195,7 +214,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
           )}
           <div className="mt-1.5 h-1 overflow-hidden rounded bg-raised">
             <div
-              className="h-full bg-ecto transition-[width]"
+              className="h-full bg-accent-solid transition-[width]"
               style={{
                 width: `${importer.progress.total ? (100 * importer.progress.bytes) / importer.progress.total : 0}%`,
               }}
@@ -205,12 +224,18 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
       )}
 
       {importer.reports && (
-        <div className="border-b border-line p-3 text-xs" role="status">
+        <div
+          className="relative mx-3 mt-3 rounded-lg border border-line bg-raised p-3 pr-9 text-xs"
+          role="status"
+        >
           {importer.reports.map((r) => (
             <div key={r.fileName} className="mb-2 last:mb-0">
-              <p className="font-medium text-fg">{r.fileName}</p>
+              <p className="flex items-center gap-1.5 truncate font-medium text-fg">
+                <FileCheck2 aria-hidden className="size-3.5 shrink-0 text-success" />
+                {r.fileName}
+              </p>
               {r.error ? (
-                <p className="text-blood">{r.error}</p>
+                <p className="text-danger">{r.error}</p>
               ) : (
                 r.counts && (
                   <p className="text-muted">
@@ -220,7 +245,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               )}
               {r.skipped.length > 0 && (
                 <details className="mt-1 text-muted">
-                  <summary className="cursor-pointer text-candle">
+                  <summary className="cursor-pointer text-warn">
                     {t.skipped(r.skipped.length)}
                   </summary>
                   <ul className="mt-1 list-disc pl-4">
@@ -234,17 +259,21 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               )}
             </div>
           ))}
-          <Button size="sm" variant="ghost" className="-ml-3 mt-1" onClick={importer.clearReports}>
-            {t.dismiss}
-          </Button>
+          <IconButton
+            aria-label={t.dismiss}
+            size="sm"
+            tooltip={false}
+            className="absolute right-1 top-1"
+            onClick={importer.clearReports}
+          >
+            <X />
+          </IconButton>
         </div>
       )}
 
       {filters.view === "drafts" ? (
         <>
-          <p className="px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-muted">
-            {t.draftsCount(data.drafts.length)}
-          </p>
+          <p className="px-4 pb-1 pt-3 text-xs text-muted">{t.draftsCount(data.drafts.length)}</p>
           <ul className="flex-1 overflow-y-auto px-2 pb-3" aria-label={t.drafts}>
             {data.drafts.map((d) => (
               <li key={d.id}>
@@ -255,7 +284,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                   className="w-full rounded-md px-3 py-2 text-left hover:bg-raised aria-[current=true]:bg-raised"
                 >
                   <span className="block truncate text-sm text-fg">{d.subject}</span>
-                  <span className="mt-0.5 block truncate text-[11px] text-muted">
+                  <span className="mt-0.5 block truncate text-xs text-muted">
                     {t.toNotSent(d.to)}
                   </span>
                 </button>
@@ -268,13 +297,13 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
         </>
       ) : (
         <>
-          <div className="flex items-center justify-between px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-muted">
+          <div className="flex items-center justify-between px-4 pb-1 pt-3 text-xs text-muted">
             <span aria-live="polite">{data.all ? t.emails(shown.length) : t.loading}</span>
             {filters.view === "banished" && shown.length > 0 && (
               <Button
                 size="sm"
                 variant="ghost"
-                className="-mr-2 normal-case tracking-normal"
+                className="-mr-2"
                 onClick={() => void restore(shown.map((e) => e.id))}
               >
                 {t.restoreAll}
@@ -299,22 +328,22 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                   onClick={() => onSelect(e.id)}
                   aria-current={selectedId === e.id ? "true" : undefined}
                   className={cn(
-                    "group w-full rounded-md px-3 py-2 text-left transition-colors duration-150 hover:bg-raised/70 relative before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ecto before:opacity-0 before:transition-opacity before:duration-150 aria-[current=true]:before:opacity-100",
+                    "w-full rounded-md px-3 py-2 text-left transition-colors duration-100 hover:bg-raised",
                     "aria-[current=true]:bg-raised",
                   )}
                 >
                   <span className="flex items-baseline gap-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg group-aria-[current=true]:text-ecto">
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">
                       {sender(e, t.unknownSender)}
                     </span>
-                    <span className="shrink-0 text-[11px] text-muted">{listDate(e.date)}</span>
+                    <span className="shrink-0 text-xs text-muted">{listDate(e.date)}</span>
                   </span>
                   <span className="block truncate text-xs text-fg/90">{e.subject}</span>
                   {(e.category || e.labels.length > 0) && (
                     <span className="mt-1 flex flex-wrap gap-1">
                       {e.category && <CategoryBadge category={e.category} small />}
                       {e.labels.slice(0, 2).map((l) => (
-                        <Badge key={l} className="px-1.5 py-0 text-[10px]">
+                        <Badge key={l} className="px-1.5 py-0 text-xs">
                           {l}
                         </Badge>
                       ))}
@@ -350,27 +379,6 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
           )}
         </>
       )}
-
-      <nav aria-label={t.views} className="flex border-t border-line p-2">
-        {(
-          [
-            ["inbox", t.inbox, data.active.length],
-            ["drafts", t.drafts, data.drafts.length],
-            ["banished", t.banished, data.banished.length],
-          ] as const
-        ).map(([v, label, n]) => (
-          <Button
-            key={v}
-            size="sm"
-            variant="ghost"
-            className={cn("flex-1 whitespace-nowrap", filters.view === v && "bg-raised text-fg")}
-            aria-pressed={filters.view === v}
-            onClick={() => onFilters({ ...EMPTY_FILTERS, view: v })}
-          >
-            {label} <span className="text-muted">{n}</span>
-          </Button>
-        ))}
-      </nav>
     </div>
   );
 });

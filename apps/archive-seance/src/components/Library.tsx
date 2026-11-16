@@ -4,12 +4,18 @@ import {
   Button,
   GhostItem,
   GhostList,
+  IconButton,
   Input,
   PaneHeader,
+  Segmented,
+  Select,
   cn,
+  fieldClass,
   useT,
   useToast,
 } from "@seance/ui";
+import * as Popover from "@radix-ui/react-popover";
+import { CalendarDays, FileCheck2, X } from "lucide-react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import {
   CONVERSATIONS,
@@ -23,6 +29,7 @@ import { storage } from "../runtime";
 import type { ArchiveData, ImportState } from "../useArchive";
 import { useSearchIds } from "../useArchive";
 import { monthYear } from "./format";
+import { SourceIcon } from "./SourceIcon";
 
 const PAGE = 300;
 
@@ -115,15 +122,25 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
           disabled={filters.view === "banished"}
           onChange={(e) => set({ query: e.target.value })}
         />
+        <Segmented
+          label={t.views}
+          value={filters.view}
+          onChange={(view) => onFilters({ ...EMPTY_FILTERS, view })}
+          items={[
+            { value: "active", label: t.all, count: data.active.length },
+            { value: "banished", label: t.banished, count: data.banished.length },
+          ]}
+        />
         <div className="flex gap-2">
           <label className="sr-only" htmlFor="filter-source">
             {t.source}
           </label>
-          <select
+          <Select
+            size="sm"
             id="filter-source"
             value={filters.source}
             onChange={(e) => set({ source: e.target.value as Filters["source"] })}
-            className="h-8 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
+            className="min-w-0 flex-1"
           >
             <option value="all">{t.allSources}</option>
             {SOURCES.map((s) => (
@@ -131,7 +148,40 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
                 {SOURCE_LABEL[s]}
               </option>
             ))}
-          </select>
+          </Select>
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <Button
+                size="sm"
+                variant={filters.from || filters.to ? "secondary" : "ghost"}
+                aria-label={t.dateRange}
+              >
+                <CalendarDays aria-hidden />
+                {filters.from || filters.to ? t.dateSet : t.date}
+              </Button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content
+                align="end"
+                sideOffset={6}
+                className="z-50 w-64 space-y-3 rounded-lg border border-line bg-raised p-3 shadow-popover"
+              >
+                <p className="text-meta font-medium text-fg">{t.dateRange}</p>
+                {(["from", "to"] as const).map((k) => (
+                  <label key={k} className="flex items-center gap-2 text-meta text-fg-2">
+                    <span className="w-8 shrink-0">{k === "from" ? t.from : t.to}</span>
+                    <input
+                      id={`filter-${k}`}
+                      type="date"
+                      value={filters[k]}
+                      onChange={(e) => set({ [k]: e.target.value })}
+                      className={cn(fieldClass, "h-7 text-meta [color-scheme:dark]")}
+                    />
+                  </label>
+                ))}
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
           {filtering && (
             <Button
               size="sm"
@@ -142,24 +192,6 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted">
-          <label htmlFor="filter-from">{t.from}</label>
-          <input
-            id="filter-from"
-            type="date"
-            value={filters.from}
-            onChange={(e) => set({ from: e.target.value })}
-            className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
-          />
-          <label htmlFor="filter-to">{t.to}</label>
-          <input
-            id="filter-to"
-            type="date"
-            value={filters.to}
-            onChange={(e) => set({ to: e.target.value })}
-            className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
-          />
-        </div>
       </div>
 
       {importer.progress && (
@@ -167,7 +199,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
           {t.importing(importer.progress.done, importer.progress.total)}
           <div className="mt-1.5 h-1 overflow-hidden rounded bg-raised">
             <div
-              className="h-full bg-ecto transition-[width]"
+              className="h-full bg-accent-solid transition-[width]"
               style={{
                 width: `${importer.progress.total ? (100 * importer.progress.done) / importer.progress.total : 0}%`,
               }}
@@ -177,12 +209,18 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
       )}
 
       {importer.reports && (
-        <div className="border-b border-line p-3 text-xs" role="status">
+        <div
+          className="relative mx-3 mt-3 rounded-lg border border-line bg-raised p-3 pr-9 text-xs"
+          role="status"
+        >
           {importer.reports.map((r) => (
             <div key={r.fileName} className="mb-2 last:mb-0">
-              <p className="font-medium text-fg">{r.fileName}</p>
+              <p className="flex items-center gap-1.5 truncate font-medium text-fg">
+                <FileCheck2 aria-hidden className="size-3.5 shrink-0 text-success" />
+                {r.fileName}
+              </p>
               {r.error ? (
-                <p className="text-blood">{r.error}</p>
+                <p className="text-danger">{r.error}</p>
               ) : (
                 r.counts && (
                   <p className="text-muted">
@@ -193,7 +231,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
               )}
               {r.skipped.length > 0 && (
                 <details className="mt-1 text-muted">
-                  <summary className="cursor-pointer text-candle">
+                  <summary className="cursor-pointer text-warn">
                     {t.skipped(r.skipped.length)}
                   </summary>
                   <ul className="mt-1 list-disc pl-4">
@@ -208,19 +246,25 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
               )}
             </div>
           ))}
-          <Button size="sm" variant="ghost" className="-ml-3 mt-1" onClick={importer.clearReports}>
-            {t.dismiss}
-          </Button>
+          <IconButton
+            aria-label={t.dismiss}
+            size="sm"
+            tooltip={false}
+            className="absolute right-1 top-1"
+            onClick={importer.clearReports}
+          >
+            <X />
+          </IconButton>
         </div>
       )}
 
-      <div className="flex items-center justify-between px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-muted">
+      <div className="flex items-center justify-between px-4 pb-1 pt-3 text-xs text-muted">
         <span aria-live="polite">{data.all ? t.chats(shown.length) : t.loading}</span>
         {filters.view === "banished" && shown.length > 0 && (
           <Button
             size="sm"
             variant="ghost"
-            className="-mr-2 normal-case tracking-normal"
+            className="-mr-2"
             onClick={() => void restore(shown.map((c) => c.id))}
           >
             {t.restoreAll}
@@ -240,23 +284,20 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
               onClick={() => onSelect(c.id)}
               aria-current={selectedId === c.id ? "true" : undefined}
               className={cn(
-                "group w-full rounded-md px-3 py-2 text-left transition-colors duration-150 hover:bg-raised/70 relative before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ecto before:opacity-0 before:transition-opacity before:duration-150 aria-[current=true]:before:opacity-100",
+                "w-full rounded-md px-3 py-2 text-left transition-colors duration-100 hover:bg-raised",
                 "aria-[current=true]:bg-raised",
               )}
             >
-              <span className="block truncate text-sm text-fg group-aria-[current=true]:text-ecto">
-                {c.title}
-              </span>
-              <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
+              <span className="block truncate text-sm font-medium text-fg">{c.title}</span>
+              <span className="mt-1 flex items-center gap-1.5 text-xs text-muted">
+                <SourceIcon source={c.source} />
                 {monthYear(c.createdAt)} · {SOURCE_LABEL[c.source]}
                 {c.summary && <span title={t.hasSummary}>· {t.summarized}</span>}
               </span>
               {c.tags.length > 0 && (
                 <span className="mt-1 flex flex-wrap gap-1">
                   {c.tags.slice(0, 3).map((tag) => (
-                    <Badge key={tag} className="px-1.5 py-0 text-[10px]">
-                      {tag}
-                    </Badge>
+                    <Badge key={tag}>{tag}</Badge>
                   ))}
                 </span>
               )}
@@ -288,21 +329,6 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
           </Button>
         </div>
       )}
-
-      <div className="border-t border-line p-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-full justify-between"
-          aria-pressed={filters.view === "banished"}
-          onClick={() =>
-            set({ view: filters.view === "banished" ? "active" : "banished", query: "" })
-          }
-        >
-          <span>{filters.view === "banished" ? t.backToLibrary : t.banished}</span>
-          {filters.view === "active" && <span className="text-muted">{data.banished.length}</span>}
-        </Button>
-      </div>
     </div>
   );
 });

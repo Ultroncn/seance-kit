@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { useRef, type ReactNode } from "react";
 import { ApprovalCard } from "./ApprovalCard";
 import { cn } from "./cn";
-import { Flame } from "./Flame";
+import { Ban, Check, CircleAlert, LoaderCircle, X } from "lucide-react";
 import { Caret, Thinking } from "./Thinking";
 import { formatDuration, formatJson } from "./format";
 import { getLocale, tNow, useT } from "./i18n";
@@ -35,32 +35,45 @@ export interface SeanceTimelineProps {
 
 const riskTone: Record<StepRisk, BadgeTone> = {
   read: "neutral",
-  write: "candle",
-  destructive: "blood",
+  write: "warn",
+  destructive: "danger",
 };
 type Kit = (typeof kitMessages)["en"];
 
-function nodeClass(entry: TimelineEntry): string {
-  if (entry.kind === "user") return "border border-muted bg-bg";
-  if (entry.kind === "message") return "bg-ecto shadow-[0_0_10px_var(--color-ecto)]";
-  if (entry.kind === "notice") return entry.tone === "error" ? "bg-blood" : "bg-muted";
-  if (entry.kind === "thinking")
-    return entry.streaming ? "border border-ecto/60 bg-bg" : "border border-line bg-raised";
+/**
+ * The mark on the thread beside an entry. Only steps get one, so each mark means "the agent did
+ * something here": a spinner while it runs, an amber dot while it waits for you, then a quiet
+ * check, cross or stop sign. Messages and thinking sit on the thread without a mark.
+ */
+function StepNode({ entry }: { entry: TimelineEntry | ReadRun }) {
+  if (entry.kind === "reads") return <Check aria-hidden className="size-3.5 text-muted" />;
+  if (entry.kind === "notice")
+    return entry.tone === "error" ? (
+      <CircleAlert aria-hidden className="size-3.5 text-danger" />
+    ) : null;
+  if (entry.kind !== "tool") return null;
   switch (entry.status) {
     case "running":
-      return "border border-ecto bg-bg";
+      return (
+        <LoaderCircle
+          aria-hidden
+          className="size-3.5 animate-spin text-accent motion-reduce:animate-none"
+        />
+      );
     case "awaiting_approval":
-      return entry.risk === "destructive"
-        ? "bg-blood shadow-[0_0_12px_var(--color-blood)]"
-        : "bg-candle shadow-[0_0_12px_var(--color-candle)]";
+      return (
+        <span
+          aria-hidden
+          data-pending-dot
+          className="size-2 rounded-full bg-warn motion-safe:animate-pulse-dot motion-reduce:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-warn)_35%,transparent)]"
+        />
+      );
     case "done":
-      return entry.risk === "destructive"
-        ? "bg-blood/80"
-        : "bg-ecto/80 shadow-[0_0_8px_var(--color-ecto)]";
+      return <Check aria-hidden className="size-3.5 text-muted" />;
     case "failed":
-      return "bg-blood";
+      return <X aria-hidden className="size-3.5 text-danger" />;
     case "rejected":
-      return "border border-line bg-raised";
+      return <Ban aria-hidden className="size-3.5 text-muted" />;
   }
 }
 
@@ -88,7 +101,7 @@ function JsonBlock({ label, value }: { label: string; value: unknown }) {
   return (
     <details className="group text-xs">
       <summary className="cursor-pointer select-none text-muted hover:text-fg">{label}</summary>
-      <pre className="mt-1.5 max-h-56 overflow-auto rounded-md bg-bg p-2 font-mono text-[11px] leading-relaxed text-fg">
+      <pre className="mt-1.5 max-h-56 overflow-auto rounded-md bg-bg p-2 font-mono text-xs leading-relaxed text-fg">
         {formatJson(value)}
       </pre>
     </details>
@@ -128,16 +141,17 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
           <span
             className={cn(
               "min-w-0 truncate text-sm",
-              step.status === "running" ? "text-ecto" : "text-fg",
+              step.status === "running" ? "text-fg" : "text-fg-2",
             )}
           >
             {label ?? step.name}
           </span>
-          {risk && (
-            <Badge tone={risk.tone} className="shrink-0 whitespace-nowrap px-1.5 py-0 text-[10px]">
-              {risk.label}
-            </Badge>
-          )}
+          {risk &&
+            (step.risk === "read" ? (
+              <span className="sr-only">{risk.label}</span>
+            ) : (
+              <Badge tone={risk.tone}>{risk.label}</Badge>
+            ))}
           {summary && (
             <span className="shrink-0 whitespace-nowrap text-xs text-muted">{summary}</span>
           )}
@@ -145,16 +159,16 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
             className={cn(
               "ml-auto shrink-0 text-xs",
               step.status === "failed"
-                ? "text-blood"
-                : step.status === "done"
-                  ? "text-ecto"
-                  : "text-muted",
+                ? "text-danger"
+                : step.status === "rejected" || restored
+                  ? "text-muted"
+                  : "sr-only",
             )}
           >
             {restored ? t.restored : t.status[step.status as ToolStepStatus]}
           </span>
           {step.durationMs !== undefined && (
-            <span className="shrink-0 font-mono text-[11px] text-muted">
+            <span className="shrink-0 font-mono text-xs text-muted">
               {formatDuration(step.durationMs)}
             </span>
           )}
@@ -166,13 +180,13 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
           </span>
         </summary>
         <div className="space-y-1.5 px-2 pb-2 pt-1">
-          {label && <code className="block font-mono text-[11px] text-muted">{step.name}</code>}
+          {label && <code className="block font-mono text-xs text-muted">{step.name}</code>}
           <JsonBlock label={t.input} value={step.input} />
           {step.status === "done" && <JsonBlock label={t.output} value={step.output} />}
         </div>
       </details>
       {step.error && step.status !== "rejected" && (
-        <p className="mt-1 text-xs text-blood">
+        <p className="mt-1 text-xs text-danger">
           {step.error.type}: {step.error.message}
         </p>
       )}
@@ -180,7 +194,7 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
         <Button
           variant="ghost"
           size="sm"
-          className="mt-1 -ml-3 text-candle hover:text-candle"
+          className="mt-1 -ml-3 text-warn hover:text-warn"
           onClick={() => props.onUndo?.(step.undoToken as string)}
         >
           <span aria-hidden>↶</span>
@@ -273,7 +287,7 @@ function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }
       );
     case "message":
       return (
-        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-fg">
+        <p className="whitespace-pre-wrap text-md leading-relaxed text-fg">
           {entry.text}
           {entry.streaming && <Caret />}
         </p>
@@ -284,7 +298,7 @@ function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }
       return (
         <p
           role={entry.tone === "error" ? "alert" : undefined}
-          className={cn("text-sm", entry.tone === "error" ? "text-blood" : "text-muted")}
+          className={cn("text-sm", entry.tone === "error" ? "text-danger" : "text-muted")}
         >
           {noticeText(entry, props.t)}
         </p>
@@ -340,17 +354,8 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="relative grid grid-cols-[1.5rem_minmax(0,1fr)] gap-3"
               >
-                <span aria-hidden className="flex justify-center pt-1.5">
-                  {entry.kind === "tool" && entry.status === "running" ? (
-                    <Flame className="-mt-1" />
-                  ) : (
-                    <span
-                      className={cn(
-                        "size-2.5 rounded-full",
-                        entry.kind === "reads" ? "bg-ecto/80" : nodeClass(entry),
-                      )}
-                    />
-                  )}
+                <span aria-hidden className="flex h-7 items-center justify-center">
+                  <StepNode entry={entry} />
                 </span>
                 {entry.kind === "reads" ? (
                   <ReadGroup steps={entry.steps} props={inner} />

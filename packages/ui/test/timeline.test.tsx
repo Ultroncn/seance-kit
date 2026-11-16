@@ -106,10 +106,12 @@ describe("SeanceTimeline", () => {
     expect(screen.queryByRole("list")).toBeNull();
   });
 
-  it("styles the pending card so reduced motion swaps the pulse for a static ring", () => {
-    renderTimeline({ entries: pendingRun });
+  it("marks a pending approval with a dot that pulses, or holds a static ring under reduced motion", () => {
+    const { container } = renderTimeline({ entries: pendingRun });
     const card = screen.getByRole("group", { name: /Allow banish_emails/ });
-    expect(card.className).toContain("motion-safe:animate-candle-pulse");
-    expect(card.className).toContain("motion-reduce:ring-2");
+    expect(card.className).not.toContain("animate");
+    const dot = container.querySelector("[data-pending-dot]");
+    expect(dot?.className).toContain("motion-safe:animate-pulse-dot");
+    expect(dot?.className).toContain("motion-reduce:shadow-");
   });
 });

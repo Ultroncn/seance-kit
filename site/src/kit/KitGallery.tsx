@@ -101,7 +101,7 @@ export function KitGallery() {
         mark={
           <span
             aria-hidden
-            className="size-2 rounded-full bg-ecto shadow-[0_0_12px_var(--color-ecto)]"
+            className="size-2 rounded-full bg-accent-solid shadow-[0_0_12px_var(--color-accent)]"
           />
         }
         actions={
@@ -122,7 +122,7 @@ export function KitGallery() {
                     type="button"
                     onClick={() => setSelected(title)}
                     aria-current={selected === title ? "true" : undefined}
-                    className="w-full rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-raised aria-[current=true]:bg-raised aria-[current=true]:text-ecto"
+                    className="w-full rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-raised aria-[current=true]:bg-raised aria-[current=true]:text-accent"
                   >
                     {title}
                   </button>
@@ -148,9 +148,9 @@ export function KitGallery() {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Badge>reads</Badge>
-                <Badge tone="candle">writes</Badge>
-                <Badge tone="blood">hides</Badge>
-                <Badge tone="ecto">{t.realProvider}</Badge>
+                <Badge tone="warn">writes</Badge>
+                <Badge tone="danger">hides</Badge>
+                <Badge tone="accent">{t.realProvider}</Badge>
               </div>
             </section>
             <section aria-labelledby="kit-fields">

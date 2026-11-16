@@ -1,14 +1,15 @@
 import { MockProvider } from "@seance/llm";
 import { useAgentRun } from "@seance/react";
+import { Settings } from "lucide-react";
 import { IndexedDbStorage, type StoredItem } from "@seance/storage";
 import {
   AgentPanel,
   AppShell,
-  Button,
   CommandPalette,
+  CommandTrigger,
   DemoBadge,
   EmptyState,
-  Kbd,
+  IconButton,
   PaneHeader,
   ProviderModeProvider,
   SeanceProvider,
@@ -69,12 +70,10 @@ function Workspace() {
         actions={
           <>
             <DemoBadge onClick={() => setSettingsOpen(true)} />
-            <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
-              {t.commands} <Kbd>⌘K</Kbd>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
-              {t.settings}
-            </Button>
+            <CommandTrigger onOpen={() => setPaletteOpen(true)} />
+            <IconButton aria-label={t.settings} onClick={() => setSettingsOpen(true)}>
+              <Settings />
+            </IconButton>
           </>
         }
         library={

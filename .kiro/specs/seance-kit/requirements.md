@@ -74,7 +74,7 @@ The edge over rivals is UI polish and a reusable, tested agent core. We do not b
 7. Gmail OAuth is out of scope.
 
 ### R7. UI and design
-1. Both apps SHALL use the shared `packages/ui` design system and one dark "candlelit" theme.
+1. Both apps SHALL use the shared `packages/ui` design system and one dark theme (neutral surfaces, one indigo accent; see `.kiro/steering/design-language.md`).
 2. The apps SHALL be dark-theme only.
 3. The agent run SHALL render as a séance timeline: each tool call is a step showing name, input, output, duration and approval state.
 4. The apps SHALL provide a command palette (⌘K / Ctrl+K) and full keyboard navigation of primary flows.

@@ -2,83 +2,99 @@
  * Séance Kit design tokens. Single source of truth for color, type and motion.
  * Dark only ("candlelit"). See .kiro/steering/design-language.md.
  * Tailwind v4 turns these into utilities: bg-bg, bg-surface, text-fg, text-muted,
- * text-ecto, text-candle, text-blood, border-line, font-sans, font-mono, animate-candle-pulse.
+ * text-accent, text-warn, text-danger, border-line, font-sans, font-mono, animate-pulse-dot.
  */
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
 
 @theme {
-  --color-bg: #0b0a10;
-  --color-surface: #14121c;
-  --color-raised: #1d1a28;
-  --color-line: #2a2638;
-  /* Borders of inputs and other controls: at least 3:1 against bg and surface (WCAG 1.4.11). */
-  --color-edge: #6b6684;
-  --color-fg: #e8e6f0;
-  --color-muted: #9a96ad;
-  --color-ecto: #7cf2b6;
-  --color-candle: #f2b35e;
-  --color-blood: #e5636f;
-
+  /*
+   * Neutral dark surfaces, one indigo accent, and status colors that carry meaning only.
+   * Every text color meets 4.5:1 on every surface; field borders meet 3:1 (checked in tests).
+   */
+  --color-bg: #0a0a0b;
+  --color-surface: #111113;
+  --color-raised: #18181b;
+  /* Pressed fills and highlighted menu items, one step above raised. */
+  --color-surface-3: #212125;
+  --color-line: #26262b;
+  /* Borders of form fields: at least 3:1 against every surface (WCAG 1.4.11). */
+  --color-edge: #6e6e78;
+  --color-fg: #ededef;
+  /* Secondary text: labels and list meta that still matters. */
+  --color-fg-2: #b4b4bb;
+  /* Tertiary text: help, placeholders, timestamps. */
+  --color-muted: #8b8b94;
+  /* Disabled controls only, never for text that must be read. */
+  --color-disabled: #5f5f68;
+  /* Accent: light for text, borders and focus; solid for filled buttons with white text. */
+  --color-accent: #a5a8ff;
+  --color-accent-solid: #5b5bd6;
+  --color-accent-hover: #6868e0;
+  --color-accent-active: #4f4fc4;
+  --color-on-accent: #ffffff;
+  --color-accent-soft: #1b1b33;
+  /* Amber: waiting for approval, and Demo mode. Nothing else. */
+  --color-warn: #f5a524;
+  --color-warn-soft: #2a1f0b;
+  --color-warn-line: #5c4310;
+  /* Red: destructive actions and errors. */
+  --color-danger: #ef6368;
+  --color-danger-soft: #2d1416;
+  --color-success: #5bb96b;
   /* Self-hosted variable fonts (OFL-1.1), bundled by Vite. System fonts are the fallback. */
   --font-sans:
-    "Inter Variable", ui-sans-serif, "Segoe UI", system-ui, "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei UI",
+    "Microsoft YaHei", sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, "PingFang SC",
+    "Noto Sans Mono CJK SC", monospace;
 
   /*
-   * Looping animations carry meaning only: a pending approval, a running step, a flame, the
-   * landing hero. Reduced motion stops all of them (see the media query below).
+   * One type scale. Nothing below 12 px. Weights 400 / 500 / 600 only.
+   * xs 12 caption · meta 13 secondary · sm 14 UI · md 15 reading · lg 16 card titles ·
+   * xl 18 dialog titles · 2xl 24 reader titles · 3xl 32 section headings · 5xl/6xl display.
    */
-  --animate-candle-pulse: candle-pulse 1.8s ease-in-out infinite;
-  --animate-flicker: flicker 2.6s ease-in-out infinite;
-  --animate-breathe: breathe 5s ease-in-out infinite;
-  --animate-drift: drift 22s ease-in-out infinite alternate;
-  --animate-orbit: orbit 90s linear infinite;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.5;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.45;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.7;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.45;
+  --text-xl: 1.125rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 1.2;
+  --text-5xl: 3.5rem;
+  --text-5xl--line-height: 1.08;
+  --text-6xl: 4rem;
+  --text-6xl--line-height: 1.06;
+
+  /* Radii: 6 controls, 8 cards and menus, 12 dialogs and the composer. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 12px;
+
+  /* Elevation: popovers and menus, then dialogs and the palette. */
+  --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-dialog: 0 24px 64px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  /*
+   * Looping animations carry meaning only: the dot of a pending approval, the caret of streaming
+   * text, the sweep over "Thinking…". Reduced motion stops all of them (see the media query below).
+   */
+  --animate-pulse-dot: pulse-dot 1.8s ease-in-out infinite;
   --animate-caret: caret 1s steps(1) infinite;
-  @keyframes flicker {
-    0%,
-    100% {
-      transform: scale(1, 1) translateY(0);
-      opacity: 1;
-    }
-    22% {
-      transform: scale(0.94, 1.06) translateY(-0.5px);
-      opacity: 0.86;
-    }
-    48% {
-      transform: scale(1.03, 0.97) translateY(0.4px);
-      opacity: 1;
-    }
-    71% {
-      transform: scale(0.97, 1.04) translateY(-0.3px);
-      opacity: 0.92;
-    }
-  }
-  @keyframes breathe {
-    0%,
-    100% {
-      opacity: 0.7;
-      transform: scale(0.96);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.04);
-    }
-  }
-  @keyframes drift {
-    from {
-      transform: translate3d(-4%, -2%, 0) scale(1);
-    }
-    to {
-      transform: translate3d(5%, 3%, 0) scale(1.12);
-    }
-  }
-  @keyframes orbit {
-    to {
-      transform: rotate(360deg);
-    }
-  }
   --animate-shimmer: shimmer 2.2s linear infinite;
   @keyframes shimmer {
     from {
@@ -94,13 +110,13 @@
     }
   }
 
-  @keyframes candle-pulse {
+  @keyframes pulse-dot {
     0%,
     100% {
-      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-candle) 40%, transparent);
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-warn) 40%, transparent);
     }
     50% {
-      box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-candle) 0%, transparent);
+      box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-warn) 0%, transparent);
     }
   }
 }
@@ -121,9 +137,26 @@ body {
   min-height: 100vh;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-ecto);
+/*
+ * Focus: buttons, links, tabs and rows get a ring outside their edge. Fields change their border
+ * and show a soft halo instead (see primitives). Menu items, palette rows and containers that are
+ * focused by script show no ring: their highlight or content carries the focus.
+ */
+:where(a, button, summary, [role="tab"], [role="radio"], [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+:where(
+  input,
+  textarea,
+  select,
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="option"],
+  [cmdk-input]
+):focus-visible,
+[data-focus-container]:focus-visible {
+  outline: none;
 }
 
 /* Code must read exactly as typed: no "=>" turning into an arrow glyph. */
@@ -134,7 +167,7 @@ kbd {
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--color-ecto) 30%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 30%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -166,4 +199,22 @@ kbd {
     -webkit-text-fill-color: currentColor;
     background: none;
   }
+}
+
+/* Chinese reads better with a little more air and no letter-spacing. */
+:lang(zh) {
+  letter-spacing: 0;
+}
+:lang(zh) :where(p, li, dd, blockquote) {
+  line-height: 1.75;
+}
+:where(h1, h2, h3) {
+  text-wrap: balance;
+}
+:where(p) {
+  text-wrap: pretty;
+}
+.tabular,
+time {
+  font-variant-numeric: tabular-nums;
 }

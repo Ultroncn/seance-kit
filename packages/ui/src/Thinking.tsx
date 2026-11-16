@@ -9,7 +9,7 @@ export function Caret() {
   return (
     <span
       aria-hidden
-      className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[0.2em] rounded-full bg-ecto motion-safe:animate-caret"
+      className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[0.2em] rounded-full bg-accent-solid motion-safe:animate-caret"
     />
   );
 }

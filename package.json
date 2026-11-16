@@ -16,7 +16,8 @@
     "test": "vitest run",
     "check:kiro": "node scripts/check-kiro-not-ignored.mjs",
     "e2e": "playwright test",
-    "new:app": "node scripts/new-app.mjs"
+    "new:app": "node scripts/new-app.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4",

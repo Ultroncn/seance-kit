@@ -35,6 +35,8 @@ export const archiveMessages = defineMessages(
       "Drop a ChatGPT or Claude export here: the .zip, or the conversations.json inside it. Markdown and text chats work too. Everything stays in this browser.",
     // Library
     library: "Library",
+    all: "All",
+    views: "Views",
     banished: "Banished",
     import: "Import",
     searchChats: "Search chats",
@@ -44,6 +46,9 @@ export const archiveMessages = defineMessages(
     clear: "Clear",
     from: "From",
     to: "to",
+    date: "Date",
+    dateSet: "Dates set",
+    dateRange: "Date range",
     importing: (done: number, total: number) => `Importing ${done} of ${total}…`,
     importCounts: (added: number, updated: number, unchanged: number) =>
       `${added} new ${plural(added, "chat", "chats")}, ${updated} updated, ${unchanged} already here.`,
@@ -143,6 +148,8 @@ export const archiveMessages = defineMessages(
     emptyText:
       "把 ChatGPT 或 Claude 的导出文件拖到这里：整个 .zip，或其中的 conversations.json。Markdown 和纯文本对话也可以。所有内容都只留在本浏览器中。",
     library: "资料库",
+    all: "全部",
+    views: "视图",
     banished: "已放逐",
     import: "导入",
     searchChats: "搜索对话",
@@ -152,6 +159,9 @@ export const archiveMessages = defineMessages(
     clear: "清除",
     from: "从",
     to: "到",
+    date: "日期",
+    dateSet: "已设日期",
+    dateRange: "日期范围",
     importing: (done: number, total: number) => `正在导入 ${done} / ${total}…`,
     importCounts: (added: number, updated: number, unchanged: number) =>
       `新增 ${added} 个对话，更新 ${updated} 个，${unchanged} 个已存在。`,

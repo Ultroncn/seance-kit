@@ -140,7 +140,10 @@ test("Banished view restores chats banished from the reader", async ({ page }) =
   await expect(banished).toHaveCount(1);
   await page.getByRole("button", { name: "Restore all" }).click();
   await expect(banished).toHaveCount(0);
-  await page.getByRole("button", { name: "← Back to library" }).click();
+  await page
+    .getByRole("navigation", { name: "Views" })
+    .getByRole("button", { name: /^All/ })
+    .click();
   await expect(chats(page)).toHaveCount(12);
 });
 

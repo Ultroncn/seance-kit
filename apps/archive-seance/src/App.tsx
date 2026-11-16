@@ -1,11 +1,12 @@
 import { useAgentRun } from "@seance/react";
+import { Settings } from "lucide-react";
 import {
   AppShell,
-  Button,
   CommandPalette,
+  CommandTrigger,
   DemoBadge,
   EmptyState,
-  Kbd,
+  IconButton,
   ProviderModeProvider,
   SeanceProvider,
   SettingsDialog,
@@ -203,21 +204,13 @@ function Workspace() {
     <>
       <AppShell
         title={t.appTitle}
-        mark={
-          <span
-            aria-hidden
-            className="size-2 rounded-full bg-ecto shadow-[0_0_12px_var(--color-ecto)]"
-          />
-        }
         actions={
           <>
             <DemoBadge onClick={() => setSettingsOpen(true)} />
-            <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
-              {t.commands} <Kbd>⌘K</Kbd>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
-              {t.settings}
-            </Button>
+            <CommandTrigger onOpen={() => setPaletteOpen(true)} />
+            <IconButton aria-label={t.settings} onClick={() => setSettingsOpen(true)}>
+              <Settings />
+            </IconButton>
           </>
         }
         library={
@@ -243,7 +236,7 @@ function Workspace() {
               <p className="-mt-8 text-xs text-muted">
                 {t.tryDrop}{" "}
                 <a
-                  className="text-ecto underline underline-offset-4"
+                  className="text-accent underline underline-offset-4"
                   href={sampleUrl("chatgpt-conversations.json")}
                   download
                 >
@@ -287,9 +280,9 @@ function Workspace() {
       />
 
       {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm">
-          <div className="rounded-2xl border-2 border-dashed border-ecto/70 px-12 py-10 text-center">
-            <p className="text-lg font-semibold text-ecto">{t.dropTitle}</p>
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/85 backdrop-blur-[2px]">
+          <div className="rounded-2xl border-2 border-dashed border-accent/70 px-12 py-10 text-center">
+            <p className="text-lg font-semibold text-accent">{t.dropTitle}</p>
             <p className="mt-1 text-sm text-muted">{t.dropText}</p>
           </div>
         </div>

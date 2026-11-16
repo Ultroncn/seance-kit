@@ -64,7 +64,7 @@ export function AgentPane({ agent, isMock, byId, hasData, onManageProviders }: P
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={i} className="border-t border-line/60">
+                  <tr key={i} className="border-t border-line">
                     <td className="py-1 pr-2 text-fg">{mail(str(r.id))?.subject ?? str(r.id)}</td>
                     <td className="whitespace-nowrap py-1 pr-2 text-muted">
                       {(() => {
@@ -86,7 +86,7 @@ export function AgentPane({ agent, isMock, byId, hasData, onManageProviders }: P
         return {
           summary: t.approveDraft(mail(str(input.id))?.from.address ?? t.theSender),
           details: (
-            <blockquote className="whitespace-pre-wrap border-l-2 border-candle/60 pl-3 text-fg">
+            <blockquote className="whitespace-pre-wrap border-l-2 border-warn/60 pl-3 text-fg">
               {str(input.body)}
             </blockquote>
           ),

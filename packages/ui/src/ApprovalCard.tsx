@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { cn } from "./cn";
 import { formatJson } from "./format";
 import { useT } from "./i18n";
 import { kitMessages } from "./messages";
-import { Button } from "./primitives";
+import { ChevronRight } from "lucide-react";
+import { Badge, Button, Kbd } from "./primitives";
 import type { StepRisk } from "./timeline-types";
 
 export interface ApprovalCardProps {
@@ -24,9 +24,9 @@ export interface ApprovalCardProps {
 }
 
 /**
- * The approval gate. Amber for writes, blood for destructive actions. Pulses gently while it
- * waits, or shows a static ring when the user prefers reduced motion. Focus moves to the card,
- * not to the Allow button, so a stray Enter never approves anything.
+ * The approval gate: one quiet card with an amber edge. Destructive actions say so with a red
+ * badge; Allow is always the primary action. The pending dot beside it in the timeline pulses,
+ * the card does not. Focus moves to the card, not to Allow, so a stray Enter never approves.
  */
 export function ApprovalCard({
   toolName,
@@ -45,7 +45,7 @@ export function ApprovalCard({
   const destructive = risk === "destructive";
 
   useEffect(() => {
-    if (autoFocus) ref.current?.focus({ preventScroll: false });
+    if (autoFocus) ref.current?.focus({ preventScroll: true });
   }, [autoFocus]);
 
   return (
@@ -54,34 +54,33 @@ export function ApprovalCard({
       tabIndex={-1}
       role="group"
       aria-labelledby={titleId}
+      data-focus-container
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
           onReject();
         }
       }}
-      className={cn(
-        "rounded-lg border bg-raised p-4 outline-none",
-        "motion-safe:animate-candle-pulse motion-reduce:ring-2",
-        destructive
-          ? "border-blood/60 motion-reduce:ring-blood/40"
-          : "border-candle/60 motion-reduce:ring-candle/40",
-        "focus-visible:ring-2 focus-visible:ring-ecto",
-      )}
+      className="rounded-lg border border-warn-line bg-surface p-4 outline-none"
     >
-      <p id={titleId} className="text-sm font-semibold">
-        <span className={destructive ? "text-blood" : "text-candle"}>{t.allow}</span>{" "}
-        {label ? (
-          `${label}${t.question}`
-        ) : (
-          <code className="font-mono">
-            {toolName}
-            {t.question}
-          </code>
-        )}
-      </p>
-      {label && <p className="mt-0.5 font-mono text-[11px] text-muted">{toolName}</p>}
-      <p className="mt-1 text-sm text-muted">
+      <div className="flex items-start gap-2">
+        <p id={titleId} className="min-w-0 flex-1 text-sm font-semibold text-fg">
+          <span className="sr-only">{t.allow} </span>
+          {label ? (
+            `${label}${t.question}`
+          ) : (
+            <code className="font-mono">
+              {toolName}
+              {t.question}
+            </code>
+          )}
+        </p>
+        <Badge tone={destructive ? "danger" : "warn"}>
+          {destructive ? t.risk.destructive : t.needsApproval}
+        </Badge>
+      </div>
+      {label && <p className="mt-0.5 font-mono text-xs text-muted">{toolName}</p>}
+      <p className="mt-2 text-sm text-fg-2">
         {summary ?? (destructive ? t.approvalDestructive : t.approvalWrite)}
       </p>
       {details && (
@@ -90,25 +89,34 @@ export function ApprovalCard({
           tabIndex={0}
           role="region"
           aria-label={t.details}
-          className="mt-3 max-h-48 overflow-y-auto rounded text-sm"
+          className="mt-3 max-h-48 overflow-y-auto rounded-md bg-bg px-3 py-2 text-sm"
         >
           {details}
         </div>
       )}
-      <details className="mt-3 text-xs">
-        <summary className="cursor-pointer text-muted hover:text-fg">{t.exactInput}</summary>
-        <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-bg p-2 font-mono text-[11px] leading-relaxed text-fg">
+      <details className="group/input mt-3 text-xs">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-muted hover:text-fg [&::-webkit-details-marker]:hidden">
+          <ChevronRight
+            aria-hidden
+            className="size-3.5 transition-transform duration-100 group-open/input:rotate-90"
+          />
+          {t.exactInput}
+        </summary>
+        <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-bg p-2 font-mono text-xs leading-relaxed text-fg-2">
           {formatJson(input)}
         </pre>
       </details>
-      <div className="mt-4 flex gap-2">
-        <Button variant={destructive ? "danger" : "primary"} size="sm" onClick={onApprove}>
+      <div className="mt-4 flex items-center gap-2">
+        <Button variant="primary" size="sm" onClick={onApprove}>
           {t.allow}
         </Button>
         <Button variant="secondary" size="sm" onClick={onReject}>
           {t.reject}
         </Button>
-        <span className="ml-auto self-center text-[11px] text-muted">{t.escRejects}</span>
+        <span className="ml-auto flex items-center gap-1 text-xs text-muted">
+          <Kbd>Esc</Kbd>
+          {t.escRejects.replace(/^(按\s*)?Esc\s*/i, "")}
+        </span>
       </div>
     </div>
   );

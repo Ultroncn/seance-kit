@@ -87,7 +87,7 @@ export function CommandPalette({ open, onOpenChange, commands, placeholder }: Co
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-bg/70 backdrop-blur-[2px]" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]" />
         <Dialog.Content
           aria-describedby={undefined}
           className="fixed left-1/2 top-[18vh] z-50 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl shadow-black/60"
@@ -99,7 +99,7 @@ export function CommandPalette({ open, onOpenChange, commands, placeholder }: Co
             <div className="flex items-center gap-2 border-b border-line px-4">
               <span
                 aria-hidden
-                className="size-1.5 rounded-full bg-ecto shadow-[0_0_10px_var(--color-ecto)]"
+                className="size-1.5 rounded-full bg-accent-solid shadow-[0_0_10px_var(--color-accent)]"
               />
               <Command.Input
                 placeholder={placeholder ?? t.paletteSearch}
@@ -115,7 +115,7 @@ export function CommandPalette({ open, onOpenChange, commands, placeholder }: Co
                 <Command.Group
                   key={heading}
                   heading={heading || undefined}
-                  className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted"
+                  className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted"
                 >
                   {items.map((c) => (
                     <Command.Item

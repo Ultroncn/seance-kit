@@ -3,12 +3,17 @@ export const colorTokenNames = [
   "bg",
   "surface",
   "raised",
+  "surface-3",
   "line",
+  "edge",
   "fg",
+  "fg-2",
   "muted",
-  "ecto",
-  "candle",
-  "blood",
+  "accent",
+  "accent-solid",
+  "warn",
+  "danger",
+  "success",
 ] as const;
 
 export type ColorTokenName = (typeof colorTokenNames)[number];
@@ -19,14 +24,21 @@ export { SeanceProvider } from "./Provider";
 export {
   Badge,
   Button,
+  IconButton,
   Input,
   Kbd,
+  Select,
   TextArea,
   Tooltip,
+  fieldClass,
   type BadgeTone,
   type ButtonProps,
   type ButtonSize,
   type ButtonVariant,
+  type ControlSize,
+  type IconButtonProps,
+  type InputProps,
+  type SelectProps,
 } from "./primitives";
 export { AppShell, EmptyState, PaneHeader, type AppShellProps } from "./AppShell";
 export {
@@ -55,7 +67,9 @@ export { DemoBadge } from "./DemoBadge";
 export { SettingsDialog, isAllowedEndpoint, type SettingsDialogProps } from "./SettingsDialog";
 export { useProviderCommands } from "./providerCommands";
 export { ModelPicker, withModelChoice } from "./ModelPicker";
-export { Flame } from "./Flame";
+export { BrandMark } from "./BrandMark";
+export { CommandTrigger } from "./CommandTrigger";
+export { Segmented, type SegmentedItem } from "./Segmented";
 export { GhostItem, GhostList } from "./GhostList";
 export { ToastProvider, useToast, type ToastInput } from "./Toast";
 export { AgentPanel, type AgentPanelProps } from "./AgentPanel";

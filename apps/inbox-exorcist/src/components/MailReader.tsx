@@ -1,5 +1,6 @@
 import { banishItems, restoreItems, undoBanish } from "@seance/core";
-import { Badge, Button, EmptyState, TextArea, Tooltip, useT, useToast } from "@seance/ui";
+import { Badge, Button, EmptyState, Select, TextArea, Tooltip, useT, useToast } from "@seance/ui";
+import { EyeOff, Reply } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { getEmail, saveEmail } from "../domain/store";
 import { CATEGORIES, DRAFTS, EMAILS, type Category, type Draft, type Email } from "../domain/types";
@@ -30,7 +31,7 @@ function Body({ text }: { text: string }) {
             href={p}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            className="text-ecto underline underline-offset-2"
+            className="text-accent underline underline-offset-2"
           >
             {p}
           </a>
@@ -108,9 +109,9 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
   };
 
   return (
-    <article className="mx-auto max-w-3xl px-8 py-8" aria-labelledby="mail-subject">
+    <article className="mx-auto max-w-[720px] px-10 py-8" aria-labelledby="mail-subject">
       {e.banishedAt && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-blood/50 bg-raised px-4 py-3 text-sm">
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-line bg-danger-soft px-4 py-3 text-sm text-fg">
           <span className="flex-1">{t.banishedNote}</span>
           <Button size="sm" onClick={() => void restore()}>
             {t.restore}
@@ -122,7 +123,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
         <h2 id="mail-subject" className="text-2xl font-semibold leading-tight">
           {e.subject}
         </h2>
-        <dl className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+        <dl className="mt-4 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-meta">
           <dt className="text-muted">{t.from}</dt>
           <dd className="truncate">{formatAddress(e.from) || t.unknownSender}</dd>
           {e.to.length > 0 && (
@@ -139,7 +140,8 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
           )}
           <dt className="text-muted">{t.date}</dt>
           <dd>{fullDate(e.date)}</dd>
-          {e.mailbox && (
+          {/* The mailbox only matters when it is not already the recipient shown above. */}
+          {e.mailbox && !e.to.some((a) => a.address === e.mailbox) && (
             <>
               <dt className="text-muted">{t.mailboxLabel}</dt>
               <dd className="truncate">{e.mailbox}</dd>
@@ -147,30 +149,18 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
           )}
         </dl>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button variant="primary" size="sm" onClick={() => setWriting((w) => !w)}>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <Button variant="primary" onClick={() => setWriting((w) => !w)}>
+            <Reply aria-hidden />
             {t.writeDraft}
           </Button>
-          {!e.banishedAt && (
-            <Tooltip content={t.banishTip}>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-blood hover:text-blood"
-                onClick={() => void banish()}
-              >
-                {t.banish}
-              </Button>
-            </Tooltip>
-          )}
-          <label htmlFor="mail-category" className="ml-auto text-xs text-muted">
+          <label htmlFor="mail-category" className="sr-only">
             {t.categoryLabel}
           </label>
-          <select
+          <Select
             id="mail-category"
             value={e.category ?? ""}
             onChange={(ev) => void setCategory(ev.target.value)}
-            className="h-8 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
           >
             <option value="">{t.notSorted}</option>
             {CATEGORIES.map((c) => (
@@ -178,7 +168,15 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
                 {t.category[c]}
               </option>
             ))}
-          </select>
+          </Select>
+          {!e.banishedAt && (
+            <Tooltip content={t.banishTip}>
+              <Button variant="danger-ghost" className="ml-auto" onClick={() => void banish()}>
+                <EyeOff aria-hidden />
+                {t.banish}
+              </Button>
+            </Tooltip>
+          )}
         </div>
         {(e.category || e.labels.length > 0 || e.attachments > 0) && (
           <div className="mt-3 flex flex-wrap gap-1.5">
@@ -218,7 +216,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
             <Button size="sm" variant="ghost" onClick={() => setWriting(false)}>
               {t.cancel}
             </Button>
-            <span className="ml-auto text-[11px] text-muted">{t.neverSent}</span>
+            <span className="ml-auto text-xs text-muted">{t.neverSent}</span>
           </div>
         </section>
       )}
@@ -227,14 +225,14 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
         <section
           key={d.id}
           aria-label={t.draftAria(d.subject)}
-          className="mt-6 rounded-lg border border-ecto/40 bg-surface p-4"
+          className="mt-6 rounded-lg border border-accent/40 bg-surface p-4"
         >
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
+            <p className="text-xs font-semibold text-accent">
               {t.draftNotSent}
               {d.by === "demo" && t.byDemo}
             </p>
-            <span className="text-[11px] text-muted">{t.toAddr(d.to)}</span>
+            <span className="text-xs text-muted">{t.toAddr(d.to)}</span>
             <span className="ml-auto flex gap-1">
               <Button
                 size="sm"

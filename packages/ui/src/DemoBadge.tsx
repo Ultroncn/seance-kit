@@ -17,9 +17,9 @@ export function DemoBadge({ onClick }: { onClick?: () => void }) {
         type="button"
         onClick={onClick}
         data-testid="demo-badge"
-        className="inline-flex items-center gap-1.5 rounded-full border border-candle/50 bg-candle/10 px-2.5 py-1 text-xs font-semibold text-candle hover:bg-candle/20"
+        className="inline-flex items-center gap-1.5 rounded-full border border-warn/50 bg-warn/10 px-2.5 py-1 text-xs font-semibold text-warn hover:bg-warn/20"
       >
-        <span aria-hidden className="size-1.5 rounded-full bg-candle" />
+        <span aria-hidden className="size-1.5 rounded-full bg-warn" />
         {t.demoMode}
         <span className="sr-only">{t.demoSr}</span>
       </button>
