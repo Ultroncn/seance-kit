@@ -28,7 +28,7 @@ afterAll(async () => {
 const text = (r: unknown) => (r as { content: { text: string }[] }).content[0]!.text;
 
 describe("Archive Séance over MCP", () => {
-  it("imports a raw ChatGPT export into a data folder and serves the same six tools", async () => {
+  it("imports a raw ChatGPT export into a data folder and serves the same tools as the browser", async () => {
     const dataDir = await tempDir();
     const { registry, storage } = await prepare(archiveMcp, {
       dataDir,

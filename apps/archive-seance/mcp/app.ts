@@ -5,7 +5,7 @@ import { createArchiveSearch, importConversations } from "../src/domain/store";
 import { parseFile } from "../src/importers";
 import { ARCHIVE_SYSTEM_PROMPT, createArchiveRegistry } from "../src/tools";
 
-/** Archive Séance as an MCP server: the same six tools the browser agent uses. */
+/** Archive Séance as an MCP server: the same tools the browser agent uses. */
 export const archiveMcp: McpApp = {
   name: "archive-seance",
   version: "0.1.0",

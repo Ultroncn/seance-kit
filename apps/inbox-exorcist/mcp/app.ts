@@ -6,7 +6,7 @@ import type { NormalizedEmail } from "../src/domain/types";
 import { readEmails } from "../src/importers";
 import { INBOX_SYSTEM_PROMPT, createInboxRegistry } from "../src/tools";
 
-/** Inbox Exorcist as an MCP server: the same six tools, none of which can send mail. */
+/** Inbox Exorcist as an MCP server: the same tools the browser agent uses, none of which can send mail. */
 export const inboxMcp: McpApp = {
   name: "inbox-exorcist",
   version: "0.1.0",

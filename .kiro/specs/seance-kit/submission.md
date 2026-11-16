@@ -49,9 +49,9 @@ A local-first template for building AI agent apps in an afternoon, plus two apps
 
 *What's next.* Browser MCP client, semantic search, light mode.
 
-**Built with**: TypeScript, React, Vite, Tailwind, Radix, Dexie/IndexedDB, MiniSearch, zod, Model Context Protocol, Vitest, fast-check, Playwright, Cloudflare Pages, Kiro.
+**Built with**: TypeScript, React, Vite, Tailwind, Radix, Dexie/IndexedDB, MiniSearch, zod, Model Context Protocol, Vitest, fast-check, Playwright, Cloudflare Workers, Kiro.
 
-**Links**: live URL (Cloudflare Pages), GitHub `Ultroncn/seance-kit`, video, `KIRO_USAGE.md`.
+**Links**: live URL https://seance-kit.mask988888888.workers.dev/, GitHub `Ultroncn/seance-kit`, video, `KIRO_USAGE.md`.
 
 ## Pre-submit checklist
 

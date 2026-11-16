@@ -109,7 +109,7 @@ const kiro = [
   },
   {
     title: "MCP",
-    body: "Both apps ship an MCP server with the same tools, so Kiro can search, sort and draft from the chat.",
+    body: "Both apps ship an MCP server with the same tools as the browser agent, ready to add to Kiro.",
     href: `${REPO}/tree/main/packages/mcp-server`,
   },
   {

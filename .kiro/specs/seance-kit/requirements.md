@@ -26,7 +26,7 @@ The edge over rivals is UI polish and a reusable, tested agent core. We do not b
 1. The repository SHALL be public, contain a root `/.kiro` directory, and SHALL NOT list `.kiro` (or any file in it) in `.gitignore`.
 2. The repository SHALL contain two separate app folders: `apps/archive-seance` and `apps/inbox-exorcist`.
 3. The repository SHALL include an OSI-approved open-source license (MIT) at the root.
-4. A working public app URL SHALL be served from Cloudflare Pages.
+4. A working public app URL SHALL be served from Cloudflare (Workers static assets; first planned as Pages, see design.md section 12).
 5. A demo video under 3:00 and a Kiro-usage write-up (`KIRO_USAGE.md`) SHALL exist before submission.
 6. CI SHALL fail if `.kiro` is gitignored or missing.
 
@@ -102,10 +102,10 @@ The edge over rivals is UI polish and a reusable, tested agent core. We do not b
 1. Unit and property-based tests (Vitest + fast-check) SHALL cover the properties listed in design.md.
 2. Playwright SHALL run a smoke test on both apps and the landing page.
 3. CI (GitHub Actions) SHALL run typecheck, lint, test and build on every push and pull request.
-4. Cloudflare Pages SHALL deploy `main` automatically, and pull requests SHALL get preview URLs.
+4. Cloudflare SHALL deploy `main` automatically from the GitHub repo.
 
 ### R12. Deployment first
-1. The landing page and empty shells of both apps SHALL be deployed to Cloudflare Pages on scaffolding day, before any app feature work.
+1. The landing page and empty shells of both apps SHALL be deployed to Cloudflare on scaffolding day, before any app feature work.
 2. Every later milestone SHALL end with a deployed build.
 
 ## Stretch goals (cut from scope, not planned)

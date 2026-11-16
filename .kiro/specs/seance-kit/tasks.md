@@ -1,7 +1,7 @@
 # Séance Kit: Tasks
 
 Today is Nov 16, 2026. Submit Dec 3. Deadline Dec 4, 2:00 PM PT.
-Every milestone ends with a deployed Cloudflare Pages build.
+Every milestone ends with a deployed Cloudflare build.
 
 ## Schedule
 
@@ -96,9 +96,22 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 4.5 README "afternoon path" in under ten steps. (R10.3)
 - [x] 4.5a Shared `AgentPanel` in `packages/ui`, used by both apps and the template.
 - [x] 4.6 Landing page content: template story, tool-registry code walkthrough, app cards, Built with Kiro section, video slot (shown once VIDEO_URL is set in site/src/App.tsx), footer. (R8)
-- [x] 4.7 Full axe pass, keyboard walk-through, contrast audit. (R7.4, R7.6, R7.7) Axe with contrast runs on every main screen and open dialog. `e2e/keyboard.spec.ts` drives the primary flows with the keyboard only.
+- [x] 4.7 Full axe pass, keyboard walk-through, contrast audit. (R7.4, R7.6, R7.7) Axe with contrast runs on every main screen, open dialog and after a rejection (the review found dimmed rejected steps failing contrast; fixed). `e2e/keyboard.spec.ts` drives the primary flows with the keyboard only.
 - [x] 4.8 Performance pass on a large mbox and a large conversations.json. Results and limits in design.md section 12a.
-- [ ] 4.9 Deploy and verify.
+- [x] 4.9 Deploy and verify.
+
+## Review fixes (Nov 16)
+
+An independent review (four reviewer sub-agents, findings in `.shots/review-*.md`, not committed) found these. Each fix has a regression test that failed on the old code.
+
+- [x] R.1 Reset mid-run could corrupt the next conversation (HTTP 400 on real providers). Unique tool-call ids; Stop reports Aborted; finite step budget (NaN looped forever).
+- [x] R.2 Anthropic: no empty turns, same-role neighbours merged.
+- [x] R.3 Settings: keys and models kept per provider; https only (http for localhost); status stays; wipe-confirm focus.
+- [x] R.4 Archive: older exports never overwrite newer chats; zip junk and attachments skipped; filters before truncation; tags in any script; one import at a time; honest demo banish and summaries.
+- [x] R.5 Inbox: linear-time HTML to text (a hostile mail froze the tab); real mbox separators only; Reply-To; zip mbox in slices with a limit; fresh reads; current category in sort approvals; honest demo outside the sample.
+- [x] R.6 UI: rejected-step contrast, focus after decisions, announced replies, hover-paused toasts, palette ranking, 3:1 input borders; landing demo of the timeline.
+- [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
+- [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
 ## M5. Video, write-up, Devpost (Dec 1)
 

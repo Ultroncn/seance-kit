@@ -6,6 +6,8 @@ export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
+  // A test that only passes on retry fails the CI run: flaky tests hide real bugs.
+  failOnFlakyTests: Boolean(process.env.CI),
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
   use: { baseURL },
   // Serve the built dist/. Skipped when testing a deployed URL via BASE_URL.

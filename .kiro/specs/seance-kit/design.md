@@ -12,7 +12,7 @@
 | Search | MiniSearch, persisted to IndexedDB |
 | Email parsing | `postal-mime` (browser), custom streaming mbox splitter |
 | Tests | Vitest, fast-check, fake-indexeddb, Playwright, axe-core |
-| Hosting | Cloudflare Pages, one origin, static only |
+| Hosting | Cloudflare Workers static assets, one origin, static files plus a small SPA-fallback Worker |
 | CI | GitHub Actions |
 | License | MIT |
 
@@ -22,7 +22,6 @@
 .kiro/
   specs/seance-kit/        requirements.md, design.md, tasks.md, submission.md
   steering/                product, tech, structure, design-language, testing
-  settings/mcp.json        registers packages/mcp-server
 apps/
   archive-seance/
   inbox-exorcist/
@@ -38,6 +37,7 @@ templates/app/             starter copied by `pnpm new:app`
 scripts/                   build-all, serve-dist, new-app, check-kiro-not-ignored
 worker/                    Cloudflare Worker: per-app SPA fallback
 wrangler.jsonc             Cloudflare deploy config
+docs/kiro-mcp.json         Kiro MCP config, copied by the user to .kiro/settings/mcp.json
 LICENSE  README.md  KIRO_USAGE.md
 ```
 

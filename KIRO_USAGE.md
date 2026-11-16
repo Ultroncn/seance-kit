@@ -20,7 +20,7 @@ We skipped hooks on Nov 16. They are not required for submission. The same check
 
 ## MCP
 
-Both apps run as MCP servers (`packages/mcp-server`, plus `apps/*/mcp/`). They expose the same tool registry as the browser agent: six tools each, schemas derived from zod, risk mapped to MCP annotations. `docs/kiro-mcp.json` registers both with Kiro. Read tools are auto-approved, and Kiro asks before every write.
+Both apps run as MCP servers (`packages/mcp-server`, plus `apps/*/mcp/`). They expose the same tool registry as the browser agent: seven tools each (including `undo_banish`), schemas derived from zod, risk mapped to MCP annotations. `docs/kiro-mcp.json` registers both with Kiro. Read tools are auto-approved, and Kiro asks before every write.
 
 Setup: copy `docs/kiro-mcp.json` to `.kiro/settings/mcp.json`. Kiro blocks agents from writing there, so this step is manual. Then ask Kiro, for example, "use archive-seance to find my Lisbon chats". The servers start on the sample data. Pass your own export with `--import` (Settings → Export all data, or a raw `conversations.json` / `.mbox`).
 
@@ -67,3 +67,16 @@ Running the agent from React (events into the timeline, approval promises, stop,
 - **Numbers were matched with typo tolerance.** A performance check searching for "1234" found 1224, 1233, 1235 and more, so in real data "LX4821" would also find "LX4831". Fuzzy matching now applies to words only.
 - **Our own measurement was wrong once.** A 1.1 s inbox search turned out to overlap with the one-time list reload after a 30,000-message import. A CPU profile showed 163 ms. We fixed the measurement and recorded both numbers in design.md section 12a.
 - **Axe on the landing page** flagged code samples that scrolled but could not be focused. They are now focusable and labelled.
+
+### An independent review, run with Kiro sub-agents
+
+Before polishing the submission we asked four reviewer sub-agents, each with a clean context, to review one part of the code against the spec: platform, Archive, Inbox, and UI with tooling. They reported 40-odd findings with file and line, many reproduced with small scripts. The serious ones:
+
+- **Pressing "New séance" while an approval was pending** left an orphan tool result in the next conversation. Real providers then reject every later request with HTTP 400. The scripted Mock never checks this, so neither the demo nor e2e caught it.
+- **A saved Anthropic key filled the OpenAI-compatible form**, so Test or Save would send it to whatever base URL was typed there.
+- **Importing an older export replaced a newer copy** of the same chat.
+- **One hostile HTML email froze the tab.** The regex-based converter was quadratic; 273 KB took 1.1 s.
+- **Our CI check for `.kiro` could never fail**: `git check-ignore` ignores tracked files unless given `--no-index`.
+- **Deep links on the live site were redirected** to the app root, and our smoke test only looked at the heading.
+
+We fixed every high and medium finding the same way: first a test that fails on the old code, then the fix. The list is in `tasks.md` under "Review fixes". Two lessons: a scripted provider hides protocol bugs, so e2e now checks that the agent really uses the provider behind the badge; and a test must assert the thing it names (the deep-link test now checks the URL and the status code).
