@@ -1,0 +1,91 @@
+[
+  {
+    "id": "conv-a",
+    "title": "  Starter   questions ",
+    "create_time": 1555070000.5,
+    "update_time": 1555073600.25,
+    "current_node": "a1b",
+    "mapping": {
+      "root": { "id": "root", "message": null, "parent": null, "children": ["sys"] },
+      "sys": {
+        "id": "sys",
+        "parent": "root",
+        "children": ["u1"],
+        "message": {
+          "id": "sys",
+          "author": { "role": "system" },
+          "content": { "content_type": "text", "parts": [""] },
+          "metadata": { "is_visually_hidden_from_conversation": true }
+        }
+      },
+      "u1": {
+        "id": "u1",
+        "parent": "sys",
+        "children": ["a1", "a1b"],
+        "message": {
+          "id": "u1",
+          "author": { "role": "user" },
+          "create_time": 1555070001,
+          "content": {
+            "content_type": "multimodal_text",
+            "parts": [
+              { "content_type": "image_asset_pointer", "asset_pointer": "file-service://x" },
+              "Why does my starter smell like nail polish?\r\n"
+            ]
+          }
+        }
+      },
+      "a1": {
+        "id": "a1",
+        "parent": "u1",
+        "children": [],
+        "message": {
+          "id": "a1",
+          "author": { "role": "assistant" },
+          "create_time": 1555070010,
+          "content": { "content_type": "text", "parts": ["OLD BRANCH that was regenerated"] }
+        }
+      },
+      "a1b": {
+        "id": "a1b",
+        "parent": "u1",
+        "children": [],
+        "message": {
+          "id": "a1b",
+          "author": { "role": "assistant" },
+          "create_time": 1555070020,
+          "content": { "content_type": "text", "parts": ["It is hungry. Feed it more often."] }
+        }
+      }
+    }
+  },
+  { "title": "No id here", "mapping": {} },
+  {
+    "conversation_id": "conv-c",
+    "title": "",
+    "create_time": 1592700000,
+    "update_time": 1592700100,
+    "mapping": {
+      "n1": {
+        "id": "n1",
+        "parent": null,
+        "children": ["n2"],
+        "message": {
+          "author": { "role": "user" },
+          "create_time": 1592700000,
+          "content": { "content_type": "text", "parts": ["Show me code"] }
+        }
+      },
+      "n2": {
+        "id": "n2",
+        "parent": "n1",
+        "children": [],
+        "message": {
+          "author": { "role": "assistant" },
+          "create_time": 1592700050,
+          "content": { "content_type": "code", "language": "python", "text": "print(1)" }
+        }
+      }
+    }
+  }
+]
