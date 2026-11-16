@@ -1,13 +1,5 @@
 import type { AgentRunState } from "@seance/react";
-import {
-  Button,
-  EmptyState,
-  PaneHeader,
-  SeanceTimeline,
-  TextArea,
-  type ToolEntry,
-} from "@seance/ui";
-import { useState, type FormEvent } from "react";
+import { AgentPanel, type ToolEntry } from "@seance/ui";
 import { DEMO_PROMPTS } from "../demo/scripts";
 import { CATEGORY_LABEL, type Category, type Email } from "../domain/types";
 import { INBOX_TOOL_LABELS } from "../tools";
@@ -25,19 +17,10 @@ const strs = (v: unknown) =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
 export function AgentPane({ agent, isMock, byId, hasData }: Props) {
-  const [prompt, setPrompt] = useState("");
   const mail = (id: string) => byId.get(id);
   const line = (id: string) => {
     const e = mail(id);
     return e ? `${e.from.name || e.from.address}: ${e.subject}` : id;
-  };
-
-  const submit = (ev?: FormEvent) => {
-    ev?.preventDefault();
-    const text = prompt.trim();
-    if (!text || agent.busy) return;
-    setPrompt("");
-    void agent.run(text);
   };
 
   const describeApproval = (step: ToolEntry) => {
@@ -117,82 +100,26 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <PaneHeader
-        title="Séance"
-        actions={
-          agent.entries.length > 0 && (
-            <Button size="sm" variant="ghost" onClick={agent.reset} disabled={agent.busy}>
-              New séance
-            </Button>
-          )
-        }
-      />
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <SeanceTimeline
-          entries={agent.entries}
-          onApprove={agent.approve}
-          onReject={agent.reject}
-          onUndo={(t) => void agent.undo(t)}
-          undone={agent.undone}
-          toolLabels={INBOX_TOOL_LABELS}
-          describeApproval={describeApproval}
-          empty={
-            <EmptyState title="Exorcise your inbox">
-              The agent can search, read, sort, label, draft replies and banish mail. It asks before
-              changing anything and can never send email.
-            </EmptyState>
-          }
-        />
-      </div>
-
-      <div className="border-t border-line p-3">
-        <div className="mb-2 flex flex-wrap gap-1.5" role="group" aria-label="Suggested prompts">
-          {Object.values(DEMO_PROMPTS).map((p) => (
-            <button
-              key={p}
-              type="button"
-              disabled={agent.busy || !hasData}
-              onClick={() => void agent.run(p)}
-              className="rounded-full border border-line px-2.5 py-1 text-xs text-muted hover:border-ecto hover:text-fg disabled:opacity-50"
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-        {isMock && (
-          <p className="mb-2 text-[11px] text-muted">
-            Demo mode scripts these prompts. The tools, approvals and changes are real and run on
-            your mail.
-          </p>
-        )}
-        <form onSubmit={submit} className="flex items-end gap-2">
-          <label htmlFor="agent-prompt" className="sr-only">
-            Ask about your mail
-          </label>
-          <TextArea
-            id="agent-prompt"
-            rows={2}
-            value={prompt}
-            placeholder={hasData ? "Ask about your mail…" : "Load or import mail first"}
-            className="min-h-0 flex-1 resize-none"
-            onChange={(ev) => setPrompt(ev.target.value)}
-            onKeyDown={(ev) => {
-              if (ev.key === "Enter" && !ev.shiftKey && !ev.nativeEvent.isComposing) {
-                ev.preventDefault();
-                submit();
-              }
-            }}
-          />
-          {agent.busy ? (
-            <Button onClick={agent.stop}>Stop</Button>
-          ) : (
-            <Button type="submit" variant="primary" disabled={prompt.trim() === ""}>
-              Send
-            </Button>
-          )}
-        </form>
-      </div>
-    </div>
+    <AgentPanel
+      entries={agent.entries}
+      busy={agent.busy}
+      undone={agent.undone}
+      onRun={(p) => void agent.run(p)}
+      onApprove={agent.approve}
+      onReject={agent.reject}
+      onUndo={(t) => void agent.undo(t)}
+      onStop={agent.stop}
+      onReset={agent.reset}
+      suggestions={Object.values(DEMO_PROMPTS)}
+      isMock={isMock}
+      hasData={hasData}
+      toolLabels={INBOX_TOOL_LABELS}
+      describeApproval={describeApproval}
+      emptyTitle="Exorcise your inbox"
+      emptyText="The agent can search, read, sort, label, draft replies and banish mail. It asks before changing anything and can never send email."
+      promptLabel="Ask about your mail"
+      placeholder="Ask about your mail…"
+      placeholderNoData="Load or import mail first"
+    />
   );
 }

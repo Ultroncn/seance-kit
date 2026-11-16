@@ -54,3 +54,4 @@ export {
 export { DemoBadge } from "./DemoBadge";
 export { SettingsDialog, type SettingsDialogProps } from "./SettingsDialog";
 export { ToastProvider, useToast, type ToastInput } from "./Toast";
+export { AgentPanel, type AgentPanelProps } from "./AgentPanel";
