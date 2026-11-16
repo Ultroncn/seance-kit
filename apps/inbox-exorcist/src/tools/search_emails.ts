@@ -1,7 +1,7 @@
 import { defineTool, listActive } from "@seance/core";
 import { z } from "zod";
 import { CATEGORIES, EMAILS, type Email } from "../domain/types";
-import { formatAddress, snippetFor, type InboxDeps } from "./shared";
+import { formatAddress, normalizeLabel, snippetFor, type InboxDeps } from "./shared";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
@@ -53,19 +53,21 @@ export const searchEmails = ({ search }: InboxDeps) =>
       const query = i.query.trim();
       let items: Email[];
       if (query !== "") {
-        const hits = await search.search(query, { limit: 1000 });
-        const found = await Promise.all(hits.map((h) => storage.get<Email>(EMAILS, h.id)));
-        items = found.filter((e): e is Email => e !== undefined);
+        // Rank everything, then filter, then cut: category and label filters must see every match.
+        const hits = await search.search(query, { limit: 100_000, includeBanished: true });
+        const byId = new Map((await listActive<Email>(storage, EMAILS)).map((e) => [e.id, e]));
+        items = hits.map((h) => byId.get(h.id)).filter((e): e is Email => e !== undefined);
       } else {
         items = await listActive<Email>(storage, EMAILS);
       }
       const from = i.from?.toLowerCase();
+      const label = i.label ? normalizeLabel(i.label) : "";
       const filtered = items.filter((e) => {
         const d = e.date.slice(0, 10);
         return (
           (!i.category ||
             (i.category === "uncategorized" ? !e.category : e.category === i.category)) &&
-          (!i.label || e.labels.includes(i.label.toLowerCase())) &&
+          (!label || e.labels.includes(label)) &&
           (!from || `${e.from.name} ${e.from.address}`.toLowerCase().includes(from)) &&
           (!i.after || d >= i.after) &&
           (!i.before || d <= i.before)

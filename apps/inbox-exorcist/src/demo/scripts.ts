@@ -59,7 +59,12 @@ interface SearchOut {
   results: Hit[];
 }
 
+const inSample = (r: Hit) => r.id.replace(/^mid:/, "") in SAMPLE_CATEGORIES;
 const categoryOf = (r: Hit) => SAMPLE_CATEGORIES[r.id.replace(/^mid:/, "")] ?? guess(r);
+const GUESS_NOTE =
+  "Outside the sample inbox, demo mode only guesses from senders and subjects, so check these. A real model reads the mail.";
+/** The one email the scripted reply was written for. */
+const SAMPLE_DINNER = "mid:dinner-saturday@example.com";
 const outputs = <T>(ctx: MockStepContext, name: string) =>
   ctx.toolResults
     .filter((r) => r.name === name && !r.isError)
@@ -90,11 +95,14 @@ export const inboxScripts: MockScript[] = [
       (ctx) => {
         const out = outputs<{ updated: { category: Category }[] }>(ctx, "classify_emails")[0];
         if (!out) return { text: "Okay, I left the categories as they were." };
+        const guessed = (outputs<SearchOut>(ctx, "search_emails")[0]?.results ?? []).some(
+          (h) => !inSample(h),
+        );
         const counts = new Map<Category, number>();
         for (const u of out.updated) counts.set(u.category, (counts.get(u.category) ?? 0) + 1);
         const parts = [...counts].map(([c, n]) => `${n} ${CATEGORY_LABEL[c].toLowerCase()}`);
         return {
-          text: `Done: ${parts.join(", ")}. Use the category filter on the left to see each group.`,
+          text: `Done: ${parts.join(", ")}. Use the category filter on the left to see each group.${guessed ? ` ${GUESS_NOTE}` : ""}`,
         };
       },
     ],
@@ -109,8 +117,9 @@ export const inboxScripts: MockScript[] = [
         const waiting = hits.filter((h) => (h.category ?? categoryOf(h)) === "needs-reply");
         if (waiting.length === 0) return { text: "Nothing is waiting for a reply." };
         const list = waiting.map((h) => `• ${sender(h.from)}: “${h.subject}”`).join("\n");
+        const guessed = waiting.some((h) => !h.category && !inSample(h));
         return {
-          text: `${waiting.length} people are waiting on you:\n${list}\n\nAsk me to draft any of these.`,
+          text: `${waiting.length} people are waiting on you:\n${list}\n\nAsk me to draft any of these.${guessed ? `\n\n${GUESS_NOTE}` : ""}`,
         };
       },
     ],
@@ -122,6 +131,10 @@ export const inboxScripts: MockScript[] = [
       (ctx) => {
         const hit = outputs<SearchOut>(ctx, "search_emails")[0]?.results[0];
         if (!hit) return { text: "I couldn't find an email from Maya about dinner." };
+        if (hit.id !== SAMPLE_DINNER)
+          return {
+            text: "Demo mode only has a scripted reply for Maya's email in the sample inbox, so I won't draft one for real mail. Add your own key in Settings and a real model will write it.",
+          };
         return { toolCalls: [{ name: "read_email", input: { id: hit.id } }] };
       },
       (ctx) => {

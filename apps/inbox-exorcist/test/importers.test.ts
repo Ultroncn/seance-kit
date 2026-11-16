@@ -83,7 +83,7 @@ describe("mbox fixture", () => {
 describe("mbox splitter on sloppy files", () => {
   it("keeps an unescaped From line inside a body when it does not follow a blank line", () => {
     const text =
-      "From a@x\nSubject: one\n\nI agree.\nFrom here on, though, I disagree.\n\nFrom b@x\nSubject: two\n\nOk\n";
+      "From a@x Thu Jan  1 00:00:00 2024\nSubject: one\n\nI agree.\nFrom here on, though, I disagree.\n\nFrom b@x Fri Jan  2 10:30:00 2024\nSubject: two\n\nOk\n";
     const out = splitMbox(text);
     expect(out).toHaveLength(2);
     expect(out[0]).toContain("From here on, though, I disagree.");

@@ -1,5 +1,5 @@
 import { isBanished } from "@seance/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importEmails, type ImportCounts } from "./domain/store";
 import { DRAFTS, EMAILS, type Draft, type Email, type NormalizedEmail } from "./domain/types";
 import { ImportError, readEmails, type FileLike, type SkippedItem } from "./importers";
@@ -63,7 +63,8 @@ export function useSearchIds(query: string, version: number): string[] | null {
     let live = true;
     const t = setTimeout(() => {
       void searchReady
-        .then(() => search.search(q, { limit: 2000 }))
+        // Banished mail is filtered by the caller. Keep every hit so filters see all matches.
+        .then(() => search.search(q, { limit: 100_000, includeBanished: true }))
         .then((hits) => {
           if (live) setIds(hits.map((h) => h.id));
         });
@@ -94,7 +95,8 @@ export interface ImportState {
   busy: boolean;
   progress: ImportProgress | null;
   reports: FileReport[] | null;
-  importFiles: (files: FileLike[]) => Promise<void>;
+  /** False when nothing was imported because another import is still running. */
+  importFiles: (files: FileLike[]) => Promise<boolean>;
   clearReports: () => void;
 }
 
@@ -104,46 +106,60 @@ export function useImporter(onDone: () => void): ImportState {
   const [progress, setProgress] = useState<ImportProgress | null>(null);
   const [reports, setReports] = useState<FileReport[] | null>(null);
 
+  const running = useRef(false);
   const importFiles = useCallback(
     async (files: FileLike[]) => {
-      if (files.length === 0) return;
+      // One import at a time. Drag-and-drop or the palette can ask while one is running.
+      if (files.length === 0 || running.current) return false;
+      running.current = true;
       setBusy(true);
       setReports(null);
-      await searchReady;
       const out: FileReport[] = [];
-      for (const file of files) {
-        const skipped: SkippedItem[] = [];
-        let state: ImportProgress = { fileName: file.name, bytes: 0, total: file.size, added: 0 };
-        setProgress(state);
-        async function* emails(): AsyncGenerator<NormalizedEmail> {
-          for await (const ev of readEmails(file)) {
-            if (ev.kind === "email") yield ev.email;
-            else if (ev.kind === "skipped") skipped.push(ev.item);
-            else {
-              state = { ...state, bytes: ev.bytes, total: ev.total };
-              setProgress(state);
+      try {
+        await searchReady;
+        for (const file of files) {
+          const skipped: SkippedItem[] = [];
+          let state: ImportProgress = { fileName: file.name, bytes: 0, total: file.size, added: 0 };
+          setProgress(state);
+          async function* emails(): AsyncGenerator<NormalizedEmail> {
+            for await (const ev of readEmails(file)) {
+              if (ev.kind === "email") yield ev.email;
+              else if (ev.kind === "skipped") skipped.push(ev.item);
+              else {
+                state = { ...state, bytes: ev.bytes, total: ev.total };
+                setProgress(state);
+              }
             }
           }
+          try {
+            const counts = await importEmails(storage, search, emails(), (c) => {
+              state = { ...state, added: c.added };
+              setProgress(state);
+            });
+            out.push({ fileName: file.name, counts, skipped });
+          } catch (err) {
+            out.push({
+              fileName: file.name,
+              skipped,
+              error: err instanceof ImportError || err instanceof Error ? err.message : String(err),
+            });
+          }
         }
-        try {
-          const counts = await importEmails(storage, search, emails(), (c) => {
-            state = { ...state, added: c.added };
-            setProgress(state);
-          });
-          out.push({ fileName: file.name, counts, skipped });
-        } catch (err) {
+        await search.flush().catch((err: unknown) =>
           out.push({
-            fileName: file.name,
-            skipped,
-            error: err instanceof ImportError || err instanceof Error ? err.message : String(err),
-          });
-        }
+            fileName: "Search index",
+            skipped: [],
+            error: `Could not be saved: ${err instanceof Error ? err.message : String(err)}`,
+          }),
+        );
+      } finally {
+        running.current = false;
+        setProgress(null);
+        setReports(out);
+        setBusy(false);
+        onDone();
       }
-      await search.flush();
-      setProgress(null);
-      setReports(out);
-      setBusy(false);
-      onDone();
+      return true;
     },
     [onDone],
   );

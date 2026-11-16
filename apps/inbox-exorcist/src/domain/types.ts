@@ -33,6 +33,8 @@ export interface NormalizedEmail {
   from: Address;
   to: Address[];
   cc: Address[];
+  /** Where replies should go, when the sender set Reply-To. */
+  replyTo: Address[];
   subject: string;
   date: string;
   /** Plain text body. HTML-only mail is converted to text. */

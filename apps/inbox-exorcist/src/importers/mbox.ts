@@ -5,6 +5,13 @@
  * original bytes and charset for the MIME parser. The output does not depend on how the input is
  * chunked (property P4).
  */
+/**
+ * A real separator carries a weekday and a time: "From sender Thu Jan  1 00:00:00 2024",
+ * "From - Thu Jan 01 …" (Thunderbird) or "From 1789…@xxx Mon Jan 01 00:00:00 +0000 2024" (Takeout).
+ * A body line like "From here on, …" after a blank line is not one.
+ */
+const SEPARATOR = /^From \S+\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b.*\b\d{1,2}:\d{2}/;
+
 export class MboxSplitter {
   private rest = "";
   private current: string[] | null = null;
@@ -40,7 +47,12 @@ export class MboxSplitter {
 
   private line(line: string, out: string[]) {
     const bare = line.endsWith("\r") ? line.slice(0, -1) : line;
-    if (this.prevBlank && bare.startsWith("From ")) {
+    // The first message may start with any "From " line; later ones need a real separator.
+    if (
+      this.prevBlank &&
+      bare.startsWith("From ") &&
+      (this.current === null || SEPARATOR.test(bare))
+    ) {
       this.finish(out);
       this.current = [];
       this.prevBlank = false;

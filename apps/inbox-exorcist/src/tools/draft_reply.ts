@@ -1,7 +1,7 @@
 import { defineTool } from "@seance/core";
 import { z } from "zod";
 import { DRAFTS, type Draft } from "../domain/types";
-import { requireEmail } from "./shared";
+import { replyAddress, requireEmail } from "./shared";
 
 const input = z.object({
   id: z.string().min(1).describe("The email to reply to."),
@@ -38,7 +38,7 @@ export const draftReply = () =>
       const draft: Draft = {
         id: `draft:${id}:${at.getTime()}`,
         emailId: id,
-        to: e.from.address,
+        to: replyAddress(e),
         subject: replySubject(e.subject),
         body,
         createdAt: at.toISOString(),

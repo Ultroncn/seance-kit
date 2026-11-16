@@ -42,6 +42,7 @@ export async function parseMessage(bytes: Uint8Array): Promise<NormalizedEmail> 
     from: e.from,
     to: e.to,
     cc: e.cc,
+    replyTo: e.replyTo,
     subject: e.subject,
     date: e.date,
     text,
@@ -92,13 +93,20 @@ async function* readMbox(
   }
 }
 
-const bytesStream = (u8: Uint8Array) =>
-  new ReadableStream<Uint8Array>({
-    start(c) {
-      c.enqueue(u8);
-      c.close();
+/** Feed bytes to the splitter in 1 MB slices, so a large mbox inside a zip is never one huge string. */
+const bytesStream = (u8: Uint8Array) => {
+  let at = 0;
+  return new ReadableStream<Uint8Array>({
+    pull(c) {
+      if (at >= u8.length) return c.close();
+      c.enqueue(u8.subarray(at, Math.min(at + 1_048_576, u8.length)));
+      at += 1_048_576;
     },
   });
+};
+
+/** Zips are unpacked in memory. Past this size, ask for the .mbox inside instead. */
+export const MAX_ZIP_BYTES = 500 * 1_048_576;
 
 /**
  * Read emails from one file: `.mbox` (Google Takeout, Thunderbird, Apple Mail export), `.eml`,
@@ -115,12 +123,15 @@ export async function* readEmails(file: FileLike): AsyncGenerator<ReadEvent> {
   if (/\.zip$/i.test(name)) {
     let entries: Record<string, Uint8Array>;
     try {
+      if (file.size > MAX_ZIP_BYTES) throw new Error("too big");
       entries = unzipSync(new Uint8Array(await file.arrayBuffer()), {
         filter: (f) => /\.(mbox|eml)$/i.test(f.name),
       });
-    } catch {
+    } catch (err) {
       throw new ImportError(
-        `${name} could not be opened as a zip file. For a large Takeout zip, unzip it and drop the .mbox file.`,
+        file.size > MAX_ZIP_BYTES || (err instanceof Error && err.message === "too big")
+          ? `${name} is over ${MAX_ZIP_BYTES / 1_048_576} MB. Unzip it and drop the .mbox file inside, which streams.`
+          : `${name} could not be opened as a zip file. For a large Takeout zip, unzip it and drop the .mbox file.`,
       );
     }
     const list = Object.entries(entries);

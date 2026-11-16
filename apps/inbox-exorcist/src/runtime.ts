@@ -10,7 +10,11 @@ export const storage = new IndexedDbStorage({ name: "inbox-exorcist" });
 export const search = createInboxSearch(storage);
 export const registry = createInboxRegistry({ search });
 export const mock = new MockProvider({ scripts: inboxScripts });
-export const searchReady = search.load();
+/** Resolves once the saved search index is restored or rebuilt. Never rejects: the list must load. */
+export const searchReady: Promise<unknown> = search.load().catch((err: unknown) => {
+  console.error("Search index could not be loaded, rebuilding", err);
+  return search.rebuild().catch((e: unknown) => console.error("Search index rebuild failed", e));
+});
 
 if (typeof window !== "undefined") {
   window.addEventListener("pagehide", () => void search.flush());

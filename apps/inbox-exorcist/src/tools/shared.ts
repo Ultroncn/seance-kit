@@ -15,6 +15,10 @@ export async function requireEmail(storage: Storage, id: string): Promise<Email>
 
 export const formatAddress = (a: Address) => (a.name ? `${a.name} <${a.address}>` : a.address);
 
+/** Replies go to Reply-To when the sender set one, otherwise to the sender. */
+export const replyAddress = (e: Pick<Email, "from" | "replyTo">) =>
+  e.replyTo?.[0]?.address || e.from.address;
+
 /** Lower-case, hyphenated, letters and digits only. "Follow Up!" → "follow-up". */
 export function normalizeLabel(raw: string): string {
   return raw
@@ -23,9 +27,10 @@ export function normalizeLabel(raw: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
+    .replace(/[^\p{L}\p{N}-]/gu, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
+    .normalize("NFC")
     .slice(0, 32);
 }
 

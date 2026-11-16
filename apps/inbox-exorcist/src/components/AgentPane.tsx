@@ -54,6 +54,9 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
                     Email
                   </th>
                   <th scope="col" className="pb-1 font-medium">
+                    Now
+                  </th>
+                  <th scope="col" className="pb-1 font-medium">
                     Category
                   </th>
                 </tr>
@@ -62,6 +65,12 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
                 {rows.map((r, i) => (
                   <tr key={i} className="border-t border-line/60">
                     <td className="py-1 pr-2 text-fg">{mail(str(r.id))?.subject ?? str(r.id)}</td>
+                    <td className="py-1 pr-2 text-muted">
+                      {(() => {
+                        const now = mail(str(r.id))?.category;
+                        return now ? CATEGORY_LABEL[now] : "Not sorted";
+                      })()}
+                    </td>
                     <td className="py-1 text-fg">
                       {CATEGORY_LABEL[str(r.category) as Category] ?? str(r.category)}
                     </td>

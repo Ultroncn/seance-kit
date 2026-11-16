@@ -40,6 +40,7 @@ export interface RawEmail {
   from?: unknown;
   to?: unknown;
   cc?: unknown;
+  replyTo?: unknown;
   subject?: unknown;
   date?: unknown;
   text?: unknown;
@@ -58,6 +59,7 @@ export function normalizeEmail(raw: RawEmail): NormalizedEmail {
     from: normalizeAddress(raw.from),
     to: list(raw.to),
     cc: list(raw.cc),
+    replyTo: list(raw.replyTo),
     subject: subject === "" ? NO_SUBJECT : subject,
     date: toIso(raw.date) ?? EPOCH,
     text: normalizeBody(raw.text),

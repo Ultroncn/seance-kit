@@ -1,7 +1,7 @@
 import { banishItems, restoreItems, undoBanish } from "@seance/core";
 import { Badge, Button, EmptyState, TextArea, Tooltip, useToast } from "@seance/ui";
 import { useState, type ReactNode } from "react";
-import { saveEmail } from "../domain/store";
+import { getEmail, saveEmail } from "../domain/store";
 import {
   CATEGORIES,
   CATEGORY_LABEL,
@@ -13,7 +13,7 @@ import {
 } from "../domain/types";
 import { search, storage } from "../runtime";
 import { replySubject } from "../tools";
-import { formatAddress } from "../tools/shared";
+import { formatAddress, replyAddress } from "../tools/shared";
 import { CategoryBadge } from "./CategoryBadge";
 import { fullDate } from "./format";
 
@@ -65,7 +65,9 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
 
   const setCategory = async (value: string) => {
     const next = value === "" ? undefined : (value as Category);
-    const { category: _old, ...rest } = e;
+    // Read the stored copy first: the agent or a Banish may have changed it since this render.
+    const fresh = (await getEmail(storage, e.id)) ?? e;
+    const { category: _old, ...rest } = fresh;
     await saveEmail(
       storage,
       search,
@@ -96,7 +98,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
     await storage.put<Draft>(DRAFTS, {
       id: `draft:${e.id}:${now.getTime()}`,
       emailId: e.id,
-      to: e.from.address,
+      to: replyAddress(e),
       subject: replySubject(e.subject),
       body: text,
       createdAt: now.toISOString(),
@@ -197,7 +199,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
           className="mt-6 rounded-lg border border-line bg-surface p-4"
         >
           <label htmlFor="reply-body" className="text-xs font-medium">
-            Reply to {e.from.address}
+            Reply to {replyAddress(e)}
           </label>
           <TextArea
             id="reply-body"
