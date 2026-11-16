@@ -87,7 +87,14 @@ export class IndexedDbStorage implements Storage {
     const rows = await this.db.items.toArray();
     rows.sort((a, b) => compareIds(a.collection, b.collection) || compareIds(a.id, b.id));
     const out: Record<string, StoredItem[]> = {};
-    for (const row of rows) (out[row.collection] ??= []).push(cloneJson(row.data));
+    // A Map, not a plain object: collection names like "constructor" are object built-ins.
+    const groups = new Map<string, StoredItem[]>();
+    for (const row of rows) {
+      const list = groups.get(row.collection) ?? [];
+      list.push(cloneJson(row.data));
+      groups.set(row.collection, list);
+    }
+    for (const [name, list] of groups) out[name] = list;
     return toExportBlob(out);
   }
 

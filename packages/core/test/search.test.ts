@@ -231,3 +231,46 @@ describe("P6 search matches a brute-force oracle", () => {
     );
   });
 });
+
+describe("search review regressions", () => {
+  it("folds letters that have no accent mark to strip (ß, ø, ł, æ) and ligatures", async () => {
+    const s = new MemoryStorage();
+    await s.put("docs", {
+      id: "1",
+      text: "Straße 5, Sørensen, Łódź, Æsir, ﬁle",
+      updatedAt: "1",
+    });
+    const svc = makeService(s);
+    await svc.load();
+    for (const q of ["strasse", "sorensen", "lodz", "aesir", "file"]) {
+      expect((await svc.search(q, { fuzzy: 0 })).map((h) => h.id)).toEqual(["1"]);
+    }
+  });
+
+  it("saves the index in order, so the newest save always wins", async () => {
+    const s = new MemoryStorage();
+    const svc = new SearchService({
+      storage: s,
+      name: "docs",
+      collection: "docs",
+      fields: ["text"],
+      persistDebounceMs: 0,
+    });
+    await svc.load();
+    for (let i = 0; i < 20; i++) {
+      const item = { id: `d${i}`, text: `word${i}`, updatedAt: "1" };
+      await s.put("docs", item);
+      svc.index(item);
+      void svc.flush();
+    }
+    await svc.flush();
+    const next = new SearchService({
+      storage: s,
+      name: "docs",
+      collection: "docs",
+      fields: ["text"],
+      persistDebounceMs: 0,
+    });
+    expect(await next.load()).toBe("restored");
+  });
+});

@@ -47,22 +47,16 @@ export async function banishItems(
   now: Date,
 ): Promise<BanishResult> {
   const undoToken = newToken(now, collection, ids);
-  const banished: string[] = [];
+  const targets: StoredItem[] = [];
   const skipped: string[] = [];
   for (const id of new Set(ids)) {
     const item = await storage.get(collection, id);
-    if (!item || isBanished(item)) {
-      skipped.push(id);
-      continue;
-    }
-    await storage.put(collection, {
-      ...item,
-      banishedAt: now.toISOString(),
-      banishToken: undoToken,
-    });
-    banished.push(id);
+    if (!item || isBanished(item)) skipped.push(id);
+    else targets.push(item);
   }
+  const banished = targets.map((t) => t.id);
   if (banished.length > 0) {
+    // Record the batch first: if a write fails halfway, undo still restores what was hidden.
     const record: BanishRecord = {
       id: undoToken,
       collection,
@@ -70,6 +64,13 @@ export async function banishItems(
       at: now.toISOString(),
     };
     await storage.put(BANISH_LOG, record);
+  }
+  for (const item of targets) {
+    await storage.put(collection, {
+      ...item,
+      banishedAt: now.toISOString(),
+      banishToken: undoToken,
+    });
   }
   return { undoToken, banished, skipped };
 }

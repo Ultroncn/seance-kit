@@ -85,3 +85,22 @@ describe("banish and undo", () => {
     );
   });
 });
+
+describe("banish review regressions", () => {
+  it("records the undo batch before changing items, so a failure halfway can still be undone", async () => {
+    const s = new MemoryStorage();
+    for (const id of ["a", "b", "c"]) await s.put("chats", { id });
+    const realPut = s.put.bind(s);
+    let writes = 0;
+    s.put = async (collection, item) => {
+      if (collection === "chats" && ++writes === 2) throw new Error("disk full");
+      return realPut(collection, item);
+    };
+    await expect(banishItems(s, "chats", ["a", "b", "c"], NOW)).rejects.toThrow("disk full");
+    s.put = realPut;
+    const [log] = await s.list("banish_log");
+    expect(log).toBeDefined();
+    await undoBanish(s, log!.id);
+    expect((await listActive(s, "chats")).map((c) => c.id)).toEqual(["a", "b", "c"]);
+  });
+});

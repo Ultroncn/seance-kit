@@ -89,6 +89,17 @@ export function runStorageContract(
       await expect(s.get("things", "")).rejects.toThrow(TypeError);
     });
 
+    it("handles collection names that are also object built-ins", async () => {
+      for (const name of ["constructor", "toString", "hasOwnProperty"])
+        await s.put(name, { id: "x" });
+      const file = JSON.parse(await (await s.exportAll()).text());
+      expect(Object.keys(file.collections).sort()).toEqual([
+        "constructor",
+        "hasOwnProperty",
+        "toString",
+      ]);
+    });
+
     it("exportAll never includes secrets, and wipe removes them", async () => {
       await s.put("secrets", { id: "provider", apiKey: "sk-should-not-leak" });
       await s.put("notes", { id: "n1" });

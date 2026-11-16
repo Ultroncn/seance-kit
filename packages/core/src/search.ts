@@ -6,11 +6,36 @@ import { isBanished } from "./banish";
 export const SEARCH_INDEX_COLLECTION = "searchIndex";
 
 // 2: terms are lower-cased and accents are folded ("café" matches "cafe").
-const INDEX_FORMAT = 2;
+// 3: also folds ß, ø, ł, æ, œ and ligatures. Older saved indexes are rebuilt.
+const INDEX_FORMAT = 3;
 
 /** Lower-case and strip accents, at index time and at query time. */
+/** Letters that are not "base letter + accent", so stripping marks does not reach them. */
+const SPECIAL: Record<string, string> = {
+  ß: "ss",
+  ẞ: "ss",
+  ø: "o",
+  Ø: "o",
+  ł: "l",
+  Ł: "l",
+  æ: "ae",
+  Æ: "ae",
+  œ: "oe",
+  Œ: "oe",
+  đ: "d",
+  Đ: "d",
+  þ: "th",
+  Þ: "th",
+  ı: "i",
+};
+
 export function foldTerm(term: string): string {
-  return term.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  // NFKD also splits ligatures such as "ﬁ" into "fi".
+  return term
+    .replace(/[ßẞøØłŁæÆœŒđĐþÞı]/g, (c) => SPECIAL[c] ?? c)
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
 }
 
 export interface SearchServiceOptions {
@@ -229,7 +254,16 @@ export class SearchService {
     }, delay);
   }
 
-  private async persistNow(signature: string): Promise<void> {
+  private saving: Promise<unknown> = Promise.resolve();
+
+  /** Saves run one after another, so an older snapshot can never land after a newer one. */
+  private persistNow(signature: string): Promise<void> {
+    const run = this.saving.then(() => this.persistOnce(signature));
+    this.saving = run.catch(() => undefined);
+    return run;
+  }
+
+  private async persistOnce(signature: string): Promise<void> {
     const record: PersistedIndex = {
       id: this.options.name,
       format: INDEX_FORMAT,
