@@ -1,7 +1,7 @@
 import { useAgentRun } from "@seance/react";
 import { Settings } from "lucide-react";
 import {
-  AppShell,
+  BrandMark,
   CommandPalette,
   CommandTrigger,
   DemoBadge,
@@ -12,6 +12,7 @@ import {
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
+  kitMessages,
   usePaletteHotkey,
   useProviderCommands,
   useProviderMode,
@@ -36,8 +37,9 @@ const PANE_WIDTHS_KEY = "archive-seance-pane-widths";
 function Workspace() {
   const toast = useToast();
   const t = useT(archiveMessages);
+  const kit = useT(kitMessages);
   const prompts = useT(archiveDemoMessages).prompts;
-  const { leftWidth, rightWidth, saveWidths } = useResizablePaneWidths(PANE_WIDTHS_KEY);
+  const { leftWidth, rightWidth } = useResizablePaneWidths(PANE_WIDTHS_KEY);
 
   // The tab title follows the language too.
   useEffect(() => {
@@ -212,15 +214,15 @@ function Workspace() {
           href="#seance-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-raised focus:px-3 focus:py-2"
         >
-          {t.skipToContent}
+          {kit.skipToContent}
         </a>
         <header className="flex h-12 shrink-0 items-center gap-3 border-b border-line bg-bg px-3">
           <a
             href="/"
-            aria-label={t.home}
+            aria-label={kit.home}
             className="grid size-8 place-items-center rounded-md transition-colors duration-100 hover:bg-raised"
           >
-            {/* BrandMark would go here */}
+            <BrandMark />
           </a>
           <h1 className="text-sm font-semibold text-fg">{t.appTitle}</h1>
           <div className="ml-auto flex items-center gap-1.5">
@@ -290,49 +292,12 @@ function Workspace() {
           rightMinWidth={200}
           rightMaxWidth={500}
           labels={{
-            left: t.library,
-            center: t.content,
-            right: t.agent,
+            left: kit.library,
+            center: kit.content,
+            right: kit.agent,
           }}
         />
       </div>
-
-      <input
-        ref={fileInput}
-        type="file"
-        accept={ACCEPT}
-        multiple
-        hidden
-        data-testid="file-input"
-        onChange={(e) => {
-          const files = Array.from(e.target.files ?? []);
-          e.target.value = "";
-          void importer.importFiles(files);
-        }}
-      />
-
-      {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/85 backdrop-blur-[2px]">
-          <div className="rounded-2xl border-2 border-dashed border-accent/70 px-12 py-10 text-center">
-            <p className="text-lg font-semibold text-accent">{t.dropTitle}</p>
-            <p className="mt-1 text-sm text-muted">{t.dropText}</p>
-          </div>
-        </div>
-      )}
-
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} commands={commands} />
-      <SettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        exportName="archive-seance"
-        onAfterWipe={() => {
-          setSelectedId(null);
-          agent.reset();
-          void search.rebuild().then(data.refresh);
-        }}
-      />
-    </>
-  );
 
       <input
         ref={fileInput}

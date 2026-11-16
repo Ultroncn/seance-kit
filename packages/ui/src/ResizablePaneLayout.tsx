@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "./cn";
 
 interface ResizablePaneLayoutProps {
   /** Left pane content */
-  left: React.ReactNode;
+  left: ReactNode;
   /** Center pane content */
-  center: React.ReactNode;
+  center: ReactNode;
   /** Right pane content */
-  right: React.ReactNode;
+  right: ReactNode;
   /** Left pane min/max width in pixels */
   leftMinWidth?: number;
   leftMaxWidth?: number;
