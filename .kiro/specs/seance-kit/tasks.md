@@ -95,7 +95,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 4.4 `pnpm new:app` script. CI job generates an app, builds and tests it. (R10.2)
 - [x] 4.5 README "afternoon path" in under ten steps. (R10.3)
 - [x] 4.5a Shared `AgentPanel` in `packages/ui`, used by both apps and the template.
-- [ ] 4.6 Landing page content: template story, tool-registry code walkthrough, app cards, Built with Kiro section, video slot, footer. (R8)
+- [x] 4.6 Landing page content: template story, tool-registry code walkthrough, app cards, Built with Kiro section, video slot (shown once VIDEO_URL is set in site/src/App.tsx), footer. (R8)
 - [ ] 4.7 Full axe pass, keyboard walk-through, contrast audit. (R7.4, R7.6, R7.7)
 - [ ] 4.8 Performance pass on a large mbox and a large conversations.json.
 - [ ] 4.9 Deploy and verify.

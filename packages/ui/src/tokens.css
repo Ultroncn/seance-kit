@@ -57,6 +57,13 @@ body {
   outline-offset: 2px;
 }
 
+/* Code must read exactly as typed: no "=>" turning into an arrow glyph. */
+code,
+pre,
+kbd {
+  font-variant-ligatures: none;
+}
+
 ::selection {
   background: color-mix(in oklab, var(--color-ecto) 30%, transparent);
 }

@@ -4,6 +4,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.shots/
 *.log
 .DS_Store
 .env
