@@ -49,7 +49,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 });
 
 const fieldClass =
-  "w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-muted transition-colors duration-150 hover:border-muted focus-visible:border-ecto";
+  "w-full rounded-md border border-edge bg-surface px-3 text-sm text-fg placeholder:text-muted transition-colors duration-150 hover:border-muted focus-visible:border-ecto";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...rest }, ref) {

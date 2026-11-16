@@ -100,7 +100,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               id="filter-category"
               value={filters.category}
               onChange={(e) => set({ category: e.target.value as Filters["category"] })}
-              className="h-8 min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-xs text-fg"
+              className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
             >
               <option value="all">All categories</option>
               {CATEGORIES.map((c) => (
@@ -117,7 +117,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               id="filter-label"
               value={filters.label}
               onChange={(e) => set({ label: e.target.value })}
-              className="h-8 min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-xs text-fg"
+              className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
             >
               <option value="">All labels</option>
               {data.labels.map((l) => (

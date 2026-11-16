@@ -74,7 +74,7 @@ test("sort: one batch approval, then the category filter works and survives a re
   ).toHaveCount(19);
   await expectAccessible(page);
   await card.getByRole("button", { name: "Allow" }).click();
-  await expect(page.getByText(/^Done: /)).toBeVisible();
+  await expect(page.getByRole("list", { name: "Agent run" }).getByText(/^Done: /)).toBeVisible();
 
   await page.getByLabel("Category", { exact: true }).first().selectOption("needs-reply");
   await expect(emails(page)).toHaveCount(3);
@@ -120,7 +120,9 @@ test("drafts: the agent drafts a reply that is saved, never sent, and opens in t
   const card = page.getByRole("group", { name: /Allow Draft a reply/ });
   await expect(card).toContainText("It will not be sent.");
   await card.getByRole("button", { name: "Allow" }).click();
-  await expect(page.getByText(/Nothing was sent/)).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Agent run" }).getByText(/Nothing was sent/),
+  ).toBeVisible();
 
   await view(page, /Drafts 1/).click();
   await page
@@ -158,7 +160,9 @@ test("travel: labels flight and hotel mail, and the label filter finds them", as
       .getByRole("button", { name: "Allow" })
       .click();
   }
-  await expect(page.getByText(/Labelled 3 emails/)).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Agent run" }).getByText(/Labelled 3 emails/),
+  ).toBeVisible();
   await page.getByLabel("Label", { exact: true }).selectOption("travel");
   await expect(emails(page)).toHaveCount(3);
 });

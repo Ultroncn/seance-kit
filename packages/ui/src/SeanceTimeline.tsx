@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { ApprovalCard } from "./ApprovalCard";
 import { cn } from "./cn";
 import { formatDuration, formatJson } from "./format";
@@ -70,6 +70,8 @@ export function timelineStatus(
 ): string {
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i];
+    if (e?.kind === "message" && i === entries.length - 1)
+      return `Agent: ${e.text.length > 200 ? `${e.text.slice(0, 199)}…` : e.text}`;
     if (e?.kind !== "tool") continue;
     const name = labels[e.name] ?? e.name;
     if (e.status === "awaiting_approval") return `Waiting for your approval: ${name}`;
@@ -89,7 +91,9 @@ function JsonBlock({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-function ToolStep({ step, props }: { step: ToolEntry; props: SeanceTimelineProps }) {
+type InnerProps = SeanceTimelineProps & { onDecided: (decide: () => void) => void };
+
+function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
   const label = props.toolLabels?.[step.name];
   const risk = step.risk ? riskBadge[step.risk] : null;
   const restored = step.undoToken !== undefined && props.undone?.has(step.undoToken);
@@ -104,14 +108,14 @@ function ToolStep({ step, props }: { step: ToolEntry; props: SeanceTimelineProps
         input={step.input}
         summary={copy?.summary}
         details={copy?.details}
-        onApprove={() => props.onApprove(step.id)}
-        onReject={() => props.onReject(step.id)}
+        onApprove={() => props.onDecided(() => props.onApprove(step.id))}
+        onReject={() => props.onDecided(() => props.onReject(step.id))}
       />
     );
   }
 
   return (
-    <div className={cn("min-w-0", step.status === "rejected" && "opacity-70")}>
+    <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
         <code className="font-mono text-sm text-fg">{step.name}</code>
         {label && <span className="text-xs text-muted">{label}</span>}
@@ -157,7 +161,7 @@ function ToolStep({ step, props }: { step: ToolEntry; props: SeanceTimelineProps
   );
 }
 
-function EntryBody({ entry, props }: { entry: TimelineEntry; props: SeanceTimelineProps }) {
+function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }) {
   switch (entry.kind) {
     case "user":
       return (
@@ -187,6 +191,17 @@ function EntryBody({ entry, props }: { entry: TimelineEntry; props: SeanceTimeli
  * and replies. Pass `reduceTimeline` output from `@seance/core` as `entries`.
  */
 export function SeanceTimeline(props: SeanceTimelineProps) {
+  const listRef = useRef<HTMLOListElement>(null);
+  // The approval card disappears after a decision. Keep keyboard focus in the timeline instead
+  // of letting it fall to <body>. A new pending card takes focus itself.
+  const onDecided = (decide: () => void) => {
+    decide();
+    requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body || !active.isConnected) listRef.current?.focus();
+    });
+  };
+  const inner: InnerProps = { ...props, onDecided };
   const { entries, empty, toolLabels } = props;
   const status = timelineStatus(entries, toolLabels);
 
@@ -203,7 +218,12 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
             aria-hidden
             className="absolute bottom-4 left-[1.69rem] top-6 w-px bg-gradient-to-b from-line via-line to-transparent"
           />
-          <ol aria-label="Agent run" className="relative space-y-4 py-4 pl-4 pr-4">
+          <ol
+            ref={listRef}
+            tabIndex={-1}
+            aria-label="Agent run"
+            className="relative space-y-4 py-4 pl-4 pr-4 outline-none"
+          >
             {entries.map((entry) => (
               <motion.li
                 key={entry.id}
@@ -214,7 +234,7 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
                 <span aria-hidden className="flex justify-center pt-1.5">
                   <span className={cn("size-2.5 rounded-full", nodeClass(entry))} />
                 </span>
-                <EntryBody entry={entry} props={props} />
+                <EntryBody entry={entry} props={inner} />
               </motion.li>
             ))}
           </ol>

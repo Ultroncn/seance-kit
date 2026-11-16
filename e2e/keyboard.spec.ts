@@ -76,7 +76,13 @@ test("archive: load, search, open, ask, approve and undo with the keyboard only"
   await expect(card).toBeVisible();
   await tabTo(page, /^Allow$/);
   await page.keyboard.press("Enter");
-  await expect(page.getByText(/^Banished “.+” and “.+”\. Nothing was deleted/)).toBeVisible();
+  // The card is gone; focus stays in the timeline instead of falling to <body>.
+  await expect(page.getByRole("list", { name: "Agent run" })).toBeFocused();
+  await expect(
+    page
+      .getByRole("list", { name: "Agent run" })
+      .getByText(/^Banished “.+” and “.+”\. Nothing was deleted/),
+  ).toBeVisible();
 
   await tabTo(page, /^Undo$/, 60);
   await page.keyboard.press("Enter");
@@ -103,7 +109,9 @@ test("inbox: Escape rejects a pending approval", async ({ page }) => {
   const card = page.getByRole("group", { name: /Allow Hide emails/ });
   await expect(card).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(page.getByText("Okay, I kept them all.")).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Agent run" }).getByText("Okay, I kept them all."),
+  ).toBeVisible();
   await expect(page.getByRole("list", { name: "Emails" }).getByRole("listitem")).toHaveCount(18);
 });
 

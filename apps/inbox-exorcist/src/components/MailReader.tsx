@@ -172,7 +172,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
             id="mail-category"
             value={e.category ?? ""}
             onChange={(ev) => void setCategory(ev.target.value)}
-            className="h-8 rounded-md border border-line bg-surface px-2 text-xs text-fg"
+            className="h-8 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
           >
             <option value="">Not sorted</option>
             {CATEGORIES.map((c) => (

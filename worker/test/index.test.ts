@@ -18,8 +18,7 @@ function makeEnv(files: Record<string, string>) {
 const files = {
   "/": "landing",
   "/archive/": "archive-shell",
-  "/archive/index.html": "archive-shell",
-  "/inbox/index.html": "inbox-shell",
+  "/inbox/": "inbox-shell",
   "/archive/assets/app.js": "js",
 };
 

@@ -111,7 +111,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             id="filter-source"
             value={filters.source}
             onChange={(e) => set({ source: e.target.value as Filters["source"] })}
-            className="h-8 flex-1 rounded-md border border-line bg-surface px-2 text-xs text-fg"
+            className="h-8 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
           >
             <option value="all">All sources</option>
             {SOURCES.map((s) => (
@@ -137,7 +137,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             type="date"
             value={filters.from}
             onChange={(e) => set({ from: e.target.value })}
-            className="h-8 min-w-0 flex-1 rounded-md border border-line bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
+            className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
           />
           <label htmlFor="filter-to">to</label>
           <input
@@ -145,7 +145,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             type="date"
             value={filters.to}
             onChange={(e) => set({ to: e.target.value })}
-            className="h-8 min-w-0 flex-1 rounded-md border border-line bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
+            className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
           />
         </div>
       </div>

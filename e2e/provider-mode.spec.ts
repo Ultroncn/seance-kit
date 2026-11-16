@@ -51,6 +51,15 @@ for (const app of [
       await dialog.getByRole("button", { name: "Save" }).click();
       await expect(badge(page)).toHaveCount(0);
 
+      // The agent must use the provider behind the badge: its reply comes from the fake endpoint.
+      await page.keyboard.press("Escape");
+      await page.getByRole("textbox", { name: /Ask/ }).fill("Hello from the test");
+      await page.getByRole("button", { name: "Send" }).click();
+      await expect(page.getByRole("list", { name: "Agent run" })).toContainText("OK");
+      await expect(page.getByRole("list", { name: "Agent run" })).not.toContainText(
+        "Demo mode only understands",
+      );
+
       await page.reload();
       await expect(page.getByRole("heading", { level: 1, name: app.title })).toBeVisible();
       await expect(badge(page)).toHaveCount(0);

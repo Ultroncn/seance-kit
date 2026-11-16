@@ -12,6 +12,8 @@
   --color-surface: #14121c;
   --color-raised: #1d1a28;
   --color-line: #2a2638;
+  /* Borders of inputs and other controls: at least 3:1 against bg and surface (WCAG 1.4.11). */
+  --color-edge: #6b6684;
   --color-fg: #e8e6f0;
   --color-muted: #9a96ad;
   --color-ecto: #7cf2b6;

@@ -89,7 +89,9 @@ test("agent summaries wait for approval, then show in the reader", async ({ page
     await expectAccessible(page);
     await card.getByRole("button", { name: "Allow" }).click();
   }
-  await expect(page.getByText(/Saved summaries for/)).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Agent run" }).getByText(/Saved summaries for/),
+  ).toBeVisible();
   await openChat(page, /^Sourdough starter keeps dying/);
   await expect(page.getByRole("region", { name: "Summary and tags" })).toContainText("acetone");
 });
@@ -103,7 +105,10 @@ test("rejecting changes nothing and the agent says so", async ({ page }) => {
       .getByRole("button", { name: "Reject" })
       .click();
   }
-  await expect(page.getByText("You rejected 2 summaries")).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Agent run" }).getByText("You rejected 2 summaries"),
+  ).toBeVisible();
+  await expectAccessible(page); // Rejected steps must still meet contrast.
   await openChat(page, /^Sourdough starter keeps dying/);
   await expect(page.getByRole("region", { name: "Summary and tags" })).toHaveCount(0);
 });
@@ -152,7 +157,24 @@ test("the agent's resurrect and tag scripts change real data", async ({ page }) 
     .getByRole("group", { name: /Allow Change tags/ })
     .getByRole("button", { name: "Allow" })
     .click();
-  await expect(page.getByText(/Tagged “Sourdough starter keeps dying”/)).toBeVisible();
+  await expect(
+    page
+      .getByRole("list", { name: "Agent run" })
+      .getByText(/Tagged “Sourdough starter keeps dying”/),
+  ).toBeVisible();
   await openChat(page, /^Sourdough starter keeps dying/);
   await expect(page.getByRole("region", { name: "Summary and tags" })).toContainText("baking");
+});
+
+test("an Undo toast stays while hovered, then goes", async ({ page }) => {
+  test.slow();
+  await loadSample(page);
+  await openChat(page, /^Birthday poem/);
+  await page.getByRole("button", { name: "Banish", exact: true }).click();
+  const toast = page.getByText("Banished “Birthday poem for Grandma Rosa”.");
+  await toast.hover();
+  await page.waitForTimeout(7000);
+  await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
+  await page.mouse.move(5, 5);
+  await expect(page.getByRole("button", { name: "Undo" })).toHaveCount(0, { timeout: 9000 });
 });

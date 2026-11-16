@@ -25,6 +25,8 @@ export default {
     const prefix = APP_PREFIXES.find((p) => pathname.startsWith(p));
     if (!prefix || looksLikeFile(pathname)) return res;
 
-    return env.ASSETS.fetch(new Request(new URL(`${prefix}index.html`, request.url), request));
+    // Ask for the app's folder, not ".../index.html": Cloudflare answers that with a 307 to the
+    // folder, which would drop the deep link from the address bar.
+    return env.ASSETS.fetch(new Request(new URL(prefix, request.url), request));
   },
 };

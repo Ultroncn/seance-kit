@@ -33,6 +33,9 @@ const Ctx = createContext<((t: ToastInput) => void) | null>(null);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const next = useRef(1);
+  const held = useRef(new Set<number>());
+  const hold = (id: number, on: boolean) =>
+    void (on ? held.current.add(id) : held.current.delete(id));
 
   const dismiss = useCallback(
     (id: number) => setToasts((all) => all.filter((t) => t.id !== id)),
@@ -42,7 +45,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (t: ToastInput) => {
       const id = next.current++;
       setToasts((all) => [...all.slice(-2), { ...t, id }]);
-      setTimeout(() => dismiss(id), t.durationMs ?? 6000);
+      const wait = t.durationMs ?? 6000;
+      const tick = () => {
+        // Keep a toast open while the pointer or keyboard focus is on it, so Undo stays usable.
+        if (held.current.has(id)) setTimeout(tick, wait);
+        else dismiss(id);
+      };
+      setTimeout(tick, wait);
     },
     [dismiss],
   );
@@ -60,6 +69,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           {toasts.map((t) => (
             <motion.div
               key={t.id}
+              onMouseEnter={() => hold(t.id, true)}
+              onMouseLeave={() => hold(t.id, false)}
+              onFocus={() => hold(t.id, true)}
+              onBlur={() => hold(t.id, false)}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}

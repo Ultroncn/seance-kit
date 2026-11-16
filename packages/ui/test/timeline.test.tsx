@@ -97,7 +97,7 @@ describe("SeanceTimeline", () => {
     expect(screen.getByRole("status")?.textContent).toContain(
       "Waiting for your approval: Hide emails",
     );
-    expect(timelineStatus(finishedRun)).toBe("");
+    expect(timelineStatus(finishedRun)).toBe("Agent: Here are your three oldest chats.");
   });
 
   it("shows the empty state when there are no entries", () => {

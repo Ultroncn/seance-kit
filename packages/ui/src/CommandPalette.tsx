@@ -38,10 +38,14 @@ export function paletteScore(value: string, search: string, keywords: string[] =
   const q = fold(search).trim();
   if (q === "") return 1;
   const hay = fold([value, ...keywords].join(" "));
-  if (hay.includes(q)) return 1;
+  const at = hay.indexOf(q);
+  // The phrase starts a word: "set" in "Open settings".
+  if (at >= 0 && (at === 0 || /[^\p{L}\p{N}]/u.test(hay[at - 1] ?? " "))) return 1;
   const terms = q.split(/\s+/);
   const words = hay.split(/[^\p{L}\p{N}]+/u);
   if (terms.every((t) => words.some((w) => w.startsWith(t)))) return 0.8;
+  // The phrase sits inside a word: "set" in "reset".
+  if (at >= 0) return 0.6;
   if (terms.every((t) => hay.includes(t))) return 0.5;
   return 0;
 }

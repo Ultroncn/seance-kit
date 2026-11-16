@@ -20,8 +20,11 @@ test("archive shell loads", async ({ page }) => {
 });
 
 test("archive SPA fallback serves the shell on deep links", async ({ page }) => {
-  await page.goto("/archive/some/deep/link");
+  const res = await page.goto("/archive/some/deep/link");
   await expect(page.getByRole("heading", { level: 1, name: "Archive Séance" })).toBeVisible();
+  // Served in place, not redirected to /archive/: the address bar keeps the deep link.
+  expect(res?.status()).toBe(200);
+  expect(new URL(page.url()).pathname).toBe("/archive/some/deep/link");
 });
 
 test("inbox SPA fallback serves the inbox shell, not the landing page", async ({ page }) => {
