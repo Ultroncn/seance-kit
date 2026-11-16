@@ -24,6 +24,30 @@ async function fakeEndpoint(page: Page) {
 
 const badge = (page: Page) => page.getByTestId("demo-badge");
 
+/**
+ * Open a submenu of the model menu by keyboard (Enter, arrows), the way the menu is built to be
+ * used without a mouse.
+ */
+async function openSubmenu(page: Page, sub: "Model" | "Reasoning") {
+  await page.getByRole("button", { name: /^Model and reasoning:/ }).focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("menuitem", { name: new RegExp(`^${sub}`) }).focus();
+  await page.keyboard.press("ArrowRight");
+  return page.getByRole("menu").last();
+}
+async function closeMenus(page: Page) {
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+}
+async function choose(page: Page, sub: "Model" | "Reasoning", name: string) {
+  const menu = await openSubmenu(page, sub);
+  await menu.getByRole("menuitemradio", { name, exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+}
+const pickModel = (page: Page, name: string) => choose(page, "Model", name);
+
 for (const app of [
   { path: "/archive/", title: "Archive Séance" },
   { path: "/inbox/", title: "Inbox Exorcist" },
@@ -65,10 +89,10 @@ for (const app of [
       await expect(page.getByRole("heading", { level: 1, name: app.title })).toBeVisible();
       await expect(badge(page)).toHaveCount(0);
 
-      // The header switch goes back to demo mode in one step, and the saved provider stays.
-      await page.getByLabel("Model in use").selectOption({ label: "Demo (scripted)" });
+      // The picker by the prompt box goes back to demo mode, and the saved provider stays.
+      await pickModel(page, "Demo (scripted)");
       await expect(badge(page)).toBeVisible();
-      await page.getByLabel("Model in use").selectOption({ label: "Custom (OpenAI-compatible)" });
+      await pickModel(page, "fake-model");
       await expect(badge(page)).toHaveCount(0);
     });
 
@@ -120,10 +144,89 @@ test("the two apps keep separate settings on the shared origin", async ({ page }
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Add a provider" }).click();
   await page.getByLabel("Vendor").selectOption("ollama");
-  await page.getByLabel("Model").fill("llama-test");
+  await page.getByLabel("Model", { exact: true }).fill("llama-test");
   await page.getByRole("button", { name: "Save and use" }).click();
   await expect(badge(page)).toHaveCount(0);
 
   await page.goto("/inbox/");
   await expect(badge(page)).toBeVisible();
+});
+
+test("model picker: models grouped by provider, reasoning levels per model, sent with the request", async ({
+  page,
+}) => {
+  const bodies: Record<string, unknown>[] = [];
+  const cors = {
+    "access-control-allow-origin": "*",
+    "access-control-allow-headers": "*",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+  };
+  await page.route(`${FAKE_BASE}/**`, (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    if (req.url().endsWith("/models"))
+      return route.fulfill({
+        headers: { ...cors, "content-type": "application/json" },
+        body: JSON.stringify({ data: [{ id: "deepseek-v4-pro" }, { id: "deepseek-v4-flash" }] }),
+      });
+    bodies.push(JSON.parse(req.postData() ?? "{}") as Record<string, unknown>);
+    return route.fulfill({
+      headers: { ...cors, "content-type": "application/json" },
+      body: JSON.stringify({ choices: [{ message: { content: "OK", reasoning_content: "hm" } }] }),
+    });
+  });
+  await page.goto("/archive/");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  await dialog.getByRole("button", { name: "Add a provider" }).click();
+  await dialog.getByLabel("Vendor").selectOption("deepseek");
+  await expect(dialog.getByLabel("Model")).toHaveValue("");
+  await dialog.getByLabel("Base URL").fill(FAKE_BASE);
+  await dialog.getByLabel("API key").fill(FAKE_KEY);
+  await dialog.getByRole("button", { name: "Load model list" }).click();
+  await expect(dialog.getByRole("status")).toHaveText(
+    "2 models found. Pick one in the Model field.",
+  );
+  await dialog.getByLabel("Model").selectOption("deepseek-v4-flash");
+  await dialog.getByRole("button", { name: "Save and use" }).click();
+  await page.keyboard.press("Escape");
+
+  // Both loaded models sit under the provider's name, after the demo entry.
+  const models = await openSubmenu(page, "Model");
+  await expect(models.getByRole("menuitemradio")).toHaveText([
+    "Demo (scripted)",
+    "deepseek-v4-flash",
+    "deepseek-v4-pro",
+  ]);
+  await expect(models).toContainText("DeepSeek");
+  await closeMenus(page);
+  await choose(page, "Model", "deepseek-v4-pro");
+
+  // DeepSeek documents these levels; the list comes from the model, not a global setting.
+  const levels = await openSubmenu(page, "Reasoning");
+  await expect(levels.getByRole("menuitemradio")).toHaveText([
+    "Default",
+    "Off",
+    "Low",
+    "High",
+    "Max",
+  ]);
+  await closeMenus(page);
+  await choose(page, "Reasoning", "Low");
+  await expect(page.getByRole("button", { name: /^Model and reasoning:/ })).toContainText(
+    "DeepSeek · deepseek-v4-pro · Low",
+  );
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(
+    violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id),
+  ).toEqual([]);
+
+  await page.getByRole("textbox", { name: /Ask/ }).fill("Hello");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("list", { name: "Agent run" })).toContainText("OK");
+  expect(bodies.at(-1)).toMatchObject({
+    model: "deepseek-v4-pro",
+    reasoning_effort: "low",
+    thinking: { type: "enabled" },
+  });
 });

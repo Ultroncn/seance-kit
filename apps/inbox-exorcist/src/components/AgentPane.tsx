@@ -8,13 +8,14 @@ interface Props {
   isMock: boolean;
   byId: Map<string, Email>;
   hasData: boolean;
+  onManageProviders?: () => void;
 }
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const strs = (v: unknown) =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
-export function AgentPane({ agent, isMock, byId, hasData }: Props) {
+export function AgentPane({ agent, isMock, byId, hasData, onManageProviders }: Props) {
   const t = useT(inboxMessages);
   const prompts = useT(inboxDemoMessages).prompts;
   const mail = (id: string) => byId.get(id);
@@ -130,6 +131,7 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       suggestions={Object.values(prompts)}
       isMock={isMock}
       hasData={hasData}
+      onManageProviders={onManageProviders}
       toolLabels={t.toolLabels}
       describeApproval={describeApproval}
       emptyTitle={t.agentEmptyTitle}

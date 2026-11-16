@@ -53,7 +53,8 @@ export {
 } from "./ProviderMode";
 export { DemoBadge } from "./DemoBadge";
 export { SettingsDialog, isAllowedEndpoint, type SettingsDialogProps } from "./SettingsDialog";
-export { ProviderSwitch, useProviderCommands } from "./ProviderSwitch";
+export { useProviderCommands } from "./providerCommands";
+export { ModelPicker, withModelChoice } from "./ModelPicker";
 export { ToastProvider, useToast, type ToastInput } from "./Toast";
 export { AgentPanel, type AgentPanelProps } from "./AgentPanel";
 export {

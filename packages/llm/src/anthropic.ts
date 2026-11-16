@@ -7,11 +7,15 @@ export interface AnthropicOptions {
   model: string;
   baseUrl?: string;
   maxTokens?: number;
+  /** Vendor-specific request fields, such as `output_config.effort`. */
+  extraBody?: Record<string, unknown>;
   fetch?: FetchLike;
 }
 
 type Block =
   | { type: "text"; text: string }
+  /** thinking and redacted_thinking blocks, kept exactly as the API sent them. */
+  | { type: "thinking" | "redacted_thinking"; [key: string]: unknown }
   | { type: "tool_use"; id: string; name: string; input: unknown }
   | { type: "tool_result"; tool_use_id: string; content: string; is_error?: boolean };
 
@@ -46,7 +50,9 @@ export function toAnthropicMessages(messages: ChatMessage[]): WireMessage[] {
     if (m.role === "user") {
       out.push({ role: "user", content: m.content });
     } else {
-      const blocks: Block[] = [];
+      // Signed thinking blocks come first, unchanged, as the API requires.
+      const blocks: Block[] =
+        m.reasoning?.format === "anthropic_thinking" ? [...(m.reasoning.blocks as Block[])] : [];
       if (m.content !== "") blocks.push({ type: "text", text: m.content });
       for (const c of m.toolCalls ?? []) {
         blocks.push({ type: "tool_use", id: c.id, name: c.name, input: c.input });
@@ -97,6 +103,7 @@ export class AnthropicProvider implements Provider {
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
+        ...this.options.extraBody,
         model,
         max_tokens: maxTokens,
         ...(request.system ? { system: request.system } : {}),
@@ -116,12 +123,20 @@ export class AnthropicProvider implements Provider {
     const body = (await res.json()) as { content?: Block[] };
     let text = "";
     const toolCalls: ToolCall[] = [];
+    const thinking: Block[] = [];
     for (const block of body.content ?? []) {
-      if (block.type === "text") text += block.text;
+      if (block.type === "thinking" || block.type === "redacted_thinking") thinking.push(block);
+      else if (block.type === "text") text += block.text;
       else if (block.type === "tool_use") {
         toolCalls.push({ id: block.id, name: block.name, input: block.input });
       }
     }
-    return { text, toolCalls };
+    return {
+      text,
+      toolCalls,
+      ...(thinking.length > 0
+        ? { reasoning: { format: "anthropic_thinking" as const, blocks: thinking } }
+        : {}),
+    };
   }
 }

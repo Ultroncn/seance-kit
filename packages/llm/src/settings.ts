@@ -1,5 +1,6 @@
 import { SECRETS_COLLECTION, type Storage } from "@seance/storage";
 import type { ProviderConfig } from "./factory";
+import { parseModelList, parseReasoning, type ModelInfo } from "./reasoning";
 
 /** Record id of the single provider config saved by earlier versions. Read once, then migrated. */
 export const PROVIDER_SETTINGS_ID = "provider";
@@ -20,11 +21,18 @@ export function parseProviderConfig(raw: unknown): ProviderConfig | null {
             apiKey: r.apiKey,
             model: r.model,
             ...(str(r.baseUrl) ? { baseUrl: r.baseUrl } : {}),
+            ...withReasoning(r.reasoning),
           }
         : null;
     case "openai-compatible":
       return str(r.baseUrl) && str(r.apiKey) && str(r.model)
-        ? { kind: "openai-compatible", baseUrl: r.baseUrl, apiKey: r.apiKey, model: r.model }
+        ? {
+            kind: "openai-compatible",
+            baseUrl: r.baseUrl,
+            apiKey: r.apiKey,
+            model: r.model,
+            ...withReasoning(r.reasoning),
+          }
         : null;
     case "ollama":
       return str(r.model) && (r.host === undefined || str(r.host))
@@ -35,6 +43,11 @@ export function parseProviderConfig(raw: unknown): ProviderConfig | null {
   }
 }
 
+const withReasoning = (raw: unknown) => {
+  const reasoning = parseReasoning(raw);
+  return reasoning ? { reasoning } : {};
+};
+
 /** One saved provider, like a CC Switch entry: a name, the vendor preset it came from, settings. */
 export interface ProviderProfile {
   id: string;
@@ -42,6 +55,8 @@ export interface ProviderProfile {
   /** Preset id from `PROVIDER_PRESETS`, or a custom one. Only used to prefill the form. */
   preset: string;
   config: ProviderConfig;
+  /** The vendor's model list, as last loaded. Empty until loaded. */
+  models?: ModelInfo[];
 }
 
 export interface ProviderProfiles {
@@ -56,8 +71,9 @@ function parseProfile(raw: unknown): ProviderProfile | null {
   if (typeof raw !== "object" || raw === null) return null;
   const r = raw as Record<string, unknown>;
   const config = parseProviderConfig(r.config);
+  const models = parseModelList(r.models);
   return str(r.id) && r.id !== "" && str(r.name) && str(r.preset) && config
-    ? { id: r.id, name: r.name, preset: r.preset, config }
+    ? { id: r.id, name: r.name, preset: r.preset, config, ...(models ? { models } : {}) }
     : null;
 }
 

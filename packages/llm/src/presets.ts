@@ -5,6 +5,9 @@ import type { ProviderKind } from "./factory";
  * from the deployed origin (no key sent). "blocked" vendors answer without
  * Access-Control-Allow-Origin, so a browser refuses the response; reach their models through an
  * aggregator such as SiliconFlow or OpenRouter instead.
+ *
+ * Presets carry no model names: vendors retire them (DeepSeek dropped deepseek-chat on July 24,
+ * 2026), so the form loads the current list from the vendor instead.
  */
 export type BrowserAccess = "ok" | "unverified" | "blocked";
 
@@ -19,8 +22,6 @@ export interface ProviderPreset {
   /** Where to create a key. Omitted for local servers. */
   keyUrl?: string;
   access: BrowserAccess;
-  /** Long-lived aliases only. "Load model list" fetches the current names from the vendor. */
-  models?: string[];
   /** False for local servers that need no key. */
   needsKey: boolean;
 }
@@ -106,7 +107,6 @@ export const PROVIDER_PRESETS: readonly ProviderPreset[] = [
     baseUrl: "https://api.deepseek.com",
     keyUrl: "https://platform.deepseek.com/api_keys",
     access: "ok",
-    models: ["deepseek-chat", "deepseek-reasoner"],
     needsKey: true,
   },
   {
@@ -117,7 +117,6 @@ export const PROVIDER_PRESETS: readonly ProviderPreset[] = [
     baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     keyUrl: "https://bailian.console.aliyun.com/",
     access: "ok",
-    models: ["qwen-plus", "qwen-max", "qwen-turbo"],
     needsKey: true,
   },
   {

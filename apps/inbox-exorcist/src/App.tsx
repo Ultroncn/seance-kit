@@ -7,7 +7,6 @@ import {
   EmptyState,
   Kbd,
   ProviderModeProvider,
-  ProviderSwitch,
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
@@ -225,7 +224,6 @@ function Workspace() {
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
               {t.commands} <Kbd>⌘K</Kbd>
             </Button>
-            <ProviderSwitch />
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
               {t.settings}
             </Button>
@@ -277,6 +275,7 @@ function Workspace() {
             isMock={isMock}
             byId={data.byId}
             hasData={!empty && data.all !== null}
+            onManageProviders={() => setSettingsOpen(true)}
           />
         }
       />

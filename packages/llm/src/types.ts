@@ -13,9 +13,18 @@ export interface ToolCall {
   input: unknown;
 }
 
+/**
+ * A model's reasoning that its API wants back, unchanged, on later requests: DeepSeek and Qwen
+ * return `reasoning_content` and reject tool follow-ups without it; Claude signs `thinking` blocks.
+ * Tagged by format so a provider only ever sends back its own kind.
+ */
+export type Reasoning =
+  | { format: "reasoning_content"; text: string }
+  | { format: "anthropic_thinking"; blocks: unknown[] };
+
 export type ChatMessage =
   | { role: "user"; content: string }
-  | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
+  | { role: "assistant"; content: string; toolCalls?: ToolCall[]; reasoning?: Reasoning }
   | { role: "tool"; toolCallId: string; name: string; content: string; isError?: boolean };
 
 export interface CompleteRequest {
@@ -28,6 +37,8 @@ export interface CompleteRequest {
 export interface ProviderReply {
   text: string;
   toolCalls: ToolCall[];
+  /** Pass back unchanged with this turn. See `Reasoning`. */
+  reasoning?: Reasoning;
 }
 
 export interface Provider {

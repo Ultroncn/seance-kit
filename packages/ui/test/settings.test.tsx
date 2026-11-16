@@ -9,7 +9,6 @@ import {
   DemoBadge,
   ProviderModeProvider,
   SeanceProvider,
-  ProviderSwitch,
   SettingsDialog,
   useProviderMode,
 } from "../src/index";
@@ -47,13 +46,12 @@ function App({
       <ProviderModeProvider storage={storage} mock={mock} createReal={fakeReal}>
         <DemoBadge onClick={() => setOpen(true)} />
         <ProviderId />
-        <ProviderSwitch />
         <SettingsDialog
           open={open}
           onOpenChange={setOpen}
           download={download}
           exportName="test"
-          loadModels={async () => ["model-b", "model-a"]}
+          loadModels={async () => [{ id: "model-b" }, { id: "model-a", reasoning: true }]}
         />
       </ProviderModeProvider>
     </SeanceProvider>
@@ -128,7 +126,7 @@ describe("Demo-mode badge and settings", () => {
     const storage = new MemoryStorage();
     render(<App storage={storage} />);
     await userEvent.click(badge()!);
-    await addProvider("deepseek", "sk-ds", "deepseek-chat");
+    await addProvider("deepseek", "sk-ds", "deepseek-v4-pro");
     await addProvider("anthropic", "sk-ant", "m");
     await waitFor(() => expect(screen.getByTestId("provider").textContent).toBe("anthropic:false"));
     await userEvent.click(screen.getByRole("radio", { name: /Demo \(scripted\)/ }));
@@ -140,11 +138,6 @@ describe("Demo-mode badge and settings", () => {
     await waitFor(() =>
       expect(screen.getByTestId("provider").textContent).toBe("openai-compatible:false"),
     );
-    // The header switch shows the same choice and can change it too.
-    const header = screen.getByLabelText("Model in use") as HTMLSelectElement;
-    expect(header.selectedOptions[0]?.textContent).toBe("DeepSeek");
-    await userEvent.selectOptions(header, "Anthropic (Claude)");
-    await waitFor(() => expect(screen.getByTestId("provider").textContent).toBe("anthropic:false"));
     const saved = (await storage.get("secrets", "providers")) as unknown as { profiles: unknown[] };
     expect(saved.profiles).toHaveLength(2);
   });
@@ -186,11 +179,20 @@ describe("Demo-mode badge and settings", () => {
     await userEvent.type(screen.getByLabelText("API key"), "sk-x");
     await userEvent.click(screen.getByRole("button", { name: "Load model list" }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toMatch(/^2 models found/));
-    const list = document.getElementById(screen.getByLabelText("Model").getAttribute("list")!);
-    expect([...(list?.querySelectorAll("option") ?? [])].map((o) => o.value)).toEqual([
+    // Every loaded model is listed, whatever is typed: no filtering by the current value.
+    const select = screen.getByLabelText("Model") as HTMLSelectElement;
+    expect([...select.options].map((o) => o.textContent)).toEqual([
+      "Choose a model",
       "model-b",
       "model-a",
+      "Other (type the name)",
     ]);
+    expect(select.value).toBe("");
+    await userEvent.selectOptions(select, "model-a");
+    await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
+    await waitFor(() => expect(badge()).toBeNull());
+    await userEvent.click(screen.getByRole("button", { name: /^Edit / }));
+    expect((screen.getByLabelText("Model") as HTMLSelectElement).value).toBe("model-a");
   });
 
   it("exports data without the key, migrates an old saved key, and wipes only after confirming", async () => {
@@ -277,16 +279,18 @@ describe("Demo-mode badge and settings", () => {
     await waitFor(() => expect(badge()).toBeNull());
   });
 
-  it("keeps saved names unique, so the switch and the palette can tell them apart", async () => {
+  it("keeps saved names unique, so the model picker and the palette can tell them apart", async () => {
     render(<App storage={new MemoryStorage()} />);
     await userEvent.click(badge()!);
-    await addProvider("deepseek", "sk-1", "deepseek-chat");
+    await addProvider("deepseek", "sk-1", "deepseek-v4-pro");
     await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
     await userEvent.selectOptions(screen.getByLabelText("Vendor"), "deepseek");
     expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("DeepSeek 2");
     await userEvent.clear(screen.getByLabelText("Name"));
     await userEvent.type(screen.getByLabelText("Name"), "DeepSeek");
     await userEvent.type(screen.getByLabelText("API key"), "sk-2");
+    expect((screen.getByLabelText("Model") as HTMLInputElement).value).toBe("");
+    await userEvent.type(screen.getByLabelText("Model"), "deepseek-v4-flash");
     await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
     await waitFor(() => expect(screen.getByRole("radio", { name: /DeepSeek 2/ })).toBeTruthy());
   });

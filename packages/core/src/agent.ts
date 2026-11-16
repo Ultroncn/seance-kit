@@ -142,6 +142,7 @@ export class Agent {
         role: "assistant",
         content: reply.text,
         ...(calls.length > 0 ? { toolCalls: calls } : {}),
+        ...(reply.reasoning ? { reasoning: reply.reasoning } : {}),
       });
       if (reply.text !== "") yield { type: "message", text: reply.text };
       if (calls.length === 0) {

@@ -1,14 +1,27 @@
 import { AnthropicProvider } from "./anthropic";
 import type { FetchLike } from "./http";
 import { OpenAiCompatibleProvider, createOllamaProvider } from "./openai";
+import { reasoningParams, type ReasoningSetting } from "./reasoning";
 import type { Provider } from "./types";
 
 /** Saved in settings. Contains secrets, so it only ever lives in the browser's IndexedDB. */
 export type ProviderConfig =
   /** `baseUrl` points at another Anthropic-compatible server, for example DeepSeek's. */
-  | { kind: "anthropic"; apiKey: string; model: string; baseUrl?: string }
+  | {
+      kind: "anthropic";
+      apiKey: string;
+      model: string;
+      baseUrl?: string;
+      reasoning?: ReasoningSetting;
+    }
   /** `apiKey` may be empty for local servers such as LM Studio. */
-  | { kind: "openai-compatible"; baseUrl: string; apiKey: string; model: string }
+  | {
+      kind: "openai-compatible";
+      baseUrl: string;
+      apiKey: string;
+      model: string;
+      reasoning?: ReasoningSetting;
+    }
   | { kind: "ollama"; model: string; host?: string };
 
 export type ProviderKind = ProviderConfig["kind"];
@@ -22,11 +35,18 @@ export function createProvider(config: ProviderConfig, fetchImpl?: FetchLike): P
         apiKey: config.apiKey,
         model: config.model,
         ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
+        extraBody: reasoningParams(config.reasoning),
         fetch: fetchImpl,
       });
     case "openai-compatible":
       requireFields(config, ["baseUrl", "model"]);
-      return new OpenAiCompatibleProvider({ ...config, fetch: fetchImpl });
+      return new OpenAiCompatibleProvider({
+        baseUrl: config.baseUrl,
+        apiKey: config.apiKey,
+        model: config.model,
+        extraBody: reasoningParams(config.reasoning),
+        fetch: fetchImpl,
+      });
     case "ollama":
       requireFields(config, ["model"]);
       return createOllamaProvider({ model: config.model, host: config.host, fetch: fetchImpl });

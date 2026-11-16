@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { EmptyState, PaneHeader } from "./AppShell";
 import { useT } from "./i18n";
 import { kitMessages } from "./messages";
+import { ModelPicker } from "./ModelPicker";
 import { Button, TextArea } from "./primitives";
 import { SeanceTimeline, type ApprovalCopy } from "./SeanceTimeline";
 import type { TimelineEntry, ToolEntry } from "./timeline-types";
@@ -30,6 +31,8 @@ export interface AgentPanelProps {
   promptLabel: string;
   placeholder: string;
   placeholderNoData?: string;
+  /** Opens settings from the model menu's "Manage providers" item. */
+  onManageProviders?: () => void;
 }
 
 /**
@@ -90,6 +93,9 @@ export function AgentPanel(p: AgentPanelProps) {
           </div>
         )}
         {p.isMock && <p className="mb-2 text-[11px] text-muted">{t.demoNote}</p>}
+        <div className="mb-1.5 -ml-2">
+          <ModelPicker onManage={p.onManageProviders} />
+        </div>
         <form onSubmit={submit} className="flex items-end gap-2">
           <label htmlFor="agent-prompt" className="sr-only">
             {p.promptLabel}

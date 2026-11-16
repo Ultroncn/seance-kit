@@ -9,6 +9,8 @@ export interface OpenAiCompatibleOptions {
   /** Omit for local servers such as Ollama. */
   apiKey?: string;
   model: string;
+  /** Vendor-specific request fields, such as reasoning settings. */
+  extraBody?: Record<string, unknown>;
   fetch?: FetchLike;
 }
 
@@ -20,7 +22,12 @@ interface WireToolCall {
 
 type WireMessage =
   | { role: "system" | "user"; content: string }
-  | { role: "assistant"; content: string | null; tool_calls?: WireToolCall[] }
+  | {
+      role: "assistant";
+      content: string | null;
+      tool_calls?: WireToolCall[];
+      reasoning_content?: string;
+    }
   | { role: "tool"; tool_call_id: string; content: string };
 
 export function toOpenAiMessages(messages: ChatMessage[], system?: string): WireMessage[] {
@@ -33,6 +40,10 @@ export function toOpenAiMessages(messages: ChatMessage[], system?: string): Wire
       out.push({
         role: "assistant",
         content: m.content === "" && m.toolCalls?.length ? null : m.content,
+        // Only servers that sent reasoning_content get it back, so OpenAI itself never sees it.
+        ...(m.reasoning?.format === "reasoning_content"
+          ? { reasoning_content: m.reasoning.text }
+          : {}),
         ...(m.toolCalls?.length
           ? {
               tool_calls: m.toolCalls.map((c): WireToolCall => ({
@@ -69,6 +80,7 @@ export class OpenAiCompatibleProvider implements Provider {
         ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
       },
       body: JSON.stringify({
+        ...this.options.extraBody,
         model,
         messages: toOpenAiMessages(request.messages, request.system),
         ...(request.tools.length > 0
@@ -83,7 +95,13 @@ export class OpenAiCompatibleProvider implements Provider {
     });
     await ensureOk(res, this.id === "ollama" ? "Ollama" : "Provider");
     const body = (await res.json()) as {
-      choices?: { message?: { content?: string | null; tool_calls?: WireToolCall[] } }[];
+      choices?: {
+        message?: {
+          content?: string | null;
+          tool_calls?: WireToolCall[];
+          reasoning_content?: string | null;
+        };
+      }[];
     };
     const message = body.choices?.[0]?.message;
     const toolCalls: ToolCall[] = (message?.tool_calls ?? []).map((c, i) => ({
@@ -91,7 +109,14 @@ export class OpenAiCompatibleProvider implements Provider {
       name: c.function.name,
       input: parseToolArguments(c.function.arguments),
     }));
-    return { text: message?.content ?? "", toolCalls };
+    const reasoning = message?.reasoning_content;
+    return {
+      text: message?.content ?? "",
+      toolCalls,
+      ...(typeof reasoning === "string" && reasoning !== ""
+        ? { reasoning: { format: "reasoning_content" as const, text: reasoning } }
+        : {}),
+    };
   }
 }
 

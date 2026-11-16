@@ -356,3 +356,34 @@ describe("agent loop regressions (review)", () => {
     expect(log.entries.length).toBeLessThanOrEqual(8);
   });
 });
+
+describe("reasoning", () => {
+  it("keeps each turn's reasoning in the history the provider sees next", async () => {
+    const seen: unknown[][] = [];
+    let turn = 0;
+    const agent = createAgent({
+      provider: {
+        id: "fake",
+        isMock: false,
+        async complete({ messages }) {
+          seen.push(structuredClone(messages));
+          turn++;
+          return turn === 1
+            ? {
+                text: "",
+                toolCalls: [{ id: "c1", name: "read_tool", input: { n: 1 } }],
+                reasoning: { format: "reasoning_content", text: "think 1" },
+              }
+            : { text: "done", toolCalls: [] };
+        },
+      },
+      registry: makeRegistry({ entries: [] }),
+      storage: new MemoryStorage(),
+    });
+    await collect(agent.run("hi"));
+    expect(seen[1]?.[1]).toMatchObject({
+      role: "assistant",
+      reasoning: { format: "reasoning_content", text: "think 1" },
+    });
+  });
+});

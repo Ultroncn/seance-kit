@@ -3,6 +3,7 @@ export type {
   CompleteRequest,
   Provider,
   ProviderReply,
+  Reasoning,
   ToolCall,
   ToolSpec,
 } from "./types";
@@ -37,4 +38,14 @@ export {
   type ProviderProfiles,
 } from "./settings";
 export { listModels } from "./models";
+export {
+  parseReasoning,
+  reasoningOptions,
+  reasoningParams,
+  type ModelInfo,
+  type ReasoningLevel,
+  type ReasoningOptions,
+  type ReasoningSetting,
+  type ReasoningStyle,
+} from "./reasoning";
 export { PROVIDER_PRESETS, presetById, type BrowserAccess, type ProviderPreset } from "./presets";

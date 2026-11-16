@@ -11,7 +11,6 @@ import {
   Kbd,
   PaneHeader,
   ProviderModeProvider,
-  ProviderSwitch,
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
@@ -69,7 +68,6 @@ function Workspace() {
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
               {t.commands} <Kbd>⌘K</Kbd>
             </Button>
-            <ProviderSwitch />
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
               {t.settings}
             </Button>
@@ -102,6 +100,7 @@ function Workspace() {
             suggestions={Object.values(prompts)}
             isMock={isMock}
             hasData
+            onManageProviders={() => setSettingsOpen(true)}
             toolLabels={t.toolLabels}
             emptyTitle={t.emptyTitle}
             emptyText={t.emptyText}

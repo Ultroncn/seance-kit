@@ -3,6 +3,7 @@ import {
   PROVIDER_PRESETS,
   listModels,
   presetById,
+  type ModelInfo,
   type ProviderConfig,
   type ProviderKind,
   type ProviderPreset,
@@ -48,7 +49,7 @@ function formForPreset(preset: ProviderPreset, t: Kit, taken: string[]): Form {
     protocol: preset.protocol,
     baseUrl: preset.baseUrl,
     apiKey: "",
-    model: preset.models?.[0] ?? "",
+    model: "",
   };
 }
 
@@ -158,12 +159,14 @@ export interface SettingsDialogProps {
   /** Override for tests. */
   download?: (blob: Blob, filename: string) => void;
   /** Override for tests. Defaults to `listModels` from `@seance/llm`. */
-  loadModels?: (config: ProviderConfig) => Promise<string[]>;
+  loadModels?: (config: ProviderConfig) => Promise<ModelInfo[]>;
 }
 
 type Status = { tone: "ok" | "error" | "info"; text: string } | null;
 
 const REGIONS = ["global", "china", "local", "custom"] as const;
+/** The "type it yourself" entry of the model list. Not a valid model id. */
+const OTHER = "\u0000other";
 
 export function SettingsDialog({
   open,
@@ -177,12 +180,13 @@ export function SettingsDialog({
   const { profiles, activeId, build, storage, reload, isMock, error: configError } = mode;
   const t = useT(kitMessages);
   const [form, setForm] = useState<Form | null>(null);
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  /** Type a model name instead of picking from the loaded list. */
+  const [manual, setManual] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [busy, setBusy] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const groupName = useId();
-  const listId = useId();
   const wasOpen = useRef(false);
   const wipeTrigger = useRef<HTMLButtonElement>(null);
   const wipeCancel = useRef<HTMLButtonElement>(null);
@@ -197,6 +201,7 @@ export function SettingsDialog({
     setConfirmWipe(false);
     setForm(null);
     setModels([]);
+    setManual(false);
     setStatus(configError ? { tone: "error", text: t.savedUnusable(configError) } : null);
     // t is read only when the dialog opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -226,6 +231,7 @@ export function SettingsDialog({
     // A new vendor never inherits the previous vendor's key.
     setForm({ ...fresh, id: form.id });
     setModels([]);
+    setManual(false);
     setStatus(null);
   };
   const startAdd = () => {
@@ -237,6 +243,7 @@ export function SettingsDialog({
       ),
     );
     setModels([]);
+    setManual(false);
     setStatus(null);
   };
   const closeEditor = () => {
@@ -272,14 +279,26 @@ export function SettingsDialog({
     if (!form) return;
     if (invalid) return setStatus({ tone: "error", text: invalid });
     const others = profiles.filter((p) => p.id !== form.id).map((p) => p.name);
-    // Names label the palette commands and the header switch, so they must stay unique.
+    // Names label the palette commands and the model picker, so they must stay unique.
     let name = form.name.trim() || presetLabel(presetById(form.preset) as ProviderPreset, t);
     for (let i = 2, base = name; others.includes(name); i++) name = `${base} ${i}`;
+    const before = profiles.find((p) => p.id === form.id);
+    const config = configFrom(form);
+    // Keep the reasoning level while the model stays the same.
+    const kept =
+      before?.config.model === config.model &&
+      before.preset === form.preset &&
+      "reasoning" in before.config &&
+      before.config.reasoning &&
+      config.kind !== "ollama"
+        ? { reasoning: before.config.reasoning }
+        : {};
     const profile: ProviderProfile = {
       id: form.id ?? newId(),
       name,
       preset: form.preset,
-      config: configFrom(form),
+      config: { ...config, ...kept } as ProviderConfig,
+      ...(models.length > 0 ? { models } : {}),
     };
     try {
       await mode.saveProfile(profile, true);
@@ -323,6 +342,7 @@ export function SettingsDialog({
     try {
       const ids = await loadModels(configFrom(form));
       setModels(ids);
+      setManual(ids.length === 0);
       setStatus(
         ids.length
           ? { tone: "ok", text: t.modelsLoaded(ids.length) }
@@ -355,7 +375,6 @@ export function SettingsDialog({
 
   const preset = form ? presetById(form.preset) : undefined;
   const custom = preset?.region === "custom";
-  const suggestions = [...new Set([...(preset?.models ?? []), ...models])];
   const choice = (selected: boolean) =>
     cn(
       "flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm",
@@ -415,7 +434,8 @@ export function SettingsDialog({
                     aria-label={t.editNamed(p.name)}
                     onClick={() => {
                       setForm(formFromProfile(p));
-                      setModels([]);
+                      setModels(p.models ?? []);
+                      setManual(!(p.models ?? []).some((m) => m.id === p.config.model));
                       setStatus(null);
                     }}
                   >
@@ -517,9 +537,7 @@ export function SettingsDialog({
                   )}
                 </Field>
               ) : (
-                <p className="text-xs text-muted">
-                  {t.protocolIs(t.protocols[form.protocol])}
-                </p>
+                <p className="text-xs text-muted">{t.protocolIs(t.protocols[form.protocol])}</p>
               )}
               <Field
                 label={form.protocol === "ollama" ? t.host : t.baseUrl}
@@ -551,19 +569,37 @@ export function SettingsDialog({
               <Field label={t.model} hint={t.modelHint}>
                 {(id) => (
                   <div className="flex gap-2">
-                    <Input
-                      id={id}
-                      list={listId}
-                      value={form.model}
-                      spellCheck={false}
-                      className="flex-1"
-                      onChange={(e) => set({ model: e.target.value })}
-                    />
-                    <datalist id={listId}>
-                      {suggestions.map((m) => (
-                        <option key={m} value={m} />
-                      ))}
-                    </datalist>
+                    {models.length > 0 && !manual ? (
+                      <select
+                        id={id}
+                        value={form.model}
+                        onChange={(e) =>
+                          e.target.value === OTHER
+                            ? setManual(true)
+                            : set({ model: e.target.value })
+                        }
+                        className="h-9 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-sm text-fg"
+                      >
+                        <option value="" disabled>
+                          {t.chooseModel}
+                        </option>
+                        {models.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.id}
+                          </option>
+                        ))}
+                        <option value={OTHER}>{t.otherModel}</option>
+                      </select>
+                    ) : (
+                      <Input
+                        id={id}
+                        value={form.model}
+                        spellCheck={false}
+                        placeholder={t.modelPlaceholder}
+                        className="flex-1"
+                        onChange={(e) => set({ model: e.target.value })}
+                      />
+                    )}
                     <Button size="sm" onClick={() => void onLoadModels()} disabled={busy}>
                       {t.loadModels}
                     </Button>

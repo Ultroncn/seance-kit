@@ -207,3 +207,67 @@ describe("createProvider", () => {
     ).toThrow("Missing setting: baseUrl");
   });
 });
+
+describe("reasoning passback", () => {
+  const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
+
+  it("DeepSeek-style reasoning_content comes back on every later request, and never to others", async () => {
+    const sent: unknown[] = [];
+    const p = new OpenAiCompatibleProvider({
+      baseUrl: "https://api.deepseek.com",
+      apiKey: "k",
+      model: "deepseek-v4-pro",
+      fetch: async (_url, init) => {
+        sent.push(JSON.parse(String(init.body)));
+        return json({
+          choices: [
+            {
+              message: {
+                content: "",
+                reasoning_content: "Need the date first.",
+                tool_calls: [
+                  { id: "c1", type: "function", function: { name: "get_date", arguments: "{}" } },
+                ],
+              },
+            },
+          ],
+        });
+      },
+    });
+    const reply = await p.complete({ messages: [{ role: "user", content: "hi" }], tools: [] });
+    expect(reply.reasoning).toEqual({ format: "reasoning_content", text: "Need the date first." });
+    const wire = toOpenAiMessages([
+      { role: "user", content: "hi" },
+      { role: "assistant", content: "", toolCalls: reply.toolCalls, reasoning: reply.reasoning },
+      { role: "tool", toolCallId: "c1", name: "get_date", content: "2026-11-16" },
+      {
+        role: "assistant",
+        content: "Hello",
+        reasoning: { format: "anthropic_thinking", blocks: [] },
+      },
+    ]);
+    expect(wire[1]).toMatchObject({ role: "assistant", reasoning_content: "Need the date first." });
+    expect(wire[3]).not.toHaveProperty("reasoning_content");
+    expect(sent).toHaveLength(1);
+  });
+
+  it("Claude thinking blocks are kept and sent back first, unchanged", async () => {
+    const thinking = { type: "thinking", thinking: "Plan.", signature: "sig-123" };
+    const p = new AnthropicProvider({
+      apiKey: "k",
+      model: "m",
+      fetch: async () =>
+        json({ content: [thinking, { type: "tool_use", id: "t1", name: "x", input: {} }] }),
+    });
+    const reply = await p.complete({ messages: [{ role: "user", content: "hi" }], tools: [] });
+    expect(reply.reasoning).toEqual({ format: "anthropic_thinking", blocks: [thinking] });
+    const wire = toAnthropicMessages([
+      { role: "user", content: "hi" },
+      { role: "assistant", content: "", toolCalls: reply.toolCalls, reasoning: reply.reasoning },
+    ]);
+    expect(wire[1]?.content).toEqual([
+      thinking,
+      { type: "tool_use", id: "t1", name: "x", input: {} },
+    ]);
+  });
+});

@@ -3,11 +3,14 @@ import { MemoryStorage } from "@seance/storage";
 import { describe, expect, it } from "vitest";
 import {
   PROVIDER_PRESETS,
+  createProvider,
   listModels,
   loadProviderConfig,
   loadProviderProfiles,
   parseProviderConfig,
   parseProviderProfiles,
+  reasoningOptions,
+  reasoningParams,
   saveProviderProfiles,
   type ProviderConfig,
   type ProviderProfiles,
@@ -127,7 +130,7 @@ describe("listModels", () => {
         { kind: "openai-compatible", baseUrl: "https://api.deepseek.com/", apiKey: "k", model: "" },
         fake,
       ),
-    ).toEqual(["a", "b"]);
+    ).toEqual([{ id: "a" }, { id: "b" }]);
     expect(calls[0]).toEqual({
       url: "https://api.deepseek.com/models",
       headers: { authorization: "Bearer k" },
@@ -148,5 +151,111 @@ describe("listModels", () => {
     ).catch((e: Error) => e);
     expect(String(err)).toMatch(/HTTP 401/);
     expect(String(err)).not.toContain("sk-secret-1");
+  });
+});
+
+describe("reasoning levels", () => {
+  it("are offered per vendor and model, and never for models without them", () => {
+    expect(reasoningOptions("deepseek", "deepseek-v4-pro")?.levels).toEqual([
+      "off",
+      "low",
+      "high",
+      "max",
+    ]);
+    expect(reasoningOptions("anthropic", "claude-opus-4-7")?.levels).toEqual([
+      "low",
+      "medium",
+      "high",
+    ]);
+    expect(reasoningOptions("anthropic", "claude-3-haiku-20240307")).toBeNull();
+    expect(reasoningOptions("openai", "gpt-5.2")?.style).toBe("openai");
+    expect(reasoningOptions("openai", "gpt-4o")).toBeNull();
+    expect(reasoningOptions("openrouter", "x/y", { id: "x/y", reasoning: true })?.style).toBe(
+      "openrouter",
+    );
+    expect(reasoningOptions("openrouter", "x/z", { id: "x/z" })).toBeNull();
+    expect(reasoningOptions("qwen", "qwen-plus")).toBeNull();
+    expect(reasoningOptions("deepseek", "")).toBeNull();
+  });
+
+  it("are encoded the way each vendor documents", () => {
+    expect(reasoningParams({ style: "deepseek", level: "off" })).toEqual({
+      thinking: { type: "disabled" },
+    });
+    expect(reasoningParams({ style: "deepseek", level: "max" })).toEqual({
+      thinking: { type: "enabled" },
+      reasoning_effort: "max",
+    });
+    expect(reasoningParams({ style: "anthropic", level: "low" })).toEqual({
+      output_config: { effort: "low" },
+    });
+    expect(reasoningParams({ style: "openrouter", level: "high" })).toEqual({
+      reasoning: { effort: "high" },
+    });
+    expect(reasoningParams(undefined)).toEqual({});
+  });
+
+  it("reach the request body, and survive saving with the profile's model list", async () => {
+    let body: Record<string, unknown> = {};
+    const provider = createProvider(
+      {
+        kind: "openai-compatible",
+        baseUrl: "https://api.deepseek.com",
+        apiKey: "k",
+        model: "m",
+        reasoning: { style: "deepseek", level: "low" },
+      },
+      async (_u, init) => {
+        body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return new Response(JSON.stringify({ choices: [{ message: { content: "OK" } }] }));
+      },
+    );
+    await provider.complete({ messages: [{ role: "user", content: "hi" }], tools: [] });
+    expect(body).toMatchObject({
+      model: "m",
+      reasoning_effort: "low",
+      thinking: { type: "enabled" },
+    });
+    const s = new MemoryStorage();
+    const value: ProviderProfiles = {
+      activeId: "a",
+      profiles: [
+        {
+          id: "a",
+          name: "DeepSeek",
+          preset: "deepseek",
+          config: {
+            kind: "openai-compatible",
+            baseUrl: "https://api.deepseek.com",
+            apiKey: "k",
+            model: "m",
+            reasoning: { style: "deepseek", level: "low" },
+          },
+          models: [{ id: "m" }, { id: "n", reasoning: true }],
+        },
+      ],
+    };
+    await saveProviderProfiles(s, value);
+    expect(await loadProviderProfiles(s)).toEqual(value);
+  });
+
+  it("OpenRouter's model list marks which models take reasoning", async () => {
+    const fake = async () =>
+      new Response(
+        JSON.stringify({
+          data: [{ id: "b", supported_parameters: ["tools", "reasoning"] }, { id: "a" }],
+        }),
+      );
+    expect(
+      await listModels(
+        {
+          kind: "openai-compatible",
+          baseUrl: "https://openrouter.ai/api/v1",
+          apiKey: "k",
+          model: "",
+        },
+        fake,
+      ),
+    ).toEqual([{ id: "a" }, { id: "b", reasoning: true }]);
   });
 });
