@@ -16,8 +16,6 @@ export interface SourceLocation {
   };
   /** File patterns to look for. */
   patterns: string[];
-  /** Description for the UI. */
-  description: string;
 }
 
 export const DETECTABLE_SOURCES: SourceLocation[] = [
@@ -25,91 +23,72 @@ export const DETECTABLE_SOURCES: SourceLocation[] = [
     source: "claude-code",
     label: "Claude Code",
     paths: {
-      mac: [
-        "~/Library/Application Support/Claude/",
-        "~/.claude/",
-      ],
-      windows: [
-        "%APPDATA%/Claude/",
-        "%USERPROFILE%/.claude/",
-      ],
-      linux: [
-        "~/.config/claude/",
-        "~/.claude/",
-      ],
+      mac: ["~/Library/Application Support/Claude/", "~/.claude/"],
+      windows: ["%APPDATA%/Claude/", "%USERPROFILE%/.claude/"],
+      linux: ["~/.config/claude/", "~/.claude/"],
     },
     patterns: ["conversations.json", "*/conversations.json"],
-    description: "从 Claude Code 本地会话数据导入",
   },
   {
     source: "chatgpt",
     label: "ChatGPT",
     paths: {
-      mac: [
-        "~/Downloads/",
-      ],
-      windows: [
-        "%USERPROFILE%/Downloads/",
-      ],
-      linux: [
-        "~/Downloads/",
-      ],
+      mac: ["~/Downloads/"],
+      windows: ["%USERPROFILE%/Downloads/"],
+      linux: ["~/Downloads/"],
     },
     patterns: ["conversations.json", "chatgpt-export-*.zip"],
-    description: "从 ChatGPT 导出文件导入（通常在下载文件夹）",
   },
   {
     source: "gemini",
     label: "Gemini",
     paths: {
-      mac: [
-        "~/Downloads/",
-      ],
-      windows: [
-        "%USERPROFILE%/Downloads/",
-      ],
-      linux: [
-        "~/Downloads/",
-      ],
+      mac: ["~/Downloads/"],
+      windows: ["%USERPROFILE%/Downloads/"],
+      linux: ["~/Downloads/"],
     },
     patterns: ["gemini-export-*.json", "*.json"],
-    description: "从 Gemini 导出文件导入",
   },
   {
     source: "deepseek",
     label: "DeepSeek",
     paths: {
-      mac: [
-        "~/Downloads/",
-      ],
-      windows: [
-        "%USERPROFILE%/Downloads/",
-      ],
-      linux: [
-        "~/Downloads/",
-      ],
+      mac: ["~/Downloads/"],
+      windows: ["%USERPROFILE%/Downloads/"],
+      linux: ["~/Downloads/"],
     },
     patterns: ["deepseek-*.json", "*.json"],
-    description: "从 DeepSeek 导出文件导入",
   },
   {
     source: "cursor",
     label: "Cursor",
     paths: {
-      mac: [
-        "~/Library/Application Support/Cursor/",
-      ],
-      windows: [
-        "%APPDATA%/Cursor/",
-      ],
-      linux: [
-        "~/.config/Cursor/",
-      ],
+      mac: ["~/Library/Application Support/Cursor/"],
+      windows: ["%APPDATA%/Cursor/"],
+      linux: ["~/.config/Cursor/"],
     },
     patterns: ["conversations.json", "*/conversations.json"],
-    description: "从 Cursor IDE 会话数据导入",
   },
 ];
+
+export type ScanError = "no-picker" | "none-found" | "failed";
+export interface ScanResult {
+  files: File[];
+  error?: ScanError;
+}
+
+/**
+ * The parts of the File System Access API used here. TypeScript's DOM types have the handles
+ * but not the picker or directory iteration, which only Chromium-based browsers ship.
+ */
+interface DirectoryPicker {
+  showDirectoryPicker(options: { mode: "read"; startIn: string }): Promise<ListableDirectory>;
+}
+interface ListableDirectory extends FileSystemDirectoryHandle {
+  values(): AsyncIterable<
+    (FileSystemFileHandle & { kind: "file" }) | (ListableDirectory & { kind: "directory" })
+  >;
+}
 
 export interface DetectedFile {
   source: DetectableSource;
@@ -131,42 +110,30 @@ export function getSourceInstructions(source: DetectableSource): SourceLocation 
  * Use File System Access API to let the user pick a directory and find conversations.
  * Returns files that match the source's patterns.
  */
-export async function pickAndScanDirectory(
-  source: DetectableSource,
-): Promise<{ files: File[]; error?: string }> {
+export async function pickAndScanDirectory(source: DetectableSource): Promise<ScanResult> {
   const sourceInfo = DETECTABLE_SOURCES.find((s) => s.source === source);
   if (!sourceInfo) {
-    return { files: [], error: "Unknown source" };
+    return { files: [], error: "failed" };
   }
 
   // Check if File System Access API is available
-  if (!("showDirectoryPicker" in window)) {
-    return {
-      files: [],
-      error: "Your browser doesn't support directory access. Please drag and drop files instead.",
-    };
-  }
+  const picker = (window as Partial<DirectoryPicker>).showDirectoryPicker;
+  if (!picker) return { files: [], error: "no-picker" };
 
   try {
-    // @ts-ignore - File System Access API not in all TypeScript versions
-    const dirHandle: FileSystemDirectoryHandle = await window.showDirectoryPicker({
-      mode: "read",
-      startIn: "downloads",
-    });
+    const dirHandle = await picker.call(window, { mode: "read", startIn: "downloads" });
 
     const files: File[] = [];
     const seen = new Set<string>();
 
     // Recursively scan the directory
-    async function scan(handle: FileSystemDirectoryHandle, depth = 0): Promise<void> {
+    async function scan(handle: ListableDirectory, depth = 0): Promise<void> {
       // Limit recursion depth to avoid infinite loops
       if (depth > 3) return;
 
-      // @ts-ignore - FileSystemDirectoryHandle.values() exists in modern browsers
       for await (const entry of handle.values()) {
         if (entry.kind === "file") {
-          // @ts-ignore - FileSystemFileHandle.getFile() exists
-          const file: File = await entry.getFile();
+          const file = await entry.getFile();
           // Check if file matches any pattern
           const matches = sourceInfo!.patterns.some((pattern) => {
             if (pattern.includes("*")) {
@@ -181,7 +148,7 @@ export async function pickAndScanDirectory(
             seen.add(file.name);
           }
         } else if (entry.kind === "directory" && !entry.name.startsWith(".")) {
-          await scan(entry as FileSystemDirectoryHandle, depth + 1);
+          await scan(entry, depth + 1);
         }
       }
     }
@@ -189,10 +156,7 @@ export async function pickAndScanDirectory(
     await scan(dirHandle);
 
     if (files.length === 0) {
-      return {
-        files: [],
-        error: `No ${sourceInfo.label} conversation files found in the selected directory.`,
-      };
+      return { files: [], error: "none-found" };
     }
 
     return { files };
@@ -200,10 +164,7 @@ export async function pickAndScanDirectory(
     if (err instanceof Error && err.name === "AbortError") {
       return { files: [] }; // User cancelled
     }
-    return {
-      files: [],
-      error: err instanceof Error ? err.message : "Failed to access directory",
-    };
+    return { files: [], error: "failed" };
   }
 }
 

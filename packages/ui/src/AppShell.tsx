@@ -1,10 +1,12 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "./cn";
 import { Inbox, type LucideIcon } from "lucide-react";
 import { BrandMark } from "./BrandMark";
 import { useT } from "./i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { kitMessages } from "./messages";
+import { PANE_LIMITS, usePaneWidths } from "./paneWidths";
+import { Splitter } from "./Splitter";
 
 export interface AppShellProps {
   /** App name, rendered as the page's h1. */
@@ -18,6 +20,11 @@ export interface AppShellProps {
   agent: ReactNode;
   /** Accessible names for the three panes. */
   labels?: { library?: string; content?: string; agent?: string };
+  /**
+   * Let people drag the borders of the side panes on wide screens. The value is the
+   * localStorage key the widths are kept under, one per app.
+   */
+  resizable?: string;
 }
 
 const pane = "min-h-0 overflow-y-auto";
@@ -34,8 +41,14 @@ export function AppShell({
   content,
   agent,
   labels = {},
+  resizable,
 }: AppShellProps) {
   const t = useT(kitMessages);
+  const [widths, setWidths] = usePaneWidths(resizable);
+  const columns = {
+    "--lib": `${widths.library}px`,
+    "--agent": `${widths.agent}px`,
+  } as CSSProperties;
   return (
     // overflow-clip, not overflow-hidden: a hidden box can still be scrolled by focus(), which
     // pushed the whole shell up when an approval card took focus.
@@ -62,10 +75,11 @@ export function AppShell({
         </div>
       </header>
       <div
+        style={columns}
         className={cn(
-          "grid min-h-0 flex-1",
+          "relative grid min-h-0 flex-1",
           "grid-cols-[16rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_minmax(0,22rem)]",
-          "lg:grid-cols-[17rem_minmax(0,1fr)_25rem] lg:grid-rows-1",
+          "lg:grid-cols-[var(--lib)_minmax(0,1fr)_var(--agent)] lg:grid-rows-1",
         )}
       >
         <nav
@@ -86,6 +100,26 @@ export function AppShell({
         >
           {agent}
         </aside>
+        {resizable && (
+          <>
+            <Splitter
+              label={t.resizeLibrary}
+              side="left"
+              value={widths.library}
+              {...PANE_LIMITS.library}
+              onChange={(library) => setWidths({ library })}
+              className="left-[var(--lib)]"
+            />
+            <Splitter
+              label={t.resizeAgent}
+              side="right"
+              value={widths.agent}
+              {...PANE_LIMITS.agent}
+              onChange={(agent) => setWidths({ agent })}
+              className="left-[calc(100%-var(--agent))]"
+            />
+          </>
+        )}
       </div>
     </div>
   );

@@ -121,28 +121,28 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             <DropdownMenu.Trigger asChild>
               <Button size="sm" disabled={importer.busy}>
                 {t.import}
-                <ChevronDown className="ml-1 h-3.5 w-3.5" aria-hidden />
+                <ChevronDown className="size-3.5 text-muted" aria-hidden />
               </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
               <DropdownMenu.Content
                 align="end"
                 sideOffset={6}
-                className="z-50 min-w-48 rounded-lg border border-line bg-raised p-1.5 shadow-popover"
+                className="z-50 min-w-48 rounded-lg border border-line bg-raised p-1 shadow-popover"
               >
                 <DropdownMenu.Item
                   onSelect={() => setAutoImportOpen(true)}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors hover:bg-surface-mid focus:bg-surface-mid"
+                  className="flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm text-fg outline-none data-[highlighted]:bg-surface-3"
                 >
-                  <Sparkles className="h-4 w-4 text-accent" aria-hidden />
-                  <span>一键导入</span>
+                  <Sparkles className="size-4 text-muted" aria-hidden />
+                  {t.autoImport.menu}
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   onSelect={onPickFiles}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none transition-colors hover:bg-surface-mid focus:bg-surface-mid"
+                  className="flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm text-fg outline-none data-[highlighted]:bg-surface-3"
                 >
-                  <Upload className="h-4 w-4" aria-hidden />
-                  <span>本地文件导入</span>
+                  <Upload className="size-4 text-muted" aria-hidden />
+                  {t.autoImport.menuFiles}
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>

@@ -213,6 +213,7 @@ function Workspace() {
     <>
       <AppShell
         title={t.appTitle}
+        resizable="inbox-exorcist-pane-widths"
         actions={
           <>
             <DemoBadge onClick={() => setSettingsOpen(true)} />

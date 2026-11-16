@@ -252,6 +252,7 @@ GitHub Actions runs checks. Cloudflare's Git integration builds and deploys `mai
 | P12 | Provider profiles survive save and load unchanged and never reach an export. Parsing any input gives unique ids and an active id that exists, or demo mode. |
 | P13 | Server-Sent Events parse to the same events however the byte stream is split, including inside multi-byte characters. |
 | P14 | A run stopped mid-stream keeps exactly the text that arrived, and leaves no timeline entry marked as streaming. |
+| P15 | Dragged or saved pane widths always stay within each pane's limits and leave the content pane at least 360 px; clamping twice changes nothing. |
 
 ### Other layers
 

@@ -42,10 +42,6 @@ export {
 } from "./primitives";
 export { AppShell, EmptyState, PaneHeader, type AppShellProps } from "./AppShell";
 export {
-  ResizablePaneLayout,
-  useResizablePaneWidths,
-} from "./ResizablePaneLayout";
-export {
   CommandPalette,
   isPaletteHotkey,
   paletteScore,
@@ -74,6 +70,16 @@ export { ModelPicker, withModelChoice } from "./ModelPicker";
 export { BrandMark } from "./BrandMark";
 export { CommandTrigger } from "./CommandTrigger";
 export { Segmented, type SegmentedItem } from "./Segmented";
+export { Splitter } from "./Splitter";
+export {
+  CONTENT_MIN,
+  PANE_DEFAULTS,
+  PANE_LIMITS,
+  clampWidths,
+  readWidths,
+  usePaneWidths,
+  type PaneWidths,
+} from "./paneWidths";
 export { GhostItem, GhostList } from "./GhostList";
 export { ToastProvider, useToast, type ToastInput } from "./Toast";
 export { AgentPanel, type AgentPanelProps } from "./AgentPanel";

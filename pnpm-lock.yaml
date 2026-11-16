@@ -337,6 +337,9 @@ importers:
       axe-core:
         specifier: ^4
         version: 4.14.0
+      fast-check:
+        specifier: ^4
+        version: 4.10.2
       jsdom:
         specifier: ^26
         version: 26.1.0

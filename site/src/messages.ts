@@ -99,9 +99,9 @@ export const siteMessages = defineMessages(
         "What Kiro did, and the bugs our property tests and axe checks caught along the way.",
       ],
     } as Record<"specs" | "steering" | "mcp" | "writeup", [string, string]>,
-    mit: "MIT licensed.",
+    mit: "MIT licensed",
     source: "Source on GitHub",
-    madeFor: "Made for Kiroween 2026.",
+    madeFor: "Made for Kiroween 2026",
     // Timeline demo
     demo: {
       prompt: "Banish my empty test chats",
@@ -197,9 +197,9 @@ export const siteMessages = defineMessages(
       ],
       writeup: ["开发记录", "Kiro 做了什么，以及属性测试和 axe 检查一路发现的 bug。"],
     },
-    mit: "MIT 许可。",
+    mit: "MIT 许可",
     source: "GitHub 上的源码",
-    madeFor: "为 Kiroween 2026 制作。",
+    madeFor: "为 Kiroween 2026 制作",
     demo: {
       prompt: "放逐那些空的测试对话",
       found: "这些看起来是空的测试对话：“Untitled chat”和“test test 123”。",
