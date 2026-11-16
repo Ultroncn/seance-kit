@@ -59,6 +59,8 @@ export function useAgentRun({
   const [undone, setUndone] = useState<ReadonlySet<string>>(new Set());
   const pending = useRef(new Map<string, (ok: boolean) => void>());
   const abort = useRef<AbortController | null>(null);
+  // Bumped by reset(). Events from an older run never reach the new timeline.
+  const generation = useRef(0);
   const onChange = useRef(onDataChange);
   onChange.current = onDataChange;
 
@@ -83,6 +85,7 @@ export function useAgentRun({
       if (text === "" || abort.current) return;
       const controller = new AbortController();
       abort.current = controller;
+      const mine = ++generation.current;
       setBusy(true);
       const risks = new Map<string, Risk | null>();
       try {
@@ -95,15 +98,18 @@ export function useAgentRun({
             }),
         });
         for await (const event of events) {
+          if (generation.current !== mine) continue;
           setEntries((all) => reduceTimeline(all, event));
           if (event.type === "tool_called") risks.set(event.callId, event.risk);
           if (event.type === "tool_result" && event.ok && risks.get(event.callId) !== "read")
             onChange.current?.();
         }
       } finally {
-        abort.current = null;
+        if (generation.current === mine || abort.current === controller) {
+          abort.current = null;
+          setBusy(false);
+        }
         settleAll();
-        setBusy(false);
       }
     },
     [agent],
@@ -137,7 +143,10 @@ export function useAgentRun({
       settleAll();
     }, []),
     reset: useCallback(() => {
+      generation.current++;
       abort.current?.abort();
+      abort.current = null;
+      setBusy(false);
       settleAll();
       agent.reset();
       setEntries([]);

@@ -224,6 +224,23 @@ describe("agent loop properties", () => {
     );
   });
 
+  it("P9 every non-read tool that ran was approved for that exact call id", async () => {
+    await fc.assert(
+      fc.asyncProperty(scenario, async (s) => {
+        const { events } = await play(s);
+        const approved = new Set<string>();
+        const risk = new Map<string, string | null>();
+        for (const e of events) {
+          if (e.type === "tool_called") risk.set(e.callId, e.risk);
+          if (e.type === "approval_resolved" && e.approved) approved.add(e.callId);
+          if (e.type === "tool_result" && e.ok && risk.get(e.callId) !== "read")
+            expect(approved.has(e.callId)).toBe(true);
+        }
+      }),
+      { numRuns: 300 },
+    );
+  });
+
   it("P9 approval is never requested for read tools", async () => {
     await fc.assert(
       fc.asyncProperty(scenario, async (s) => {
@@ -234,5 +251,108 @@ describe("agent loop properties", () => {
       }),
       { numRuns: 100 },
     );
+  });
+});
+
+describe("agent loop regressions (review)", () => {
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+
+  it("reset while an approval is pending leaves the new conversation clean and valid", async () => {
+    const { agent, log } = setup([
+      { text: "", calls: [call("write_tool")] },
+      { text: "ok", calls: [] },
+    ]);
+    let release: ((ok: boolean) => void) | undefined;
+    const first = collect(
+      agent.run("go", { approve: () => new Promise<boolean>((r) => (release = r)) }),
+    );
+    while (!release) await tick();
+    agent.reset();
+    release(false);
+    await first;
+    expect(agent.messages).toEqual([]);
+    expect(log.entries).toEqual([]);
+
+    await collect(agent.run("again"));
+    expect(agent.messages[0]).toEqual({ role: "user", content: "again" });
+    expect(historyIsValid(agent.messages)).toBe(true);
+  });
+
+  it("gives every tool call a unique id even when the provider repeats or omits ids", async () => {
+    let turn = 0;
+    const agent = createAgent({
+      provider: {
+        id: "sloppy",
+        isMock: false,
+        async complete() {
+          turn++;
+          if (turn > 3) return { text: "done", toolCalls: [] };
+          return {
+            text: "",
+            toolCalls: [
+              { id: turn === 3 ? "" : "call-0", name: "read_tool", input: { n: 1 } },
+              { id: "call-0", name: "read_tool", input: { n: 2 } },
+            ],
+          };
+        },
+      },
+      registry: makeRegistry({ entries: [] }),
+      storage: new MemoryStorage(),
+    });
+    const events = await collect(agent.run("go"));
+    const ids = events
+      .filter((e) => e.type === "tool_called")
+      .map((e) => (e.type === "tool_called" ? e.callId : ""));
+    expect(ids).toHaveLength(6);
+    expect(new Set(ids).size).toBe(6);
+    expect(ids.every((id) => id !== "")).toBe(true);
+    expect(historyIsValid(agent.messages)).toBe(true);
+  });
+
+  it("reports Stop during a provider request as Aborted, not as a provider error", async () => {
+    const ac = new AbortController();
+    const agent = createAgent({
+      provider: {
+        id: "slow",
+        isMock: false,
+        complete: ({ signal }) =>
+          new Promise((_, reject) =>
+            signal?.addEventListener("abort", () =>
+              reject(new DOMException("aborted", "AbortError")),
+            ),
+          ),
+      },
+      registry: makeRegistry({ entries: [] }),
+      storage: new MemoryStorage(),
+    });
+    const done = collect(agent.run("go", { signal: ac.signal }));
+    await tick();
+    ac.abort();
+    const events = await done;
+    expect(events).toContainEqual(expect.objectContaining({ type: "error", code: "Aborted" }));
+    expect(events.at(-1)).toEqual({ type: "run_finished", reason: "aborted" });
+  });
+
+  it("does not run the remaining calls of a reply after Stop", async () => {
+    const ac = new AbortController();
+    const { agent, log } = setup([{ text: "", calls: [call("write_tool"), call("read_tool")] }]);
+    const events = await collect(
+      agent.run("go", {
+        signal: ac.signal,
+        approve: () => {
+          ac.abort();
+          return false;
+        },
+      }),
+    );
+    expect(log.entries).toEqual([]);
+    expect(events.at(-1)).toEqual({ type: "run_finished", reason: "aborted" });
+    expect(historyIsValid(agent.messages)).toBe(true);
+  });
+
+  it("keeps the step budget when maxSteps is not a finite number", async () => {
+    const { agent, log } = setup([{ text: "", calls: [call("read_tool")] }], Number.NaN, true);
+    await collect(agent.run("go"));
+    expect(log.entries.length).toBeLessThanOrEqual(8);
   });
 });

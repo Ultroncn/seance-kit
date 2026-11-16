@@ -63,9 +63,12 @@ function errorContent(error: ToolError): string {
  * - At most `maxSteps` tool calls run per `run`.
  * - A tool whose risk is not `read` never runs without an approval for that exact call.
  * - Invalid tool input is returned to the model as a typed error and never reaches the tool.
+ * - Every tool call in the history gets exactly one result, and call ids are unique.
+ * - A run only ever writes to the history it started with, so `reset()` mid-run is safe.
  */
 export class Agent {
   private history: ChatMessage[] = [];
+  private seenCallIds = new Set<string>();
   private runCount = 0;
 
   constructor(private readonly options: AgentOptions) {}
@@ -76,24 +79,35 @@ export class Agent {
 
   /** Start a fresh conversation. */
   reset(): void {
+    // A run still in flight keeps writing to its own (old) array, never to the new one.
     this.history = [];
+    this.seenCallIds = new Set();
   }
 
   async *run(userMessage: string, runOptions: RunOptions = {}): AsyncGenerator<AgentEvent> {
     const { provider, registry, storage } = this.options;
     const now = this.options.now ?? (() => new Date());
-    const maxSteps = Math.max(0, Math.floor(this.options.maxSteps ?? DEFAULT_MAX_STEPS));
+    const requested = this.options.maxSteps ?? DEFAULT_MAX_STEPS;
+    const maxSteps = Number.isFinite(requested)
+      ? Math.max(0, Math.floor(requested))
+      : DEFAULT_MAX_STEPS;
     const signal = runOptions.signal ?? new AbortController().signal;
+    const history = this.history;
+    const seen = this.seenCallIds;
+    const runId = `run-${++this.runCount}`;
+    const aborted = function* (): Generator<AgentEvent> {
+      yield { type: "error", code: "Aborted", message: "Run cancelled" };
+      yield { type: "run_finished", reason: "aborted" };
+    };
 
-    yield { type: "run_started", runId: `run-${++this.runCount}`, prompt: userMessage };
-    this.history.push({ role: "user", content: userMessage });
+    yield { type: "run_started", runId, prompt: userMessage };
+    history.push({ role: "user", content: userMessage });
 
     let steps = 0;
     let turn = 0;
     for (;;) {
       if (signal.aborted) {
-        yield { type: "error", code: "Aborted", message: "Run cancelled" };
-        yield { type: "run_finished", reason: "aborted" };
+        yield* aborted();
         return;
       }
 
@@ -101,31 +115,52 @@ export class Agent {
       let reply;
       try {
         reply = await provider.complete({
-          messages: this.history,
+          messages: history,
           tools: registry.toJsonSchema(),
           system: this.options.system,
           signal,
         });
       } catch (err) {
+        if (signal.aborted) {
+          yield* aborted();
+          return;
+        }
         const message = err instanceof Error ? err.message : String(err);
         yield { type: "error", code: "Provider", message };
         yield { type: "run_finished", reason: "error" };
         return;
       }
 
-      this.history.push({
+      // Providers may omit ids or reuse them across turns. Results and approvals are matched by
+      // id, so give any missing or repeated id a fresh one before it enters the history.
+      const calls: ToolCall[] = reply.toolCalls.map((c, i) => {
+        const id = c.id && !seen.has(c.id) ? c.id : `${runId}-t${turn}-c${i}`;
+        seen.add(id);
+        return { ...c, id };
+      });
+      history.push({
         role: "assistant",
         content: reply.text,
-        ...(reply.toolCalls.length > 0 ? { toolCalls: reply.toolCalls } : {}),
+        ...(calls.length > 0 ? { toolCalls: calls } : {}),
       });
       if (reply.text !== "") yield { type: "message", text: reply.text };
-      if (reply.toolCalls.length === 0) {
+      if (calls.length === 0) {
         yield { type: "run_finished", reason: "complete" };
         return;
       }
 
       let budgetHit = false;
-      for (const call of reply.toolCalls) {
+      let stopped = false;
+      for (const call of calls) {
+        if (stopped || signal.aborted) {
+          // Stopped: answer the remaining calls without running them.
+          stopped = true;
+          this.pushResult(history, call, {
+            type: "Aborted",
+            message: "Not run: the run was stopped",
+          });
+          continue;
+        }
         if (budgetHit || steps >= maxSteps) {
           // Every tool call needs a result in the history, or providers reject the next request.
           if (!budgetHit) {
@@ -136,14 +171,18 @@ export class Agent {
               message: `Step budget of ${maxSteps} tool calls reached`,
             };
           }
-          this.pushResult(call, {
+          this.pushResult(history, call, {
             type: "StepBudget",
             message: "Not run: step budget exhausted",
           });
           continue;
         }
         steps++;
-        yield* this.runCall(call, runOptions, { registry, storage, now, signal });
+        yield* this.runCall(call, runOptions, { registry, storage, now, signal, history });
+      }
+      if (stopped || signal.aborted) {
+        yield* aborted();
+        return;
       }
       if (budgetHit) {
         yield { type: "run_finished", reason: "budget" };
@@ -152,8 +191,8 @@ export class Agent {
     }
   }
 
-  private pushResult(call: ToolCall, error: ToolError): void {
-    this.history.push({
+  private pushResult(history: ChatMessage[], call: ToolCall, error: ToolError): void {
+    history.push({
       role: "tool",
       toolCallId: call.id,
       name: call.name,
@@ -170,9 +209,10 @@ export class Agent {
       storage: Storage;
       now: () => Date;
       signal: AbortSignal;
+      history: ChatMessage[];
     },
   ): AsyncGenerator<AgentEvent> {
-    const { registry, storage, now, signal } = env;
+    const { registry, storage, now, signal, history } = env;
     const started = Date.now();
     const tool = registry.get(call.name);
     yield {
@@ -185,7 +225,7 @@ export class Agent {
 
     const fail = (type: ToolErrorType, message: string): AgentEvent => {
       const error: ToolError = { type, message };
-      this.pushResult(call, error);
+      this.pushResult(history, call, error);
       return {
         type: "tool_result",
         callId: call.id,
@@ -233,7 +273,7 @@ export class Agent {
       return;
     }
     const output = result.value;
-    this.history.push({
+    history.push({
       role: "tool",
       toolCallId: call.id,
       name: call.name,

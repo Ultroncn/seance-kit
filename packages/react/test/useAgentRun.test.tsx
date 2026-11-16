@@ -122,4 +122,23 @@ describe("useAgentRun", () => {
     expect(result.current.busy).toBe(false);
     expect(await storage.get("notes", "n1")).toEqual({ id: "n1" });
   });
+
+  it("New séance during a pending approval starts clean: no stale events, and the next run works", async () => {
+    const { storage, registry, provider } = setup();
+    await storage.put("notes", { id: "n1" });
+    const { result } = renderHook(() => useAgentRun({ provider, registry, storage }));
+    let first!: Promise<void>;
+    act(() => {
+      first = result.current.run("hide it");
+    });
+    await waitFor(() => expect(result.current.entries.some((e) => e.kind === "tool")).toBe(true));
+    act(() => result.current.reset());
+    await act(() => first);
+    expect(result.current.entries).toEqual([]);
+    expect(result.current.busy).toBe(false);
+    expect(await storage.get("notes", "n1")).toEqual({ id: "n1" });
+
+    await act(() => result.current.run("count them"));
+    expect(result.current.entries.map((e) => e.kind)).toEqual(["user", "tool", "message"]);
+  });
 });
