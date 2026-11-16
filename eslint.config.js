@@ -26,7 +26,7 @@ export default tseslint.config(
   },
   {
     files: [
-      "scripts/**/*.mjs",
+      "**/scripts/**/*.mjs",
       "*.js",
       "**/vite.config.ts",
       "playwright.config.ts",
