@@ -34,6 +34,10 @@ function Workspace() {
   const toast = useToast();
   const t = useT(archiveMessages);
   const prompts = useT(archiveDemoMessages).prompts;
+  // The tab title follows the language too.
+  useEffect(() => {
+    document.title = t.appTitle;
+  }, [t.appTitle]);
   const { provider, isMock } = useProviderMode();
   const providerCommands = useProviderCommands();
   const data = useArchive();

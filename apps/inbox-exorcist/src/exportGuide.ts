@@ -59,7 +59,7 @@ export const exportGuide = defineMessages(
   {
     title: "如何导出你的邮件",
     intro:
-      "Inbox Exorcist 只读取文件，从不登录你的账号，所以不需要密码。常见邮箱都能导出 .mbox 或 .eml 文件：",
+      "收件箱驱魔只读取文件，从不登录你的账号，所以不需要密码。常见邮箱都能导出 .mbox 或 .eml 文件：",
     thunderbirdStep:
       "在 Thunderbird 中安装 ImportExportTools NG 扩展，右键点击文件夹，选择“导出文件夹 → mbox 格式”，再把导出的文件拖到这里。",
     providers: [

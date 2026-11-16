@@ -214,6 +214,24 @@ const rawEmail: fc.Arbitrary<RawEmail> = fc.record({
 });
 
 describe("email properties", () => {
+  it("P2 regression: a Message-ID of nested brackets normalizes the same way twice", () => {
+    // Shrunk counterexample from fast-check (seed -1261147559).
+    const raw: RawEmail = {
+      messageId: "<<",
+      from: { name: "", address: "a@a.aa" },
+      to: [],
+      cc: [],
+      subject: "  ",
+      date: "not a date",
+      text: "",
+      attachments: -1,
+    };
+    const once = normalizeEmail(raw);
+    expect(once.messageId).toBeNull();
+    expect(normalizeEmail(once as RawEmail)).toEqual(once);
+    expect(normalizeEmail({ messageId: "<<id@x>>" }).messageId).toBe("id@x");
+  });
+
   it("P2 normalizeEmail is idempotent", () => {
     fc.assert(
       fc.property(rawEmail, (raw) => {

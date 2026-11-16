@@ -116,7 +116,7 @@ export const archiveMessages = defineMessages(
     } as Record<string, string>,
   },
   {
-    appTitle: "Archive Séance",
+    appTitle: "对话降灵",
     commands: "命令",
     settings: "设置",
     importBusy: "还有导入在进行，请等它完成后再试。",

@@ -156,7 +156,7 @@ export function App() {
                 href={a.href}
                 className="group block rounded-xl border border-line bg-surface p-6 hover:border-ecto/50 hover:bg-raised"
               >
-                <span className="text-xl font-medium text-ecto">{a.name}</span>
+                <span className="text-xl font-medium text-ecto">{t.appNames[i] ?? a.name}</span>
                 <span className="mt-2 block text-fg">{t.apps[i]?.blurb}</span>
                 <ul className="mt-4 space-y-1.5 text-sm text-muted">
                   {t.apps[i]?.points.map((p) => (

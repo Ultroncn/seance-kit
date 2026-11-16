@@ -41,6 +41,7 @@ test("archive: load, search, open, ask, approve and undo with the keyboard only"
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
 
+  await expect(page.getByRole("button", { name: "Load the sample archive" })).toBeVisible();
   await tabTo(page, /^Load the sample archive$/);
   await page.keyboard.press("Enter");
   await expect(page.getByRole("list", { name: "Chats" }).getByRole("listitem")).toHaveCount(12);
@@ -91,6 +92,8 @@ test("archive: load, search, open, ask, approve and undo with the keyboard only"
 
 test("inbox: Escape rejects a pending approval", async ({ page }) => {
   await page.goto("/inbox/");
+  // The button appears once IndexedDB is read. Tabbing earlier can never reach it.
+  await expect(page.getByRole("button", { name: "Load the sample inbox" })).toBeVisible();
   await tabTo(page, /^Load the sample inbox$/);
   await page.keyboard.press("Enter");
   await expect(page.getByRole("list", { name: "Emails" }).getByRole("listitem")).toHaveCount(18);

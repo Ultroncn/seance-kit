@@ -53,7 +53,8 @@ const list = (v: unknown) =>
 
 /** The single place where imported mail is cleaned. Idempotent (P2). */
 export function normalizeEmail(raw: RawEmail): NormalizedEmail {
-  const id = oneLine(raw.messageId).replace(/^<|>$/g, "").trim();
+  // Strip every leading "<" and trailing ">", or a second pass would strip more (P2).
+  const id = oneLine(raw.messageId).replace(/^[<\s]+|[>\s]+$/g, "");
   const subject = oneLine(raw.subject);
   return {
     messageId: id === "" ? null : id,

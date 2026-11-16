@@ -36,6 +36,10 @@ function Workspace() {
   const toast = useToast();
   const t = useT(inboxMessages);
   const prompts = useT(inboxDemoMessages).prompts;
+  // The tab title follows the language too.
+  useEffect(() => {
+    document.title = t.appTitle;
+  }, [t.appTitle]);
   const { provider, isMock } = useProviderMode();
   const providerCommands = useProviderCommands();
   const data = useInbox();

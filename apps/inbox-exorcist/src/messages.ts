@@ -144,7 +144,7 @@ export const inboxMessages = defineMessages(
     } as Record<string, string>,
   },
   {
-    appTitle: "Inbox Exorcist",
+    appTitle: "收件箱驱魔",
     commands: "命令",
     settings: "设置",
     mailbox: "邮箱",
