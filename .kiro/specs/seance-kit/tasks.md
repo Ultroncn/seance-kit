@@ -113,6 +113,8 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.9 Language switch: EN / 中文 on every page, typed dictionaries checked by `tsc`, scripted demo replies in both languages, unit tests for the i18n layer and the Chinese scripts, a zh e2e smoke test with axe.
+
 ## M5. Video, write-up, Devpost (Dec 1)
 
 - [ ] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5)
