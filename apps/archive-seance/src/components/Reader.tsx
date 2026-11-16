@@ -1,5 +1,5 @@
 import { banishItems, restoreItems, undoBanish } from "@seance/core";
-import { Badge, Button, EmptyState, Tooltip, useToast } from "@seance/ui";
+import { Badge, Button, EmptyState, Tooltip, useT, useToast } from "@seance/ui";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   CONVERSATIONS,
@@ -9,6 +9,7 @@ import {
   type Resurrection,
 } from "../domain/types";
 import { toMarkdown } from "../importers";
+import { archiveMessages } from "../messages";
 import { registry, storage, toolContext } from "../runtime";
 import { shortDate } from "./format";
 
@@ -50,6 +51,7 @@ interface Props {
 
 export function Reader({ conversation: c, version, onChanged, empty }: Props) {
   const toast = useToast();
+  const t = useT(archiveMessages);
   const [resurrection, setResurrection] = useState<Resurrection | null>(null);
 
   useEffect(() => {
@@ -68,15 +70,15 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
   }, [c, version]);
 
   if (!c) return <>{empty}</>;
-  const assistant = c.source === "markdown" ? "Assistant" : SOURCE_LABEL[c.source];
+  const assistant = c.source === "markdown" ? t.assistant : SOURCE_LABEL[c.source];
 
   const banish = async () => {
     const r = await banishItems(storage, CONVERSATIONS, [c.id], new Date());
     onChanged();
     toast({
-      text: `Banished “${c.title}”.`,
+      text: t.banishedToast(c.title),
       action: {
-        label: "Undo",
+        label: t.undo,
         onClick: () => void undoBanish(storage, r.undoToken).then(onChanged),
       },
     });
@@ -84,24 +86,22 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
   const restore = async () => {
     await restoreItems(storage, CONVERSATIONS, [c.id]);
     onChanged();
-    toast({ text: `Restored “${c.title}”.`, tone: "ok" });
+    toast({ text: t.restoredOne(c.title), tone: "ok" });
   };
   const resurrect = async () => {
     const r = await registry.run("resurrect_conversation", { id: c.id }, toolContext());
     if (!r.ok) return toast({ text: r.error.message, tone: "error" });
     onChanged();
-    toast({ text: "Resurrection prompt ready. Copy it into any chat app.", tone: "ok" });
+    toast({ text: t.resurrectReady, tone: "ok" });
   };
 
   return (
     <article className="mx-auto max-w-3xl px-8 py-8" aria-labelledby="reader-title">
       {c.banishedAt && (
         <div className="mb-6 flex items-center gap-3 rounded-lg border border-blood/50 bg-raised px-4 py-3 text-sm">
-          <span className="flex-1">
-            This chat is banished. It is hidden from the library and search.
-          </span>
+          <span className="flex-1">{t.banishedNote}</span>
           <Button size="sm" onClick={() => void restore()}>
-            Restore
+            {t.restore}
           </Button>
         </div>
       )}
@@ -111,29 +111,29 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
           {c.title}
         </h2>
         <p className="mt-2 text-sm text-muted">
-          {SOURCE_LABEL[c.source]} · {shortDate(c.createdAt)} · {c.messages.length} messages
+          {SOURCE_LABEL[c.source]} · {shortDate(c.createdAt)} · {t.messages(c.messages.length)}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Tooltip content="Write a prompt that restarts this chat in any app, with its context.">
+          <Tooltip content={t.resurrectTip}>
             <Button variant="primary" size="sm" onClick={() => void resurrect()}>
-              Resurrect
+              {t.resurrect}
             </Button>
           </Tooltip>
           <Button
             size="sm"
-            onClick={() => copy(toMarkdown(c), () => toast({ text: "Copied as Markdown." }))}
+            onClick={() => copy(toMarkdown(c), () => toast({ text: t.copiedMarkdown }))}
           >
-            Copy as Markdown
+            {t.copyMarkdown}
           </Button>
           {!c.banishedAt && (
-            <Tooltip content="Hide from the library and search. Nothing is deleted, and you can undo it.">
+            <Tooltip content={t.banishTip}>
               <Button
                 size="sm"
                 variant="ghost"
                 className="text-blood hover:text-blood"
                 onClick={() => void banish()}
               >
-                Banish
+                {t.banish}
               </Button>
             </Tooltip>
           )}
@@ -142,22 +142,23 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
 
       {(c.summary || c.tags.length > 0) && (
         <section
-          aria-label="Summary and tags"
+          aria-label={t.summaryAndTags}
           className="mt-6 rounded-lg border border-line bg-surface p-4"
         >
           {c.summary && (
             <>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
-                Summary{c.summarizedBy === "demo" && " · scripted by demo mode"}
+                {t.summary}
+                {c.summarizedBy === "demo" && t.byDemo}
               </p>
               <p className="mt-1 text-sm leading-relaxed">{c.summary}</p>
             </>
           )}
           {c.tags.length > 0 && (
             <div className={c.summary ? "mt-3 flex flex-wrap gap-1.5" : "flex flex-wrap gap-1.5"}>
-              {c.tags.map((t) => (
-                <Badge key={t} tone="ecto">
-                  {t}
+              {c.tags.map((tag) => (
+                <Badge key={tag} tone="ecto">
+                  {tag}
                 </Badge>
               ))}
             </div>
@@ -167,25 +168,21 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
 
       {resurrection && (
         <section
-          aria-label="Resurrection prompt"
+          aria-label={t.resurrectionPrompt}
           className="mt-4 rounded-lg border border-ecto/40 bg-surface p-4"
         >
           <div className="flex items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
-              Resurrection prompt
+              {t.resurrectionPrompt}
             </p>
             <span className="text-[11px] text-muted">{shortDate(resurrection.createdAt)}</span>
             <Button
               size="sm"
               variant="ghost"
               className="ml-auto"
-              onClick={() =>
-                copy(resurrection.prompt, () =>
-                  toast({ text: "Prompt copied. Paste it into any chat app." }),
-                )
-              }
+              onClick={() => copy(resurrection.prompt, () => toast({ text: t.promptCopied }))}
             >
-              Copy
+              {t.copy}
             </Button>
           </div>
           <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-fg">
@@ -194,7 +191,7 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
         </section>
       )}
 
-      <ol className="mt-8 space-y-6" aria-label="Messages">
+      <ol className="mt-8 space-y-6" aria-label={t.messagesList}>
         {c.messages.map((m, i) => (
           <li key={i} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4">
             <span
@@ -204,7 +201,7 @@ export function Reader({ conversation: c, version, onChanged, empty }: Props) {
                   : "pt-0.5 text-xs font-semibold text-ecto"
               }
             >
-              {m.role === "user" ? "You" : assistant}
+              {m.role === "user" ? t.you : assistant}
             </span>
             <div className="space-y-2 text-sm leading-relaxed">
               <MessageText text={m.text} />
@@ -225,22 +222,22 @@ export function ArchiveEmpty({
   onPick: () => void;
   loading: boolean;
 }) {
+  const t = useT(archiveMessages);
   return (
     <EmptyState
-      title="Your archive is empty"
+      title={t.emptyTitle}
       action={
         <div className="flex flex-wrap justify-center gap-2">
           <Button variant="primary" onClick={onSample} disabled={loading}>
-            Load the sample archive
+            {t.cmdSample}
           </Button>
           <Button onClick={onPick} disabled={loading}>
-            Import an export…
+            {t.importExport}
           </Button>
         </div>
       }
     >
-      Drop a ChatGPT or Claude export here: the .zip, or the conversations.json inside it. Markdown
-      and text chats work too. Everything stays in this browser.
+      {t.emptyText}
     </EmptyState>
   );
 }

@@ -4,7 +4,9 @@ import { createAgent, type AgentEvent, type ToolContext } from "@seance/core";
 import { MockProvider } from "@seance/llm";
 import { MemoryStorage } from "@seance/storage";
 import { describe, expect, it } from "vitest";
+import { setLocale } from "@seance/ui";
 import { archiveScripts, DEMO_PROMPTS } from "../src/demo/scripts";
+import { archiveDemoMessages } from "../src/messages";
 import { createArchiveSearch, importConversations } from "../src/domain/store";
 import { CONVERSATIONS, RESURRECTIONS, type Conversation } from "../src/domain/types";
 import { parseChatGPT, parseClaude } from "../src/importers";
@@ -236,5 +238,17 @@ describe("demo scripts run end to end on the sample archive", () => {
     const r = await play(DEMO_PROMPTS.regex);
     expect(r.failed).toEqual([]);
     expect(r.final).toContain("It also matches 2020-13-45");
+  });
+
+  it("answers the Chinese prompt with the same tools, in Chinese", async () => {
+    setLocale("zh");
+    try {
+      const r = await play(archiveDemoMessages.zh.prompts.banish);
+      expect(r.failed).toEqual([]);
+      expect(r.final).toContain("已放逐");
+      expect(r.final).not.toMatch(/Banished/);
+    } finally {
+      setLocale("en");
+    }
   });
 });

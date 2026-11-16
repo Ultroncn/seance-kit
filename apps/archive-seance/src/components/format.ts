@@ -1,12 +1,6 @@
-export const shortDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+import { formatDate } from "@seance/ui";
 
-export const monthYear = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+/** Dates in the reader's language. */
+export const shortDate = (iso: string) => formatDate(iso, "day");
 
-export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+export const monthYear = (iso: string) => formatDate(iso, "month");

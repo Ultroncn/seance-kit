@@ -1,95 +1,92 @@
-import { Button, SeanceProvider, SeanceTimeline, type TimelineEntry } from "@seance/ui";
+import { Button, SeanceProvider, SeanceTimeline, useT, type TimelineEntry } from "@seance/ui";
 import { useState } from "react";
+import { siteMessages } from "./messages";
 
-const START: TimelineEntry[] = [
-  { kind: "user", id: "u", text: "Banish my empty test chats" },
-  {
-    kind: "tool",
-    id: "s",
-    name: "search_conversations",
-    input: { query: "test", limit: 20 },
-    risk: "read",
-    status: "done",
-    output: { total: 2 },
-    durationMs: 12,
-  },
-  {
-    kind: "message",
-    id: "m",
-    text: "These look like empty test chats: “Untitled chat” and “test test 123”.",
-  },
-  {
+type Demo = (typeof siteMessages)["en"]["demo"];
+type Phase = "waiting" | "approved" | "rejected";
+
+/** The run so far, in the reader's language. Derived on render, so switching language mid-demo works. */
+function entriesFor(phase: Phase, d: Demo): TimelineEntry[] {
+  const banish: TimelineEntry = {
     kind: "tool",
     id: "b",
     name: "banish_conversation",
     input: { ids: ["chatgpt:01", "chatgpt:08"] },
     risk: "destructive",
     status: "awaiting_approval",
-  },
-];
+  };
+  const start: TimelineEntry[] = [
+    { kind: "user", id: "u", text: d.prompt },
+    {
+      kind: "tool",
+      id: "s",
+      name: "search_conversations",
+      input: { query: "test", limit: 20 },
+      risk: "read",
+      status: "done",
+      output: { total: 2 },
+      durationMs: 12,
+    },
+    { kind: "message", id: "m", text: d.found },
+  ];
+  if (phase === "waiting") return [...start, banish];
+  return [
+    ...start,
+    phase === "approved"
+      ? {
+          ...banish,
+          status: "done",
+          durationMs: 9,
+          output: { undoToken: "demo" },
+          undoToken: "demo",
+        }
+      : {
+          ...banish,
+          status: "rejected",
+          durationMs: 900,
+          error: { type: "Rejected", message: "The user rejected this action" },
+        },
+    { kind: "message", id: "r", text: phase === "approved" ? d.approved : d.rejected },
+  ];
+}
 
 /** A canned run of the real timeline component. No agent, no data: it shows the approval gate. */
 export function TimelineDemo() {
-  const [entries, setEntries] = useState(START);
+  const d = useT(siteMessages).demo;
+  const [phase, setPhase] = useState<Phase>("waiting");
   const [undone, setUndone] = useState<ReadonlySet<string>>(new Set());
-  const settle = (approved: boolean) =>
-    setEntries((all) => [
-      ...all.map((e): TimelineEntry =>
-        e.kind === "tool" && e.id === "b"
-          ? approved
-            ? {
-                ...e,
-                status: "done",
-                durationMs: 9,
-                output: { undoToken: "demo" },
-                undoToken: "demo",
-              }
-            : {
-                ...e,
-                status: "rejected",
-                durationMs: 900,
-                error: { type: "Rejected", message: "The user rejected this action" },
-              }
-          : e,
-      ),
-      {
-        kind: "message",
-        id: "r",
-        text: approved
-          ? "Banished both. Nothing was deleted: undo it here."
-          : "Okay, I left them where they are.",
-      },
-    ]);
+  const entries = entriesFor(phase, d);
 
   return (
     <SeanceProvider>
       <div className="max-w-2xl overflow-hidden rounded-xl border border-line bg-surface">
         <SeanceTimeline
           entries={entries}
-          onApprove={() => settle(true)}
-          onReject={() => settle(false)}
+          onApprove={() => setPhase("approved")}
+          onReject={() => setPhase("rejected")}
           onUndo={(t) => setUndone(new Set([t]))}
           undone={undone}
           autoFocusApprovals={false}
-          toolLabels={{ banish_conversation: "Hide chats", search_conversations: "Search chats" }}
+          toolLabels={{ banish_conversation: d.hide, search_conversations: d.search }}
           describeApproval={() => ({
-            summary: "Hide 2 chats. Nothing is deleted, and you can undo it.",
+            summary: d.summary,
             details: (
               <ul className="list-disc space-y-1 pl-5 text-fg">
-                <li>Untitled chat (Nov 2019, 2 messages)</li>
-                <li>test test 123 (May 2024, 2 messages)</li>
+                {d.rows.map((row) => (
+                  <li key={row}>{row}</li>
+                ))}
               </ul>
             ),
           })}
         />
-        {entries.length > START.length && (
+        {phase !== "waiting" && (
           <div className="border-t border-line px-4 py-3">
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => (setEntries(START), setUndone(new Set()))}
+              onClick={() => (setPhase("waiting"), setUndone(new Set()))}
             >
-              Replay
+              {d.replay}
             </Button>
           </div>
         )}

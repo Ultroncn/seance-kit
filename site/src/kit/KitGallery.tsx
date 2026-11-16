@@ -6,15 +6,18 @@ import {
   EmptyState,
   Input,
   Kbd,
+  kitMessages,
   PaneHeader,
   SeanceTimeline,
   TextArea,
   Tooltip,
   usePaletteHotkey,
+  useT,
   type PaletteCommand,
   type TimelineEntry,
 } from "@seance/ui";
 import { useMemo, useState } from "react";
+import { galleryMessages } from "../messages";
 import { banishStep, banishTitles, galleryRun } from "./fixtures";
 
 const library = [
@@ -29,6 +32,8 @@ const library = [
  * Demo-mode badge here. The badge belongs to screens that run the agent.
  */
 export function KitGallery() {
+  const t = useT(galleryMessages);
+  const kit = useT(kitMessages);
   const [entries, setEntries] = useState<TimelineEntry[]>(galleryRun);
   const [undone, setUndone] = useState<ReadonlySet<string>>(new Set());
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -61,8 +66,8 @@ export function KitGallery() {
     () => [
       {
         id: "ask-banish",
-        label: "Show a destructive approval",
-        group: "Gallery",
+        label: t.showDestructive,
+        group: t.groupGallery,
         keywords: ["banish", "delete", "hide"],
         onSelect: () =>
           setEntries((all) =>
@@ -71,8 +76,8 @@ export function KitGallery() {
       },
       {
         id: "reset",
-        label: "Reset the run",
-        group: "Gallery",
+        label: t.resetRun,
+        group: t.groupGallery,
         keywords: ["restart", "replay"],
         onSelect: () => {
           setEntries(galleryRun);
@@ -82,17 +87,17 @@ export function KitGallery() {
       ...library.map((title) => ({
         id: `open-${title}`,
         label: title,
-        group: "Library",
+        group: t.groupLibrary,
         onSelect: () => setSelected(title),
       })),
     ],
-    [],
+    [t],
   );
 
   return (
     <>
       <AppShell
-        title="UI kit"
+        title={t.title}
         mark={
           <span
             aria-hidden
@@ -101,14 +106,14 @@ export function KitGallery() {
         }
         actions={
           <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
-            Commands <Kbd>⌘K</Kbd>
+            {t.commands} <Kbd>⌘K</Kbd>
           </Button>
         }
         library={
           <>
-            <PaneHeader title="Library" actions={<Button size="sm">Import</Button>} />
+            <PaneHeader title={t.library} actions={<Button size="sm">{t.import}</Button>} />
             <div className="p-3">
-              <Input aria-label="Search the library" placeholder="Search…" />
+              <Input aria-label={t.searchLibrary} placeholder={t.search} />
             </div>
             <ul className="px-2 pb-4">
               {library.map((title) => (
@@ -130,64 +135,64 @@ export function KitGallery() {
           <div className="mx-auto max-w-2xl space-y-10 px-8 py-10">
             <section aria-labelledby="kit-buttons">
               <h2 id="kit-buttons" className="text-lg font-semibold">
-                Buttons and badges
+                {t.buttons}
               </h2>
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Button variant="primary">Resurrect</Button>
-                <Button>Import</Button>
-                <Tooltip content="Hides the chat. Nothing is deleted, and you can undo it.">
-                  <Button variant="danger">Banish</Button>
+                <Button variant="primary">{t.resurrect}</Button>
+                <Button>{t.import}</Button>
+                <Tooltip content={t.banishTip}>
+                  <Button variant="danger">{t.banish}</Button>
                 </Tooltip>
-                <Button variant="ghost">Cancel</Button>
-                <Button disabled>Disabled</Button>
+                <Button variant="ghost">{t.cancel}</Button>
+                <Button disabled>{t.disabled}</Button>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Badge>reads</Badge>
                 <Badge tone="candle">writes</Badge>
                 <Badge tone="blood">hides</Badge>
-                <Badge tone="ecto">Real provider</Badge>
+                <Badge tone="ecto">{t.realProvider}</Badge>
               </div>
             </section>
             <section aria-labelledby="kit-fields">
               <h2 id="kit-fields" className="text-lg font-semibold">
-                Fields
+                {t.fields}
               </h2>
               <div className="mt-4 space-y-3">
-                <Input aria-label="Example input" placeholder="Ask about your archive…" />
-                <TextArea aria-label="Example text area" placeholder="Longer notes" />
+                <Input aria-label={t.exampleInput} placeholder={t.exampleInputPh} />
+                <TextArea aria-label={t.exampleArea} placeholder={t.exampleAreaPh} />
               </div>
             </section>
             <section aria-labelledby="kit-empty" className="rounded-lg border border-line">
               <h2 id="kit-empty" className="sr-only">
-                Empty state
+                {t.emptyHeading}
               </h2>
               <EmptyState
-                title="No chats yet"
-                action={<Button variant="primary">Import an export</Button>}
+                title={t.noChats}
+                action={<Button variant="primary">{t.importExport}</Button>}
               >
-                Drop a ChatGPT or Claude export here. It stays in this browser.
+                {t.emptyText}
               </EmptyState>
             </section>
           </div>
         }
         agent={
           <>
-            <PaneHeader title="Séance" />
+            <PaneHeader title={kit.seance} />
             <SeanceTimeline
               entries={entries}
               onApprove={(id) => settle(id, true)}
               onReject={(id) => settle(id, false)}
               onUndo={(token) => setUndone((s) => new Set([...s, token]))}
               undone={undone}
-              toolLabels={{ banish_conversation: "Hide chats", tag_conversation: "Add tags" }}
+              toolLabels={{ banish_conversation: t.hideChats, tag_conversation: t.addTags }}
               describeApproval={(step) =>
                 step.risk === "destructive"
                   ? {
-                      summary: `Hide ${banishTitles.length} chats. Nothing is deleted, and you can undo it.`,
+                      summary: t.hideN(banishTitles.length),
                       details: (
                         <ul className="list-disc space-y-1 pl-5 text-fg">
-                          {banishTitles.map((t) => (
-                            <li key={t}>{t}</li>
+                          {banishTitles.map((title) => (
+                            <li key={title}>{title}</li>
                           ))}
                         </ul>
                       ),

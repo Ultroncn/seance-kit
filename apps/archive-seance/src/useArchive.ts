@@ -1,8 +1,10 @@
 import { isBanished } from "@seance/core";
+import { tNow } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importConversations, type ImportCounts } from "./domain/store";
 import { CONVERSATIONS, type Conversation } from "./domain/types";
 import { ImportError, parseFile, type FileLike, type SkippedItem } from "./importers";
+import { archiveMessages } from "./messages";
 import { search, searchReady, storage } from "./runtime";
 
 export interface ArchiveData {
@@ -127,9 +129,11 @@ export function useImporter(onDone: () => void): ImportState {
         }
         await search.flush().catch((err: unknown) =>
           out.push({
-            fileName: "Search index",
+            fileName: tNow(archiveMessages).indexFile,
             skipped: [],
-            error: `Could not be saved: ${err instanceof Error ? err.message : String(err)}`,
+            error: tNow(archiveMessages).indexNotSaved(
+              err instanceof Error ? err.message : String(err),
+            ),
           }),
         );
       } finally {

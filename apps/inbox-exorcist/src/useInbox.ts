@@ -1,8 +1,10 @@
 import { isBanished } from "@seance/core";
+import { tNow } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importEmails, type ImportCounts } from "./domain/store";
 import { DRAFTS, EMAILS, type Draft, type Email, type NormalizedEmail } from "./domain/types";
 import { ImportError, readEmails, type FileLike, type SkippedItem } from "./importers";
+import { inboxMessages } from "./messages";
 import { search, searchReady, storage } from "./runtime";
 
 export interface InboxData {
@@ -147,9 +149,11 @@ export function useImporter(onDone: () => void): ImportState {
         }
         await search.flush().catch((err: unknown) =>
           out.push({
-            fileName: "Search index",
+            fileName: tNow(inboxMessages).indexFile,
             skipped: [],
-            error: `Could not be saved: ${err instanceof Error ? err.message : String(err)}`,
+            error: tNow(inboxMessages).indexNotSaved(
+              err instanceof Error ? err.message : String(err),
+            ),
           }),
         );
       } finally {

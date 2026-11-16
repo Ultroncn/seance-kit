@@ -4,7 +4,9 @@ import { createAgent, type AgentEvent, type ToolContext } from "@seance/core";
 import { MockProvider } from "@seance/llm";
 import { MemoryStorage } from "@seance/storage";
 import { describe, expect, it } from "vitest";
+import { setLocale } from "@seance/ui";
 import { DEMO_PROMPTS, inboxScripts } from "../src/demo/scripts";
+import { inboxDemoMessages } from "../src/messages";
 import { createInboxSearch, importEmails } from "../src/domain/store";
 import { DRAFTS, EMAILS, type Draft, type Email } from "../src/domain/types";
 import { fileFrom, readEmails } from "../src/importers";
@@ -252,5 +254,16 @@ describe("demo scripts run end to end on the sample inbox", () => {
       "Reservation confirmed: 14–18 June",
       "Your booking LX4821 is confirmed",
     ]);
+  });
+
+  it("answers the Chinese prompt with the same tools, in Chinese", async () => {
+    setLocale("zh");
+    try {
+      const r = await play(inboxDemoMessages.zh.prompts.sort);
+      expect(r.final).toMatch(/^完成：/);
+      expect(r.final).toContain("待回复");
+    } finally {
+      setLocale("en");
+    }
   });
 });

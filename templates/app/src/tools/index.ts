@@ -14,13 +14,6 @@ export function createRegistry(deps: NotebookDeps): ToolRegistry {
     .register(banishNotes());
 }
 
-/** Plain labels shown in the timeline and approval cards. */
-export const TOOL_LABELS: Record<string, string> = {
-  search_notes: "Search notes",
-  add_note: "Add a note",
-  banish_notes: "Hide notes",
-};
-
 /** Sent to real models. Say what the app is and how to use the tools. */
 export const SYSTEM_PROMPT = `You are the agent inside My Agent App, a local-first notebook.
 Use search_notes before acting on notes, and never invent ids. The user approves every change.`;

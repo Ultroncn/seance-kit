@@ -1,5 +1,7 @@
 import type { MockScript, MockStepContext } from "@seance/llm";
-import { CATEGORY_LABEL, type Category } from "../domain/types";
+import { tNow } from "@seance/ui";
+import type { Category } from "../domain/types";
+import { inboxDemoMessages, inboxMessages } from "../messages";
 
 /**
  * Scripted demo runs for the Mock provider. They call the real tools on the real (sample or
@@ -7,13 +9,12 @@ import { CATEGORY_LABEL, type Category } from "../domain/types";
  * category, what the reply says) are scripted for the sample inbox, and the Demo badge says so.
  */
 
-export const DEMO_PROMPTS = {
-  sort: "Sort my inbox",
-  replies: "What needs a reply?",
-  draft: "Draft a reply to Maya about dinner",
-  banish: "Banish my newsletters",
-  travel: "Label my travel emails",
-} as const;
+/** The English prompts. Tests use these; the UI shows the reader's language. */
+export const DEMO_PROMPTS = inboxDemoMessages.en.prompts;
+type PromptId = keyof typeof DEMO_PROMPTS;
+/** A script answers its prompt in either language. */
+const both = (id: PromptId) => [inboxDemoMessages.en.prompts[id], inboxDemoMessages.zh.prompts[id]];
+const m = () => tNow(inboxDemoMessages);
 
 /** Scripted categories for the sample inbox, keyed by Message-ID. */
 const SAMPLE_CATEGORIES: Record<string, Category> = {
@@ -61,8 +62,6 @@ interface SearchOut {
 
 const inSample = (r: Hit) => r.id.replace(/^mid:/, "") in SAMPLE_CATEGORIES;
 const categoryOf = (r: Hit) => SAMPLE_CATEGORIES[r.id.replace(/^mid:/, "")] ?? guess(r);
-const GUESS_NOTE =
-  "Outside the sample inbox, demo mode only guesses from senders and subjects, so check these. A real model reads the mail.";
 /** The one email the scripted reply was written for. */
 const SAMPLE_DINNER = "mid:dinner-saturday@example.com";
 const outputs = <T>(ctx: MockStepContext, name: string) =>
@@ -72,18 +71,20 @@ const outputs = <T>(ctx: MockStepContext, name: string) =>
 const rejected = (ctx: MockStepContext, name: string) =>
   ctx.toolResults.some((r) => r.name === name && r.isError);
 const sender = (from: string) => from.replace(/\s*<.*>$/, "");
-const EMPTY = "I couldn't find any mail. Load the sample inbox or import an .mbox file first.";
 
 export const inboxScripts: MockScript[] = [
   {
-    match: DEMO_PROMPTS.sort,
+    match: both("sort"),
     steps: [
-      { text: "Reading your inbox.", toolCalls: [{ name: "search_emails", input: { limit: 50 } }] },
+      () => ({
+        text: m().readingInbox,
+        toolCalls: [{ name: "search_emails", input: { limit: 50 } }],
+      }),
       (ctx) => {
         const hits = outputs<SearchOut>(ctx, "search_emails")[0]?.results ?? [];
-        if (hits.length === 0) return { text: EMPTY };
+        if (hits.length === 0) return { text: m().empty };
         return {
-          text: `I sorted ${hits.length} emails into categories. Check the batch before it is saved.`,
+          text: m().sorted(hits.length),
           toolCalls: [
             {
               name: "classify_emails",
@@ -94,54 +95,52 @@ export const inboxScripts: MockScript[] = [
       },
       (ctx) => {
         const out = outputs<{ updated: { category: Category }[] }>(ctx, "classify_emails")[0];
-        if (!out) return { text: "Okay, I left the categories as they were." };
+        if (!out) return { text: m().keptCategories };
         const guessed = (outputs<SearchOut>(ctx, "search_emails")[0]?.results ?? []).some(
           (h) => !inSample(h),
         );
         const counts = new Map<Category, number>();
         for (const u of out.updated) counts.set(u.category, (counts.get(u.category) ?? 0) + 1);
-        const parts = [...counts].map(([c, n]) => `${n} ${CATEGORY_LABEL[c].toLowerCase()}`);
+        const label = tNow(inboxMessages).category;
+        const parts = [...counts].map(([c, n]) => m().countPart(n, label[c]));
         return {
-          text: `Done: ${parts.join(", ")}. Use the category filter on the left to see each group.${guessed ? ` ${GUESS_NOTE}` : ""}`,
+          text: m().sortDone(parts.join(m().listSep)) + (guessed ? m().gap + m().guessNote : ""),
         };
       },
     ],
   },
   {
-    match: DEMO_PROMPTS.replies,
+    match: both("replies"),
     steps: [
       { toolCalls: [{ name: "search_emails", input: { limit: 50 } }] },
       (ctx) => {
         const hits = outputs<SearchOut>(ctx, "search_emails")[0]?.results ?? [];
-        if (hits.length === 0) return { text: EMPTY };
+        if (hits.length === 0) return { text: m().empty };
         const waiting = hits.filter((h) => (h.category ?? categoryOf(h)) === "needs-reply");
-        if (waiting.length === 0) return { text: "Nothing is waiting for a reply." };
+        if (waiting.length === 0) return { text: m().nothingWaiting };
         const list = waiting.map((h) => `• ${sender(h.from)}: “${h.subject}”`).join("\n");
         const guessed = waiting.some((h) => !h.category && !inSample(h));
         return {
-          text: `${waiting.length} people are waiting on you:\n${list}\n\nAsk me to draft any of these.${guessed ? `\n\n${GUESS_NOTE}` : ""}`,
+          text: m().waiting(waiting.length, list) + (guessed ? `\n\n${m().guessNote}` : ""),
         };
       },
     ],
   },
   {
-    match: DEMO_PROMPTS.draft,
+    match: both("draft"),
     steps: [
       { toolCalls: [{ name: "search_emails", input: { query: "Maya dinner", limit: 3 } }] },
       (ctx) => {
         const hit = outputs<SearchOut>(ctx, "search_emails")[0]?.results[0];
-        if (!hit) return { text: "I couldn't find an email from Maya about dinner." };
-        if (hit.id !== SAMPLE_DINNER)
-          return {
-            text: "Demo mode only has a scripted reply for Maya's email in the sample inbox, so I won't draft one for real mail. Add your own key in Settings and a real model will write it.",
-          };
+        if (!hit) return { text: m().noMaya };
+        if (hit.id !== SAMPLE_DINNER) return { text: m().notSampleMaya };
         return { toolCalls: [{ name: "read_email", input: { id: hit.id } }] };
       },
       (ctx) => {
         const mail = outputs<{ id: string; subject: string }>(ctx, "read_email")[0];
-        if (!mail) return { text: "I couldn't read that email." };
+        if (!mail) return { text: m().cantRead };
         return {
-          text: "Here's a short reply. It will be saved as a draft, not sent.",
+          text: m().hereIsDraft,
           toolCalls: [
             {
               name: "draft_reply",
@@ -156,22 +155,20 @@ export const inboxScripts: MockScript[] = [
       (ctx) => {
         const d = outputs<{ to: string; subject: string }>(ctx, "draft_reply")[0];
         return {
-          text: d
-            ? `Draft saved: “${d.subject}” to ${d.to}. Nothing was sent. Copy it or open it in your mail app from the email.`
-            : "Okay, no draft saved.",
+          text: d ? m().draftSaved(d.subject, d.to) : m().noDraft,
         };
       },
     ],
   },
   {
-    match: DEMO_PROMPTS.banish,
+    match: both("banish"),
     steps: [
       { toolCalls: [{ name: "search_emails", input: { query: "unsubscribe", limit: 50 } }] },
       (ctx) => {
         const hits = outputs<SearchOut>(ctx, "search_emails")[0]?.results ?? [];
-        if (hits.length === 0) return { text: "I found no newsletters to banish." };
+        if (hits.length === 0) return { text: m().noNewsletters };
         return {
-          text: `I found ${hits.length} newsletters and promotions. You'll see the full list before anything is hidden.`,
+          text: m().foundNewsletters(hits.length),
           toolCalls: [{ name: "banish_emails", input: { ids: hits.map((h) => h.id) } }],
         };
       },
@@ -179,16 +176,16 @@ export const inboxScripts: MockScript[] = [
         const out = outputs<{ banished: unknown[] }>(ctx, "banish_emails")[0];
         if (!out)
           return {
-            text: rejected(ctx, "banish_emails") ? "Okay, I kept them all." : "Nothing was hidden.",
+            text: rejected(ctx, "banish_emails") ? m().keptAll : m().nothingHidden,
           };
         return {
-          text: `Banished ${out.banished.length} emails. Nothing was deleted and your mail server was not touched. Undo it here, or restore them from the Banished view.`,
+          text: m().banishedDone(out.banished.length),
         };
       },
     ],
   },
   {
-    match: DEMO_PROMPTS.travel,
+    match: both("travel"),
     steps: [
       {
         toolCalls: [
@@ -199,9 +196,9 @@ export const inboxScripts: MockScript[] = [
       (ctx) => {
         const hits = outputs<SearchOut>(ctx, "search_emails").flatMap((o) => o.results);
         const unique = [...new Map(hits.map((h) => [h.id, h])).values()];
-        if (unique.length === 0) return { text: "I found no flight or hotel emails." };
+        if (unique.length === 0) return { text: m().noTravel };
         return {
-          text: `Labelling ${unique.length} flight and hotel emails “travel”.`,
+          text: m().labelling(unique.length),
           toolCalls: unique.map((h) => ({
             name: "label_email",
             input: { id: h.id, add: ["travel"] },
@@ -211,10 +208,7 @@ export const inboxScripts: MockScript[] = [
       (ctx) => {
         const n = outputs<unknown>(ctx, "label_email").length;
         return {
-          text:
-            n > 0
-              ? `Labelled ${n} emails “travel”. Filter by the label on the left to see them together.`
-              : "No labels were changed.",
+          text: n > 0 ? m().labelled(n) : m().noLabels,
         };
       },
     ],

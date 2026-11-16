@@ -22,16 +22,6 @@ export function createArchiveRegistry(deps: ArchiveDeps): ToolRegistry {
     .register(resurrectConversation());
 }
 
-export const ARCHIVE_TOOL_LABELS: Record<string, string> = {
-  undo_banish: "Undo a banish",
-  search_conversations: "Search chats",
-  read_conversation: "Read a chat",
-  summarize_conversation: "Save a summary",
-  tag_conversation: "Change tags",
-  banish_conversation: "Hide chats",
-  resurrect_conversation: "Resurrect a chat",
-};
-
 export const ARCHIVE_SYSTEM_PROMPT = `You are the agent inside Archive Séance, a local-first app that holds the user's old AI chat exports.
 Use the tools to search, read, summarize, tag, hide (banish) and resurrect chats. The data is on the user's device.
 Rules:

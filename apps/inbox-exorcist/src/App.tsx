@@ -12,15 +12,17 @@ import {
   ToastProvider,
   usePaletteHotkey,
   useProviderMode,
+  useT,
   useToast,
+  withReplyLanguage,
   type PaletteCommand,
 } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPane } from "./components/AgentPane";
 import { EMPTY_FILTERS, MailList, type Filters } from "./components/MailList";
 import { InboxEmpty, MailReader } from "./components/MailReader";
-import { DEMO_PROMPTS } from "./demo/scripts";
-import { CATEGORIES, CATEGORY_LABEL } from "./domain/types";
+import { CATEGORIES } from "./domain/types";
+import { inboxDemoMessages, inboxMessages } from "./messages";
 import { fetchSampleFile, mock, registry, sampleUrl, search, storage } from "./runtime";
 import { INBOX_SYSTEM_PROMPT } from "./tools";
 import { useImporter, useInbox } from "./useInbox";
@@ -29,6 +31,8 @@ const ACCEPT = ".mbox,.mbx,.eml,.zip";
 
 function Workspace() {
   const toast = useToast();
+  const t = useT(inboxMessages);
+  const prompts = useT(inboxDemoMessages).prompts;
   const { provider, isMock } = useProviderMode();
   const data = useInbox();
   const importer = useImporter(data.refresh);
@@ -36,7 +40,7 @@ function Workspace() {
     provider,
     registry,
     storage,
-    system: INBOX_SYSTEM_PROMPT,
+    system: withReplyLanguage(INBOX_SYSTEM_PROMPT),
     onDataChange: data.refresh,
   });
 
@@ -54,16 +58,17 @@ function Workspace() {
   importRef.current = importer.importFiles;
   const toastRef = useRef(toast);
   toastRef.current = toast;
+  const busyText = useRef(t.importBusy);
+  busyText.current = t.importBusy;
 
   const pickFiles = useCallback(() => fileInput.current?.click(), []);
   const loadSample = useCallback(async () => {
     try {
-      if (!(await importer.importFiles([await fetchSampleFile()])))
-        toast({ text: "An import is still running. Try again when it finishes." });
+      if (!(await importer.importFiles([await fetchSampleFile()]))) toast({ text: t.importBusy });
     } catch (err) {
       toast({ text: err instanceof Error ? err.message : String(err), tone: "error" });
     }
-  }, [importer, toast]);
+  }, [importer, toast, t]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -105,8 +110,7 @@ function Workspace() {
       depth = 0;
       setDragging(false);
       void importRef.current(Array.from(e.dataTransfer?.files ?? [])).then((started) => {
-        if (!started)
-          toastRef.current({ text: "An import is still running. Try again when it finishes." });
+        if (!started) toastRef.current({ text: busyText.current });
       });
     };
     window.addEventListener("dragenter", enter);
@@ -128,22 +132,22 @@ function Workspace() {
     () => [
       {
         id: "import",
-        label: "Import mail…",
-        group: "Inbox",
+        label: t.cmdImport,
+        group: t.groupInbox,
         keywords: ["mbox", "eml", "upload", "takeout"],
         onSelect: pickFiles,
       },
       {
         id: "sample",
-        label: "Load the sample inbox",
-        group: "Inbox",
+        label: t.cmdSample,
+        group: t.groupInbox,
         keywords: ["demo", "example"],
         onSelect: () => void loadSample(),
       },
       {
         id: "search",
-        label: "Search mail",
-        group: "Inbox",
+        label: t.cmdSearch,
+        group: t.groupInbox,
         shortcut: "/",
         keywords: ["find"],
         onSelect: () => {
@@ -153,53 +157,53 @@ function Workspace() {
       },
       ...CATEGORIES.map((c) => ({
         id: `cat-${c}`,
-        label: `Show ${CATEGORY_LABEL[c].toLowerCase()}`,
-        group: "Filter",
+        label: t.cmdShowCategory(t.category[c]),
+        group: t.groupFilter,
         onSelect: () => setFilters({ ...EMPTY_FILTERS, category: c }),
       })),
       {
         id: "drafts",
-        label: "Show drafts",
-        group: "Views",
+        label: t.cmdDrafts,
+        group: t.groupViews,
         keywords: ["replies"],
         onSelect: () => setFilters({ ...EMPTY_FILTERS, view: "drafts" }),
       },
       {
         id: "banished",
-        label: "Show banished mail",
-        group: "Views",
+        label: t.cmdBanished,
+        group: t.groupViews,
         keywords: ["hidden", "deleted", "trash", "restore"],
         onSelect: () => setFilters({ ...EMPTY_FILTERS, view: "banished" }),
       },
-      ...Object.values(DEMO_PROMPTS).map((p) => ({
+      ...Object.values(prompts).map((p) => ({
         id: `ask-${p}`,
         label: p,
-        group: "Ask the agent",
+        group: t.groupAsk,
         disabled: agent.busy || empty,
         onSelect: () => void agent.run(p),
       })),
       {
         id: "new",
-        label: "New séance",
-        group: "Agent",
+        label: t.cmdNew,
+        group: t.groupAgent,
         keywords: ["reset", "clear"],
         onSelect: agent.reset,
       },
       {
         id: "settings",
-        label: "Open settings",
-        group: "App",
+        label: t.cmdSettings,
+        group: t.groupApp,
         keywords: ["provider", "api key", "model", "export", "delete"],
         onSelect: () => setSettingsOpen(true),
       },
     ],
-    [pickFiles, loadSample, agent, empty],
+    [pickFiles, loadSample, agent, empty, t, prompts],
   );
 
   return (
     <>
       <AppShell
-        title="Inbox Exorcist"
+        title={t.appTitle}
         mark={
           <span
             aria-hidden
@@ -210,14 +214,14 @@ function Workspace() {
           <>
             <DemoBadge onClick={() => setSettingsOpen(true)} />
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
-              Commands <Kbd>⌘K</Kbd>
+              {t.commands} <Kbd>⌘K</Kbd>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
-              Settings
+              {t.settings}
             </Button>
           </>
         }
-        labels={{ library: "Mailbox" }}
+        labels={{ library: t.mailbox }}
         library={
           <MailList
             ref={searchInput}
@@ -239,11 +243,11 @@ function Workspace() {
                 loading={importer.busy}
               />
               <p className="-mt-8 text-xs text-muted">
-                Want to try the drag-and-drop?{" "}
+                {t.tryDrop}{" "}
                 <a className="text-ecto underline underline-offset-4" href={sampleUrl()} download>
-                  Download the sample .mbox
+                  {t.downloadSample}
                 </a>
-                .
+                {t.period}
               </p>
             </div>
           ) : (
@@ -252,11 +256,7 @@ function Workspace() {
               email={selected}
               drafts={data.drafts}
               onChanged={data.refresh}
-              empty={
-                <EmptyState title="Pick an email">
-                  Choose one from the list, or ask the agent on the right.
-                </EmptyState>
-              }
+              empty={<EmptyState title={t.pickTitle}>{t.pickText}</EmptyState>}
             />
           )
         }
@@ -287,10 +287,8 @@ function Workspace() {
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm">
           <div className="rounded-2xl border-2 border-dashed border-ecto/70 px-12 py-10 text-center">
-            <p className="text-lg font-semibold text-ecto">Drop to import</p>
-            <p className="mt-1 text-sm text-muted">
-              .mbox, .eml, or a .zip of them. Mail stays in this browser.
-            </p>
+            <p className="text-lg font-semibold text-ecto">{t.dropTitle}</p>
+            <p className="mt-1 text-sm text-muted">{t.dropText}</p>
           </div>
         </div>
       )}

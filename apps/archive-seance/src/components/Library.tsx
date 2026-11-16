@@ -1,5 +1,5 @@
 import { restoreItems } from "@seance/core";
-import { Badge, Button, Input, PaneHeader, cn, useToast } from "@seance/ui";
+import { Badge, Button, Input, PaneHeader, cn, useT, useToast } from "@seance/ui";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import {
   CONVERSATIONS,
@@ -8,10 +8,11 @@ import {
   type Conversation,
   type Source,
 } from "../domain/types";
+import { archiveMessages } from "../messages";
 import { storage } from "../runtime";
 import type { ArchiveData, ImportState } from "../useArchive";
 import { useSearchIds } from "../useArchive";
-import { monthYear, plural } from "./format";
+import { monthYear } from "./format";
 
 const PAGE = 300;
 
@@ -46,6 +47,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
   searchRef,
 ) {
   const toast = useToast();
+  const t = useT(archiveMessages);
   const ids = useSearchIds(filters.view === "active" ? filters.query : "", data.version);
   const set = (patch: Partial<Filters>) => onFilters({ ...filters, ...patch });
 
@@ -79,16 +81,16 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
   const restore = async (list: string[]) => {
     const r = await restoreItems(storage, CONVERSATIONS, list);
     data.refresh();
-    toast({ text: `Restored ${plural(r.restored.length, "chat")}.`, tone: "ok" });
+    toast({ text: t.restoredN(r.restored.length), tone: "ok" });
   };
 
   return (
     <div className="flex h-full flex-col">
       <PaneHeader
-        title={filters.view === "banished" ? "Banished" : "Library"}
+        title={filters.view === "banished" ? t.banished : t.library}
         actions={
           <Button size="sm" onClick={onPickFiles} disabled={importer.busy}>
-            Import
+            {t.import}
           </Button>
         }
       />
@@ -97,15 +99,15 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
         <Input
           ref={searchRef}
           type="search"
-          aria-label="Search chats"
-          placeholder="Search chats…  /"
+          aria-label={t.searchChats}
+          placeholder={t.searchPlaceholder}
           value={filters.query}
           disabled={filters.view === "banished"}
           onChange={(e) => set({ query: e.target.value })}
         />
         <div className="flex gap-2">
           <label className="sr-only" htmlFor="filter-source">
-            Source
+            {t.source}
           </label>
           <select
             id="filter-source"
@@ -113,7 +115,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             onChange={(e) => set({ source: e.target.value as Filters["source"] })}
             className="h-8 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
           >
-            <option value="all">All sources</option>
+            <option value="all">{t.allSources}</option>
             {SOURCES.map((s) => (
               <option key={s} value={s}>
                 {SOURCE_LABEL[s]}
@@ -126,12 +128,12 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
               variant="ghost"
               onClick={() => onFilters({ ...EMPTY_FILTERS, view: filters.view })}
             >
-              Clear
+              {t.clear}
             </Button>
           )}
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted">
-          <label htmlFor="filter-from">From</label>
+          <label htmlFor="filter-from">{t.from}</label>
           <input
             id="filter-from"
             type="date"
@@ -139,7 +141,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             onChange={(e) => set({ from: e.target.value })}
             className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-1.5 text-xs text-fg [color-scheme:dark]"
           />
-          <label htmlFor="filter-to">to</label>
+          <label htmlFor="filter-to">{t.to}</label>
           <input
             id="filter-to"
             type="date"
@@ -152,7 +154,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
 
       {importer.progress && (
         <div className="border-b border-line px-3 py-2 text-xs text-muted" role="status">
-          Importing {importer.progress.done} of {importer.progress.total}…
+          {t.importing(importer.progress.done, importer.progress.total)}
           <div className="mt-1.5 h-1 overflow-hidden rounded bg-raised">
             <div
               className="h-full bg-ecto transition-[width]"
@@ -174,17 +176,15 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
               ) : (
                 r.counts && (
                   <p className="text-muted">
-                    {plural(r.counts.added, "new chat")}, {r.counts.updated} updated,{" "}
-                    {r.counts.unchanged} already here.
-                    {r.counts.older > 0 &&
-                      ` Kept the newer copy of ${plural(r.counts.older, "chat")}.`}
+                    {t.importCounts(r.counts.added, r.counts.updated, r.counts.unchanged)}
+                    {r.counts.older > 0 && t.keptNewer(r.counts.older)}
                   </p>
                 )
               )}
               {r.skipped.length > 0 && (
                 <details className="mt-1 text-muted">
                   <summary className="cursor-pointer text-candle">
-                    Skipped {plural(r.skipped.length, "item")}
+                    {t.skipped(r.skipped.length)}
                   </summary>
                   <ul className="mt-1 list-disc pl-4">
                     {r.skipped.slice(0, 20).map((s) => (
@@ -199,13 +199,13 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             </div>
           ))}
           <Button size="sm" variant="ghost" className="-ml-3 mt-1" onClick={importer.clearReports}>
-            Dismiss
+            {t.dismiss}
           </Button>
         </div>
       )}
 
       <div className="flex items-center justify-between px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-muted">
-        <span aria-live="polite">{data.all ? plural(shown.length, "chat") : "Loading…"}</span>
+        <span aria-live="polite">{data.all ? t.chats(shown.length) : t.loading}</span>
         {filters.view === "banished" && shown.length > 0 && (
           <Button
             size="sm"
@@ -213,14 +213,14 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             className="-mr-2 normal-case tracking-normal"
             onClick={() => void restore(shown.map((c) => c.id))}
           >
-            Restore all
+            {t.restoreAll}
           </Button>
         )}
       </div>
 
       <ul
         className="flex-1 overflow-y-auto px-2 pb-3"
-        aria-label={filters.view === "banished" ? "Banished chats" : "Chats"}
+        aria-label={filters.view === "banished" ? t.banishedChats : t.chatsList}
       >
         {visible.map((c) => (
           <li key={c.id}>
@@ -238,13 +238,13 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
               </span>
               <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
                 {monthYear(c.createdAt)} · {SOURCE_LABEL[c.source]}
-                {c.summary && <span title="Has a summary">· summarized</span>}
+                {c.summary && <span title={t.hasSummary}>· {t.summarized}</span>}
               </span>
               {c.tags.length > 0 && (
                 <span className="mt-1 flex flex-wrap gap-1">
-                  {c.tags.slice(0, 3).map((t) => (
-                    <Badge key={t} className="px-1.5 py-0 text-[10px]">
-                      {t}
+                  {c.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} className="px-1.5 py-0 text-[10px]">
+                      {tag}
                     </Badge>
                   ))}
                 </span>
@@ -256,10 +256,10 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
       {data.all && shown.length === 0 && (
         <p className="px-5 py-8 text-center text-sm text-muted">
           {filters.view === "banished"
-            ? "Nothing is banished."
+            ? t.nothingBanished
             : data.active.length === 0
-              ? "No chats yet."
-              : "No chats match."}
+              ? t.noChats
+              : t.noMatch}
         </p>
       )}
       {shown.length > visible.length && (
@@ -270,8 +270,10 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             className="w-full"
             onClick={() => setPageSize((n) => n + PAGE)}
           >
-            Show {Math.min(PAGE, shown.length - visible.length)} more of{" "}
-            {shown.length - visible.length}
+            {t.showMore(
+              Math.min(PAGE, shown.length - visible.length),
+              shown.length - visible.length,
+            )}
           </Button>
         </div>
       )}
@@ -286,7 +288,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
             set({ view: filters.view === "banished" ? "active" : "banished", query: "" })
           }
         >
-          <span>{filters.view === "banished" ? "← Back to library" : "Banished"}</span>
+          <span>{filters.view === "banished" ? t.backToLibrary : t.banished}</span>
           {filters.view === "active" && <span className="text-muted">{data.banished.length}</span>}
         </Button>
       </div>

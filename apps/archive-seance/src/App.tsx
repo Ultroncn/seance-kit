@@ -12,15 +12,17 @@ import {
   ToastProvider,
   usePaletteHotkey,
   useProviderMode,
+  useT,
   useToast,
+  withReplyLanguage,
   type PaletteCommand,
 } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPane } from "./components/AgentPane";
 import { Library, EMPTY_FILTERS, type Filters } from "./components/Library";
 import { ArchiveEmpty, Reader } from "./components/Reader";
-import { DEMO_PROMPTS } from "./demo/scripts";
 import { ARCHIVE_SYSTEM_PROMPT } from "./tools";
+import { archiveDemoMessages, archiveMessages } from "./messages";
 import { fetchSampleFiles, mock, registry, sampleUrl, search, storage } from "./runtime";
 import { useArchive, useImporter } from "./useArchive";
 
@@ -28,6 +30,8 @@ const ACCEPT = ".json,.zip,.md,.markdown,.txt";
 
 function Workspace() {
   const toast = useToast();
+  const t = useT(archiveMessages);
+  const prompts = useT(archiveDemoMessages).prompts;
   const { provider, isMock } = useProviderMode();
   const data = useArchive();
   const importer = useImporter(data.refresh);
@@ -35,7 +39,7 @@ function Workspace() {
     provider,
     registry,
     storage,
-    system: ARCHIVE_SYSTEM_PROMPT,
+    system: withReplyLanguage(ARCHIVE_SYSTEM_PROMPT),
     onDataChange: data.refresh,
   });
 
@@ -53,16 +57,17 @@ function Workspace() {
   importRef.current = importer.importFiles;
   const toastRef = useRef(toast);
   toastRef.current = toast;
+  const busyText = useRef(t.importBusy);
+  busyText.current = t.importBusy;
 
   const pickFiles = useCallback(() => fileInput.current?.click(), []);
   const loadSample = useCallback(async () => {
     try {
-      if (!(await importer.importFiles(await fetchSampleFiles())))
-        toast({ text: "An import is still running. Try again when it finishes." });
+      if (!(await importer.importFiles(await fetchSampleFiles()))) toast({ text: t.importBusy });
     } catch (err) {
       toast({ text: err instanceof Error ? err.message : String(err), tone: "error" });
     }
-  }, [importer, toast]);
+  }, [importer, toast, t]);
 
   // "/" focuses search, like most list apps.
   useEffect(() => {
@@ -106,8 +111,7 @@ function Workspace() {
       depth = 0;
       setDragging(false);
       void importRef.current(Array.from(e.dataTransfer?.files ?? [])).then((started) => {
-        if (!started)
-          toastRef.current({ text: "An import is still running. Try again when it finishes." });
+        if (!started) toastRef.current({ text: busyText.current });
       });
     };
     window.addEventListener("dragenter", enter);
@@ -129,22 +133,22 @@ function Workspace() {
     () => [
       {
         id: "import",
-        label: "Import files…",
-        group: "Library",
+        label: t.cmdImport,
+        group: t.groupLibrary,
         keywords: ["upload", "open", "zip", "json"],
         onSelect: pickFiles,
       },
       {
         id: "sample",
-        label: "Load the sample archive",
-        group: "Library",
+        label: t.cmdSample,
+        group: t.groupLibrary,
         keywords: ["demo", "example"],
         onSelect: () => void loadSample(),
       },
       {
         id: "search",
-        label: "Search chats",
-        group: "Library",
+        label: t.cmdSearch,
+        group: t.groupLibrary,
         shortcut: "/",
         keywords: ["find"],
         onSelect: () => {
@@ -154,8 +158,8 @@ function Workspace() {
       },
       {
         id: "banished",
-        label: filters.view === "banished" ? "Back to the library" : "Show banished chats",
-        group: "Library",
+        label: filters.view === "banished" ? t.cmdBack : t.cmdShowBanished,
+        group: t.groupLibrary,
         keywords: ["hidden", "deleted", "trash", "restore"],
         onSelect: () =>
           setFilters((f) => ({
@@ -163,35 +167,35 @@ function Workspace() {
             view: f.view === "banished" ? "active" : "banished",
           })),
       },
-      ...Object.values(DEMO_PROMPTS).map((p) => ({
+      ...Object.values(prompts).map((p) => ({
         id: `ask-${p}`,
         label: p,
-        group: "Ask the agent",
+        group: t.groupAsk,
         disabled: agent.busy || empty,
         onSelect: () => void agent.run(p),
       })),
       {
         id: "new",
-        label: "New séance",
-        group: "Agent",
+        label: t.cmdNew,
+        group: t.groupAgent,
         keywords: ["reset", "clear"],
         onSelect: agent.reset,
       },
       {
         id: "settings",
-        label: "Open settings",
-        group: "App",
+        label: t.cmdSettings,
+        group: t.groupApp,
         keywords: ["provider", "api key", "model", "export", "delete"],
         onSelect: () => setSettingsOpen(true),
       },
     ],
-    [pickFiles, loadSample, filters.view, agent, empty],
+    [pickFiles, loadSample, filters.view, agent, empty, t, prompts],
   );
 
   return (
     <>
       <AppShell
-        title="Archive Séance"
+        title={t.appTitle}
         mark={
           <span
             aria-hidden
@@ -202,10 +206,10 @@ function Workspace() {
           <>
             <DemoBadge onClick={() => setSettingsOpen(true)} />
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
-              Commands <Kbd>⌘K</Kbd>
+              {t.commands} <Kbd>⌘K</Kbd>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
-              Settings
+              {t.settings}
             </Button>
           </>
         }
@@ -230,15 +234,15 @@ function Workspace() {
                 loading={importer.busy}
               />
               <p className="-mt-8 text-xs text-muted">
-                Want to try the drag-and-drop?{" "}
+                {t.tryDrop}{" "}
                 <a
                   className="text-ecto underline underline-offset-4"
                   href={sampleUrl("chatgpt-conversations.json")}
                   download
                 >
-                  Download a sample export
+                  {t.downloadSample}
                 </a>
-                .
+                {t.period}
               </p>
             </div>
           ) : (
@@ -246,11 +250,7 @@ function Workspace() {
               conversation={selected}
               version={data.version}
               onChanged={data.refresh}
-              empty={
-                <EmptyState title="Pick a chat">
-                  Choose one from the library, or ask the agent on the right.
-                </EmptyState>
-              }
+              empty={<EmptyState title={t.pickTitle}>{t.pickText}</EmptyState>}
             />
           )
         }
@@ -281,10 +281,8 @@ function Workspace() {
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/80 backdrop-blur-sm">
           <div className="rounded-2xl border-2 border-dashed border-ecto/70 px-12 py-10 text-center">
-            <p className="text-lg font-semibold text-ecto">Drop to import</p>
-            <p className="mt-1 text-sm text-muted">
-              ChatGPT or Claude exports, .zip or .json, and Markdown. Files stay in this browser.
-            </p>
+            <p className="text-lg font-semibold text-ecto">{t.dropTitle}</p>
+            <p className="mt-1 text-sm text-muted">{t.dropText}</p>
           </div>
         </div>
       )}

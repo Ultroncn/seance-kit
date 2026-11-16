@@ -1,16 +1,9 @@
 import { banishItems, restoreItems, undoBanish } from "@seance/core";
-import { Badge, Button, EmptyState, TextArea, Tooltip, useToast } from "@seance/ui";
+import { Badge, Button, EmptyState, TextArea, Tooltip, useT, useToast } from "@seance/ui";
 import { useState, type ReactNode } from "react";
 import { getEmail, saveEmail } from "../domain/store";
-import {
-  CATEGORIES,
-  CATEGORY_LABEL,
-  DRAFTS,
-  EMAILS,
-  type Category,
-  type Draft,
-  type Email,
-} from "../domain/types";
+import { CATEGORIES, DRAFTS, EMAILS, type Category, type Draft, type Email } from "../domain/types";
+import { inboxMessages } from "../messages";
 import { search, storage } from "../runtime";
 import { replySubject } from "../tools";
 import { formatAddress, replyAddress } from "../tools/shared";
@@ -58,6 +51,7 @@ interface Props {
 
 export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
   const toast = useToast();
+  const t = useT(inboxMessages);
   const [writing, setWriting] = useState(false);
   const [body, setBody] = useState("");
   if (!e) return <>{empty}</>;
@@ -79,9 +73,9 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
     const r = await banishItems(storage, EMAILS, [e.id], new Date());
     onChanged();
     toast({
-      text: `Banished “${e.subject}”.`,
+      text: t.banishedToast(e.subject),
       action: {
-        label: "Undo",
+        label: t.undo,
         onClick: () => void undoBanish(storage, r.undoToken).then(onChanged),
       },
     });
@@ -89,7 +83,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
   const restore = async () => {
     await restoreItems(storage, EMAILS, [e.id]);
     onChanged();
-    toast({ text: `Restored “${e.subject}”.`, tone: "ok" });
+    toast({ text: t.restoredOne(e.subject), tone: "ok" });
   };
   const saveDraft = async () => {
     const text = body.trim();
@@ -106,7 +100,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
     setBody("");
     setWriting(false);
     onChanged();
-    toast({ text: "Draft saved. Nothing was sent.", tone: "ok" });
+    toast({ text: t.draftSaved, tone: "ok" });
   };
   const discard = async (d: Draft) => {
     await storage.remove(DRAFTS, d.id);
@@ -117,11 +111,9 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
     <article className="mx-auto max-w-3xl px-8 py-8" aria-labelledby="mail-subject">
       {e.banishedAt && (
         <div className="mb-6 flex items-center gap-3 rounded-lg border border-blood/50 bg-raised px-4 py-3 text-sm">
-          <span className="flex-1">
-            This email is banished. It is hidden from the inbox and search.
-          </span>
+          <span className="flex-1">{t.banishedNote}</span>
           <Button size="sm" onClick={() => void restore()}>
-            Restore
+            {t.restore}
           </Button>
         </div>
       )}
@@ -131,42 +123,42 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
           {e.subject}
         </h2>
         <dl className="mt-3 grid grid-cols-[3rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
-          <dt className="text-muted">From</dt>
-          <dd className="truncate">{formatAddress(e.from) || "Unknown sender"}</dd>
+          <dt className="text-muted">{t.from}</dt>
+          <dd className="truncate">{formatAddress(e.from) || t.unknownSender}</dd>
           {e.to.length > 0 && (
             <>
-              <dt className="text-muted">To</dt>
+              <dt className="text-muted">{t.to}</dt>
               <dd className="truncate">{e.to.map(formatAddress).join(", ")}</dd>
             </>
           )}
           {e.cc.length > 0 && (
             <>
-              <dt className="text-muted">Cc</dt>
+              <dt className="text-muted">{t.cc}</dt>
               <dd className="truncate">{e.cc.map(formatAddress).join(", ")}</dd>
             </>
           )}
-          <dt className="text-muted">Date</dt>
+          <dt className="text-muted">{t.date}</dt>
           <dd>{fullDate(e.date)}</dd>
         </dl>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Button variant="primary" size="sm" onClick={() => setWriting((w) => !w)}>
-            Write a reply draft
+            {t.writeDraft}
           </Button>
           {!e.banishedAt && (
-            <Tooltip content="Hide from the inbox and search. Nothing is deleted, and your mail server is not touched.">
+            <Tooltip content={t.banishTip}>
               <Button
                 size="sm"
                 variant="ghost"
                 className="text-blood hover:text-blood"
                 onClick={() => void banish()}
               >
-                Banish
+                {t.banish}
               </Button>
             </Tooltip>
           )}
           <label htmlFor="mail-category" className="ml-auto text-xs text-muted">
-            Category
+            {t.categoryLabel}
           </label>
           <select
             id="mail-category"
@@ -174,10 +166,10 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
             onChange={(ev) => void setCategory(ev.target.value)}
             className="h-8 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
           >
-            <option value="">Not sorted</option>
+            <option value="">{t.notSorted}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {CATEGORY_LABEL[c]}
+                {t.category[c]}
               </option>
             ))}
           </select>
@@ -188,18 +180,18 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
             {e.labels.map((l) => (
               <Badge key={l}>{l}</Badge>
             ))}
-            {e.attachments > 0 && <Badge>{e.attachments} attachments (not imported)</Badge>}
+            {e.attachments > 0 && <Badge>{t.attachments(e.attachments)}</Badge>}
           </div>
         )}
       </header>
 
       {writing && (
         <section
-          aria-label="Write a reply"
+          aria-label={t.writeReply}
           className="mt-6 rounded-lg border border-line bg-surface p-4"
         >
           <label htmlFor="reply-body" className="text-xs font-medium">
-            Reply to {replyAddress(e)}
+            {t.replyTo(replyAddress(e))}
           </label>
           <TextArea
             id="reply-body"
@@ -215,14 +207,12 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
               disabled={body.trim() === ""}
               onClick={() => void saveDraft()}
             >
-              Save draft
+              {t.saveDraft}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setWriting(false)}>
-              Cancel
+              {t.cancel}
             </Button>
-            <span className="ml-auto text-[11px] text-muted">
-              Drafts are never sent from this app.
-            </span>
+            <span className="ml-auto text-[11px] text-muted">{t.neverSent}</span>
           </div>
         </section>
       )}
@@ -230,30 +220,31 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
       {mine.map((d) => (
         <section
           key={d.id}
-          aria-label={`Draft: ${d.subject}`}
+          aria-label={t.draftAria(d.subject)}
           className="mt-6 rounded-lg border border-ecto/40 bg-surface p-4"
         >
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-ecto">
-              Draft · not sent{d.by === "demo" && " · scripted by demo mode"}
+              {t.draftNotSent}
+              {d.by === "demo" && t.byDemo}
             </p>
-            <span className="text-[11px] text-muted">To {d.to}</span>
+            <span className="text-[11px] text-muted">{t.toAddr(d.to)}</span>
             <span className="ml-auto flex gap-1">
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => copy(d.body, () => toast({ text: "Draft copied." }))}
+                onClick={() => copy(d.body, () => toast({ text: t.draftCopied }))}
               >
-                Copy
+                {t.copy}
               </Button>
               <a
                 href={mailtoFor(d)}
                 className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-muted hover:bg-raised hover:text-fg"
               >
-                Open in mail app
+                {t.openMailApp}
               </a>
               <Button size="sm" variant="ghost" onClick={() => void discard(d)}>
-                Discard
+                {t.discard}
               </Button>
             </span>
           </div>
@@ -263,7 +254,7 @@ export function MailReader({ email: e, drafts, onChanged, empty }: Props) {
       ))}
 
       <div className="mt-8 border-t border-line pt-6">
-        <Body text={e.text || "(This email has no text body.)"} />
+        <Body text={e.text || t.noBody} />
       </div>
     </article>
   );
@@ -278,22 +269,22 @@ export function InboxEmpty({
   onPick: () => void;
   loading: boolean;
 }) {
+  const t = useT(inboxMessages);
   return (
     <EmptyState
-      title="Your inbox is empty"
+      title={t.emptyTitle}
       action={
         <div className="flex flex-wrap justify-center gap-2">
           <Button variant="primary" onClick={onSample} disabled={loading}>
-            Load the sample inbox
+            {t.cmdSample}
           </Button>
           <Button onClick={onPick} disabled={loading}>
-            Import mail…
+            {t.cmdImport}
           </Button>
         </div>
       }
     >
-      Drop an .mbox file (Google Takeout, Thunderbird, Apple Mail) or .eml files here. Everything
-      stays in this browser, and nothing is ever sent.
+      {t.emptyText}
     </EmptyState>
   );
 }

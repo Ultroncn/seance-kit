@@ -1,9 +1,8 @@
 import type { AgentRunState } from "@seance/react";
-import { AgentPanel, type ToolEntry } from "@seance/ui";
-import { DEMO_PROMPTS } from "../demo/scripts";
-import { ARCHIVE_TOOL_LABELS } from "../tools";
+import { AgentPanel, useT, type ToolEntry } from "@seance/ui";
+import { archiveDemoMessages, archiveMessages } from "../messages";
 import type { Conversation } from "../domain/types";
-import { monthYear, plural } from "./format";
+import { monthYear } from "./format";
 
 interface Props {
   agent: AgentRunState;
@@ -17,11 +16,13 @@ const strs = (v: unknown) =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
 export function AgentPane({ agent, isMock, byId, hasData }: Props) {
+  const t = useT(archiveMessages);
+  const prompts = useT(archiveDemoMessages).prompts;
   const titleOf = (id: string) => byId.get(id)?.title ?? id;
   /** Title plus date and source, so chats with the same title can be told apart. */
   const describe = (id: string) => {
     const c = byId.get(id);
-    return c ? `${c.title} (${monthYear(c.createdAt)}, ${c.messages.length} messages)` : id;
+    return c ? t.describeChat(c.title, monthYear(c.createdAt), c.messages.length) : id;
   };
 
   const describeApproval = (step: ToolEntry) => {
@@ -30,7 +31,7 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       case "banish_conversation": {
         const ids = strs(input.ids);
         return {
-          summary: `Hide ${plural(ids.length, "chat")}. Nothing is deleted, and you can undo it.`,
+          summary: t.approveBanish(ids.length),
           details: (
             <ul className="list-disc space-y-1 pl-5 text-fg">
               {ids.map((id) => (
@@ -42,7 +43,7 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       }
       case "summarize_conversation":
         return {
-          summary: `Save this summary on “${titleOf(str(input.id))}”:`,
+          summary: t.approveSummary(titleOf(str(input.id))),
           details: (
             <blockquote className="border-l-2 border-candle/60 pl-3 text-fg">
               {str(input.summary)}
@@ -53,20 +54,34 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
         const add = strs(input.add);
         const remove = strs(input.remove);
         return {
-          summary: `Change tags on “${titleOf(str(input.id))}”.`,
+          summary: t.approveTags(titleOf(str(input.id))),
           details: (
             <p className="text-fg">
-              {add.length > 0 && <>Add: {add.join(", ")}. </>}
-              {remove.length > 0 && <>Remove: {remove.join(", ")}.</>}
+              {add.length > 0 && (
+                <>
+                  {t.tagsAdd} {add.join(", ")}{" "}
+                </>
+              )}
+              {remove.length > 0 && (
+                <>
+                  {t.tagsRemove} {remove.join(", ")}
+                </>
+              )}
             </p>
           ),
         };
       }
       case "resurrect_conversation":
         return {
-          summary: `Write a resurrection prompt for “${titleOf(str(input.id))}” and save it with the chat.`,
+          summary: t.approveResurrect(titleOf(str(input.id))),
           ...(str(input.note)
-            ? { details: <p className="text-fg">Note added to the prompt: “{str(input.note)}”</p> }
+            ? {
+                details: (
+                  <p className="text-fg">
+                    {t.noteAdded} “{str(input.note)}”
+                  </p>
+                ),
+              }
             : {}),
         };
       default:
@@ -82,19 +97,19 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       onRun={(p) => void agent.run(p)}
       onApprove={agent.approve}
       onReject={agent.reject}
-      onUndo={(t) => void agent.undo(t)}
+      onUndo={(token) => void agent.undo(token)}
       onStop={agent.stop}
       onReset={agent.reset}
-      suggestions={Object.values(DEMO_PROMPTS)}
+      suggestions={Object.values(prompts)}
       isMock={isMock}
       hasData={hasData}
-      toolLabels={ARCHIVE_TOOL_LABELS}
+      toolLabels={t.toolLabels}
       describeApproval={describeApproval}
-      emptyTitle="Ask your archive"
-      emptyText="The agent can search, read, summarize, tag, banish and resurrect chats. It asks before changing anything."
-      promptLabel="Ask the archive"
-      placeholder="Ask about your chats…"
-      placeholderNoData="Load or import chats first"
+      emptyTitle={t.agentEmptyTitle}
+      emptyText={t.agentEmptyText}
+      promptLabel={t.promptLabel}
+      placeholder={t.placeholder}
+      placeholderNoData={t.placeholderNoData}
     />
   );
 }

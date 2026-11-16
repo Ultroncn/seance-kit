@@ -22,16 +22,6 @@ export function createInboxRegistry(deps: InboxDeps): ToolRegistry {
     .register(undoBanishTool());
 }
 
-export const INBOX_TOOL_LABELS: Record<string, string> = {
-  undo_banish: "Undo a banish",
-  search_emails: "Search mail",
-  read_email: "Read an email",
-  classify_emails: "Sort into categories",
-  draft_reply: "Draft a reply",
-  label_email: "Change labels",
-  banish_emails: "Hide emails",
-};
-
 export const INBOX_SYSTEM_PROMPT = `You are the agent inside Inbox Exorcist, a local-first app holding an imported email archive (.mbox or .eml).
 You can search, read, classify, label, draft replies and hide (banish) mail. You can never send email.
 Rules:

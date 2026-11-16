@@ -1,9 +1,7 @@
 import type { AgentRunState } from "@seance/react";
-import { AgentPanel, type ToolEntry } from "@seance/ui";
-import { DEMO_PROMPTS } from "../demo/scripts";
-import { CATEGORY_LABEL, type Category, type Email } from "../domain/types";
-import { INBOX_TOOL_LABELS } from "../tools";
-import { plural } from "./format";
+import { AgentPanel, useT, type ToolEntry } from "@seance/ui";
+import type { Category, Email } from "../domain/types";
+import { inboxDemoMessages, inboxMessages } from "../messages";
 
 interface Props {
   agent: AgentRunState;
@@ -17,6 +15,8 @@ const strs = (v: unknown) =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
 export function AgentPane({ agent, isMock, byId, hasData }: Props) {
+  const t = useT(inboxMessages);
+  const prompts = useT(inboxDemoMessages).prompts;
   const mail = (id: string) => byId.get(id);
   const line = (id: string) => {
     const e = mail(id);
@@ -29,7 +29,7 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       case "banish_emails": {
         const ids = strs(input.ids);
         return {
-          summary: `Hide ${plural(ids.length, "email")}. Nothing is deleted, nothing changes on your mail server, and you can undo it.`,
+          summary: t.approveBanish(ids.length),
           details: (
             <ul className="list-disc space-y-1 pl-5 text-fg">
               {ids.map((id) => (
@@ -44,20 +44,20 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
           ? (input.assignments as { id?: unknown; category?: unknown }[])
           : [];
         return {
-          summary: `Sort ${plural(rows.length, "email")} into categories.`,
+          summary: t.approveClassify(rows.length),
           details: (
             <table className="w-full text-left text-xs">
-              <caption className="sr-only">Proposed categories</caption>
+              <caption className="sr-only">{t.proposed}</caption>
               <thead className="text-muted">
                 <tr>
                   <th scope="col" className="pb-1 font-medium">
-                    Email
+                    {t.colEmail}
                   </th>
                   <th scope="col" className="pb-1 font-medium">
-                    Now
+                    {t.colNow}
                   </th>
                   <th scope="col" className="pb-1 font-medium">
-                    Category
+                    {t.colCategory}
                   </th>
                 </tr>
               </thead>
@@ -65,14 +65,14 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
                 {rows.map((r, i) => (
                   <tr key={i} className="border-t border-line/60">
                     <td className="py-1 pr-2 text-fg">{mail(str(r.id))?.subject ?? str(r.id)}</td>
-                    <td className="py-1 pr-2 text-muted">
+                    <td className="whitespace-nowrap py-1 pr-2 text-muted">
                       {(() => {
                         const now = mail(str(r.id))?.category;
-                        return now ? CATEGORY_LABEL[now] : "Not sorted";
+                        return now ? t.category[now] : t.notSorted;
                       })()}
                     </td>
-                    <td className="py-1 text-fg">
-                      {CATEGORY_LABEL[str(r.category) as Category] ?? str(r.category)}
+                    <td className="whitespace-nowrap py-1 text-fg">
+                      {t.category[str(r.category) as Category] ?? str(r.category)}
                     </td>
                   </tr>
                 ))}
@@ -83,7 +83,7 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       }
       case "draft_reply":
         return {
-          summary: `Save a reply draft to ${mail(str(input.id))?.from.address ?? "the sender"}. It will not be sent.`,
+          summary: t.approveDraft(mail(str(input.id))?.from.address ?? t.theSender),
           details: (
             <blockquote className="whitespace-pre-wrap border-l-2 border-candle/60 pl-3 text-fg">
               {str(input.body)}
@@ -94,11 +94,19 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
         const add = strs(input.add);
         const remove = strs(input.remove);
         return {
-          summary: `Change labels on “${mail(str(input.id))?.subject ?? str(input.id)}”.`,
+          summary: t.approveLabels(mail(str(input.id))?.subject ?? str(input.id)),
           details: (
             <p className="text-fg">
-              {add.length > 0 && <>Add: {add.join(", ")}. </>}
-              {remove.length > 0 && <>Remove: {remove.join(", ")}.</>}
+              {add.length > 0 && (
+                <>
+                  {t.labelsAdd} {add.join(", ")}{" "}
+                </>
+              )}
+              {remove.length > 0 && (
+                <>
+                  {t.labelsRemove} {remove.join(", ")}
+                </>
+              )}
             </p>
           ),
         };
@@ -116,19 +124,19 @@ export function AgentPane({ agent, isMock, byId, hasData }: Props) {
       onRun={(p) => void agent.run(p)}
       onApprove={agent.approve}
       onReject={agent.reject}
-      onUndo={(t) => void agent.undo(t)}
+      onUndo={(token) => void agent.undo(token)}
       onStop={agent.stop}
       onReset={agent.reset}
-      suggestions={Object.values(DEMO_PROMPTS)}
+      suggestions={Object.values(prompts)}
       isMock={isMock}
       hasData={hasData}
-      toolLabels={INBOX_TOOL_LABELS}
+      toolLabels={t.toolLabels}
       describeApproval={describeApproval}
-      emptyTitle="Exorcise your inbox"
-      emptyText="The agent can search, read, sort, label, draft replies and banish mail. It asks before changing anything and can never send email."
-      promptLabel="Ask about your mail"
-      placeholder="Ask about your mail…"
-      placeholderNoData="Load or import mail first"
+      emptyTitle={t.agentEmptyTitle}
+      emptyText={t.agentEmptyText}
+      promptLabel={t.promptLabel}
+      placeholder={t.placeholder}
+      placeholderNoData={t.placeholderNoData}
     />
   );
 }

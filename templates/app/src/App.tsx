@@ -14,29 +14,28 @@ import {
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
+  tNow,
   usePaletteHotkey,
   useProviderMode,
+  useT,
+  withReplyLanguage,
 } from "@seance/ui";
 import { useCallback, useEffect, useState } from "react";
-import { DEMO_PROMPTS, scripts } from "./demo/scripts";
-import {
-  NOTES,
-  SYSTEM_PROMPT,
-  TOOL_LABELS,
-  createNotesSearch,
-  createRegistry,
-  type Note,
-} from "./tools";
+import { scripts } from "./demo/scripts";
+import { demoMessages, messages } from "./messages";
+import { NOTES, SYSTEM_PROMPT, createNotesSearch, createRegistry, type Note } from "./tools";
 
 // Step 4: wire it up. Each app on the shared origin needs its own database name.
 const storage = new IndexedDbStorage({ name: "my-agent-app" });
 const search = createNotesSearch(storage);
 const registry = createRegistry({ search });
-const mock = new MockProvider({ scripts });
+const mock = new MockProvider({ scripts, unknownPromptText: () => tNow(demoMessages).unknown });
 const ready = search.load();
 
 function Workspace() {
   const { provider, isMock } = useProviderMode();
+  const t = useT(messages);
+  const prompts = useT(demoMessages).prompts;
   const [notes, setNotes] = useState<Note[]>([]);
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
@@ -44,7 +43,7 @@ function Workspace() {
     provider,
     registry,
     storage,
-    system: SYSTEM_PROMPT,
+    system: withReplyLanguage(SYSTEM_PROMPT),
     onDataChange: refresh,
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -65,17 +64,17 @@ function Workspace() {
           <>
             <DemoBadge onClick={() => setSettingsOpen(true)} />
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
-              Commands <Kbd>⌘K</Kbd>
+              {t.commands} <Kbd>⌘K</Kbd>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
-              Settings
+              {t.settings}
             </Button>
           </>
         }
         library={
           <>
-            <PaneHeader title="Notes" />
-            <ul className="p-2" aria-label="Notes">
+            <PaneHeader title={t.notes} />
+            <ul className="p-2" aria-label={t.notes}>
               {notes.map((n) => (
                 <li key={n.id} className="rounded-md px-3 py-2 text-sm">
                   {n.title}
@@ -84,11 +83,7 @@ function Workspace() {
             </ul>
           </>
         }
-        content={
-          <EmptyState title="Your app goes here">
-            Replace this pane with your own view of the data.
-          </EmptyState>
-        }
+        content={<EmptyState title={t.contentTitle}>{t.contentText}</EmptyState>}
         agent={
           <AgentPanel
             entries={agent.entries}
@@ -97,17 +92,17 @@ function Workspace() {
             onRun={(p) => void agent.run(p)}
             onApprove={agent.approve}
             onReject={agent.reject}
-            onUndo={(t) => void agent.undo(t)}
+            onUndo={(token) => void agent.undo(token)}
             onStop={agent.stop}
             onReset={agent.reset}
-            suggestions={Object.values(DEMO_PROMPTS)}
+            suggestions={Object.values(prompts)}
             isMock={isMock}
             hasData
-            toolLabels={TOOL_LABELS}
-            emptyTitle="Ask your notebook"
-            emptyText="The agent can search, add and hide notes. It asks before changing anything."
-            promptLabel="Ask your notebook"
-            placeholder="Ask about your notes…"
+            toolLabels={t.toolLabels}
+            emptyTitle={t.emptyTitle}
+            emptyText={t.emptyText}
+            promptLabel={t.promptLabel}
+            placeholder={t.placeholder}
           />
         }
       />
@@ -117,8 +112,8 @@ function Workspace() {
         commands={[
           {
             id: "settings",
-            label: "Open settings",
-            group: "App",
+            label: t.openSettings,
+            group: t.groupApp,
             keywords: ["provider", "api key"],
             onSelect: () => setSettingsOpen(true),
           },

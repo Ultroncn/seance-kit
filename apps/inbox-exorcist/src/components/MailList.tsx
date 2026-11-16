@@ -1,12 +1,13 @@
 import { restoreItems } from "@seance/core";
-import { Badge, Button, Input, PaneHeader, cn, useToast } from "@seance/ui";
+import { Badge, Button, Input, PaneHeader, cn, useT, useToast } from "@seance/ui";
 import { forwardRef, useEffect, useMemo, useState } from "react";
-import { CATEGORIES, CATEGORY_LABEL, EMAILS, type Category, type Email } from "../domain/types";
+import { CATEGORIES, EMAILS, type Category, type Email } from "../domain/types";
+import { inboxMessages } from "../messages";
 import { storage } from "../runtime";
 import type { ImportState, InboxData } from "../useInbox";
 import { useSearchIds } from "../useInbox";
 import { CategoryBadge } from "./CategoryBadge";
-import { listDate, megabytes, plural } from "./format";
+import { listDate, megabytes } from "./format";
 
 const PAGE = 300;
 
@@ -31,13 +32,14 @@ interface Props {
   onPickFiles: () => void;
 }
 
-const sender = (e: Email) => e.from.name || e.from.address || "Unknown sender";
+const sender = (e: Email, unknown: string) => e.from.name || e.from.address || unknown;
 
 export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
   { data, filters, onFilters, selectedId, onSelect, importer, onPickFiles },
   searchRef,
 ) {
   const toast = useToast();
+  const t = useT(inboxMessages);
   const ids = useSearchIds(filters.view === "inbox" ? filters.query : "", data.version);
   const set = (patch: Partial<Filters>) => onFilters({ ...filters, ...patch });
 
@@ -64,12 +66,12 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
   const restore = async (list: string[]) => {
     const r = await restoreItems(storage, EMAILS, list);
     data.refresh();
-    toast({ text: `Restored ${plural(r.restored.length, "email")}.`, tone: "ok" });
+    toast({ text: t.restoredN(r.restored.length), tone: "ok" });
   };
 
   const filtering = filters.query !== "" || filters.category !== "all" || filters.label !== "";
   const title =
-    filters.view === "drafts" ? "Drafts" : filters.view === "banished" ? "Banished" : "Inbox";
+    filters.view === "drafts" ? t.drafts : filters.view === "banished" ? t.banished : t.inbox;
 
   return (
     <div className="flex h-full flex-col">
@@ -77,7 +79,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
         title={title}
         actions={
           <Button size="sm" onClick={onPickFiles} disabled={importer.busy}>
-            Import
+            {t.import}
           </Button>
         }
       />
@@ -87,14 +89,14 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
           <Input
             ref={searchRef}
             type="search"
-            aria-label="Search mail"
-            placeholder="Search mail…  /"
+            aria-label={t.searchMail}
+            placeholder={t.searchPlaceholder}
             value={filters.query}
             onChange={(e) => set({ query: e.target.value })}
           />
           <div className="flex gap-2">
             <label className="sr-only" htmlFor="filter-category">
-              Category
+              {t.categoryLabel}
             </label>
             <select
               id="filter-category"
@@ -102,16 +104,16 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               onChange={(e) => set({ category: e.target.value as Filters["category"] })}
               className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
             >
-              <option value="all">All categories</option>
+              <option value="all">{t.allCategories}</option>
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {CATEGORY_LABEL[c]}
+                  {t.category[c]}
                 </option>
               ))}
-              <option value="uncategorized">Not sorted yet</option>
+              <option value="uncategorized">{t.notSortedYet}</option>
             </select>
             <label className="sr-only" htmlFor="filter-label">
-              Label
+              {t.label}
             </label>
             <select
               id="filter-label"
@@ -119,7 +121,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               onChange={(e) => set({ label: e.target.value })}
               className="h-8 min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 text-xs text-fg"
             >
-              <option value="">All labels</option>
+              <option value="">{t.allLabels}</option>
               {data.labels.map((l) => (
                 <option key={l} value={l}>
                   {l}
@@ -134,7 +136,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               className="-ml-3"
               onClick={() => onFilters(EMPTY_FILTERS)}
             >
-              Clear filters
+              {t.clearFilters}
             </Button>
           )}
         </div>
@@ -142,8 +144,12 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
 
       {importer.progress && (
         <div className="border-b border-line px-3 py-2 text-xs text-muted" role="status">
-          Reading {importer.progress.fileName}: {megabytes(importer.progress.bytes)} of{" "}
-          {megabytes(importer.progress.total)} · {plural(importer.progress.added, "new email")}
+          {t.reading(
+            importer.progress.fileName,
+            megabytes(importer.progress.bytes),
+            megabytes(importer.progress.total),
+            importer.progress.added,
+          )}
           <div className="mt-1.5 h-1 overflow-hidden rounded bg-raised">
             <div
               className="h-full bg-ecto transition-[width]"
@@ -165,14 +171,14 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               ) : (
                 r.counts && (
                   <p className="text-muted">
-                    {plural(r.counts.added, "new email")}, {r.counts.duplicates} already here.
+                    {t.importCounts(r.counts.added, r.counts.duplicates)}
                   </p>
                 )
               )}
               {r.skipped.length > 0 && (
                 <details className="mt-1 text-muted">
                   <summary className="cursor-pointer text-candle">
-                    Skipped {plural(r.skipped.length, "item")}
+                    {t.skipped(r.skipped.length)}
                   </summary>
                   <ul className="mt-1 list-disc pl-4">
                     {r.skipped.slice(0, 20).map((s) => (
@@ -186,7 +192,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
             </div>
           ))}
           <Button size="sm" variant="ghost" className="-ml-3 mt-1" onClick={importer.clearReports}>
-            Dismiss
+            {t.dismiss}
           </Button>
         </div>
       )}
@@ -194,9 +200,9 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
       {filters.view === "drafts" ? (
         <>
           <p className="px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-muted">
-            {plural(data.drafts.length, "draft")}
+            {t.draftsCount(data.drafts.length)}
           </p>
-          <ul className="flex-1 overflow-y-auto px-2 pb-3" aria-label="Drafts">
+          <ul className="flex-1 overflow-y-auto px-2 pb-3" aria-label={t.drafts}>
             {data.drafts.map((d) => (
               <li key={d.id}>
                 <button
@@ -207,22 +213,20 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                 >
                   <span className="block truncate text-sm text-fg">{d.subject}</span>
                   <span className="mt-0.5 block truncate text-[11px] text-muted">
-                    To {d.to} · not sent
+                    {t.toNotSent(d.to)}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
           {data.drafts.length === 0 && (
-            <p className="px-5 py-8 text-center text-sm text-muted">
-              No drafts. Ask the agent to draft a reply.
-            </p>
+            <p className="px-5 py-8 text-center text-sm text-muted">{t.noDrafts}</p>
           )}
         </>
       ) : (
         <>
           <div className="flex items-center justify-between px-4 pb-1 pt-3 text-[11px] uppercase tracking-wider text-muted">
-            <span aria-live="polite">{data.all ? plural(shown.length, "email") : "Loading…"}</span>
+            <span aria-live="polite">{data.all ? t.emails(shown.length) : t.loading}</span>
             {filters.view === "banished" && shown.length > 0 && (
               <Button
                 size="sm"
@@ -230,13 +234,13 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                 className="-mr-2 normal-case tracking-normal"
                 onClick={() => void restore(shown.map((e) => e.id))}
               >
-                Restore all
+                {t.restoreAll}
               </Button>
             )}
           </div>
           <ul
             className="flex-1 overflow-y-auto px-2 pb-3"
-            aria-label={filters.view === "banished" ? "Banished emails" : "Emails"}
+            aria-label={filters.view === "banished" ? t.banishedEmails : t.emailsList}
           >
             {visible.map((e) => (
               <li key={e.id}>
@@ -251,7 +255,7 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                 >
                   <span className="flex items-baseline gap-2">
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg group-aria-[current=true]:text-ecto">
-                      {sender(e)}
+                      {sender(e, t.unknownSender)}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted">{listDate(e.date)}</span>
                   </span>
@@ -278,36 +282,38 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                 className="w-full"
                 onClick={() => setPageSize((n) => n + PAGE)}
               >
-                Show {Math.min(PAGE, shown.length - visible.length)} more of{" "}
-                {shown.length - visible.length}
+                {t.showMore(
+                  Math.min(PAGE, shown.length - visible.length),
+                  shown.length - visible.length,
+                )}
               </Button>
             </div>
           )}
           {data.all && shown.length === 0 && (
             <p className="px-5 py-8 text-center text-sm text-muted">
               {filters.view === "banished"
-                ? "Nothing is banished."
+                ? t.nothingBanished
                 : data.active.length === 0
-                  ? "No mail yet."
-                  : "No mail matches."}
+                  ? t.noMail
+                  : t.noMatch}
             </p>
           )}
         </>
       )}
 
-      <nav aria-label="Views" className="flex border-t border-line p-2">
+      <nav aria-label={t.views} className="flex border-t border-line p-2">
         {(
           [
-            ["inbox", "Inbox", data.active.length],
-            ["drafts", "Drafts", data.drafts.length],
-            ["banished", "Banished", data.banished.length],
+            ["inbox", t.inbox, data.active.length],
+            ["drafts", t.drafts, data.drafts.length],
+            ["banished", t.banished, data.banished.length],
           ] as const
         ).map(([v, label, n]) => (
           <Button
             key={v}
             size="sm"
             variant="ghost"
-            className={cn("flex-1", filters.view === v && "bg-raised text-fg")}
+            className={cn("flex-1 whitespace-nowrap", filters.view === v && "bg-raised text-fg")}
             aria-pressed={filters.view === v}
             onClick={() => onFilters({ ...EMPTY_FILTERS, view: v })}
           >

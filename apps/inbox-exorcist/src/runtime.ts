@@ -1,7 +1,9 @@
 import { MockProvider } from "@seance/llm";
 import { IndexedDbStorage } from "@seance/storage";
+import { tNow } from "@seance/ui";
 import { inboxScripts } from "./demo/scripts";
 import { createInboxSearch } from "./domain/store";
+import { inboxDemoMessages } from "./messages";
 import type { FileLike } from "./importers";
 import { createInboxRegistry } from "./tools";
 
@@ -9,7 +11,10 @@ import { createInboxRegistry } from "./tools";
 export const storage = new IndexedDbStorage({ name: "inbox-exorcist" });
 export const search = createInboxSearch(storage);
 export const registry = createInboxRegistry({ search });
-export const mock = new MockProvider({ scripts: inboxScripts });
+export const mock = new MockProvider({
+  scripts: inboxScripts,
+  unknownPromptText: () => tNow(inboxDemoMessages).unknown,
+});
 /** Resolves once the saved search index is restored or rebuilt. Never rejects: the list must load. */
 export const searchReady: Promise<unknown> = search.load().catch((err: unknown) => {
   console.error("Search index could not be loaded, rebuilding", err);

@@ -12,14 +12,6 @@ export const CATEGORIES = [
   "noise",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
-export const CATEGORY_LABEL: Record<Category, string> = {
-  "needs-reply": "Needs reply",
-  personal: "Personal",
-  receipt: "Receipt",
-  notification: "Notification",
-  newsletter: "Newsletter",
-  noise: "Noise",
-};
 
 export interface Address {
   name: string;

@@ -1,7 +1,9 @@
 import { MockProvider } from "@seance/llm";
 import { IndexedDbStorage } from "@seance/storage";
+import { tNow } from "@seance/ui";
 import { archiveScripts } from "./demo/scripts";
 import { createArchiveSearch } from "./domain/store";
+import { archiveDemoMessages } from "./messages";
 import type { FileLike } from "./importers";
 import { createArchiveRegistry } from "./tools";
 
@@ -9,7 +11,10 @@ import { createArchiveRegistry } from "./tools";
 export const storage = new IndexedDbStorage({ name: "archive-seance" });
 export const search = createArchiveSearch(storage);
 export const registry = createArchiveRegistry({ search });
-export const mock = new MockProvider({ scripts: archiveScripts });
+export const mock = new MockProvider({
+  scripts: archiveScripts,
+  unknownPromptText: () => tNow(archiveDemoMessages).unknown,
+});
 
 /** Resolves once the saved search index is restored or rebuilt. Never rejects: the list must load. */
 export const searchReady: Promise<unknown> = search.load().catch((err: unknown) => {
