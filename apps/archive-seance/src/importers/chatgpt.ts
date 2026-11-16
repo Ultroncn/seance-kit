@@ -48,9 +48,11 @@ function walk(mapping: Record<string, Node>, start: string): Record<string, unkn
   const chain: Record<string, unknown>[] = [];
   const seen = new Set<string>();
   let id: unknown = start;
-  while (typeof id === "string" && mapping[id] && !seen.has(id)) {
+  for (;;) {
+    if (typeof id !== "string" || seen.has(id)) break;
+    const node = mapping[id];
+    if (!node) break;
     seen.add(id);
-    const node: Node = mapping[id];
     if (isRecord(node.message)) chain.push(node.message);
     id = node.parent;
   }
