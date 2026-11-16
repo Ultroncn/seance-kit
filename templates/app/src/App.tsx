@@ -30,7 +30,11 @@ import { NOTES, SYSTEM_PROMPT, createNotesSearch, createRegistry, type Note } fr
 const storage = new IndexedDbStorage({ name: "my-agent-app" });
 const search = createNotesSearch(storage);
 const registry = createRegistry({ search });
-const mock = new MockProvider({ scripts, unknownPromptText: () => tNow(demoMessages).unknown });
+const mock = new MockProvider({
+  scripts,
+  typingMs: 14,
+  unknownPromptText: () => tNow(demoMessages).unknown,
+});
 const ready = search.load();
 
 function Workspace() {

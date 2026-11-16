@@ -1,12 +1,19 @@
 import type { ChatMessage, Provider, ToolCall } from "@seance/llm";
 import type { Storage } from "@seance/storage";
 import type { ToolRegistry } from "./registry";
+import { withDeltas } from "./stream";
 import type { Risk, ToolError, ToolErrorType } from "./types";
 
 export type AgentEvent =
   | { type: "run_started"; runId: string; prompt: string }
   | { type: "step_started"; step: number }
   | { type: "message"; text: string }
+  /** A piece of the reply as the model writes it. `message` follows with the whole text. */
+  | { type: "message_delta"; text: string }
+  /** A piece of the model's reasoning, where its API shares it. */
+  | { type: "reasoning_delta"; text: string }
+  /** The step's whole reasoning and how long the model thought, sent once the reply is in. */
+  | { type: "reasoning"; text: string; durationMs: number }
   | { type: "tool_called"; callId: string; name: string; input: unknown; risk: Risk | null }
   | { type: "approval_requested"; callId: string; name: string; input: unknown; risk: Risk }
   | { type: "approval_resolved"; callId: string; approved: boolean }
@@ -113,13 +120,33 @@ export class Agent {
 
       yield { type: "step_started", step: ++turn };
       let reply;
+      const t0 = now().getTime();
+      let thoughtUntil: number | null = null;
+      let thought = "";
       try {
-        reply = await provider.complete({
-          messages: history,
-          tools: registry.toJsonSchema(),
-          system: this.options.system,
-          signal,
-        });
+        const stream = withDeltas((onDelta) =>
+          provider.complete({
+            messages: history,
+            tools: registry.toJsonSchema(),
+            system: this.options.system,
+            signal,
+            onDelta,
+          }),
+        );
+        for (let next = await stream.next(); ; next = await stream.next()) {
+          if (next.done) {
+            reply = next.value;
+            break;
+          }
+          const d = next.value;
+          if (d.kind === "reasoning") {
+            thought += d.text;
+            yield { type: "reasoning_delta", text: d.text };
+          } else {
+            thoughtUntil ??= now().getTime();
+            yield { type: "message_delta", text: d.text };
+          }
+        }
       } catch (err) {
         if (signal.aborted) {
           yield* aborted();
@@ -144,6 +171,12 @@ export class Agent {
         ...(calls.length > 0 ? { toolCalls: calls } : {}),
         ...(reply.reasoning ? { reasoning: reply.reasoning } : {}),
       });
+      if (thought !== "")
+        yield {
+          type: "reasoning",
+          text: thought,
+          durationMs: Math.max(0, (thoughtUntil ?? now().getTime()) - t0),
+        };
       if (reply.text !== "") yield { type: "message", text: reply.text };
       if (calls.length === 0) {
         yield { type: "run_finished", reason: "complete" };

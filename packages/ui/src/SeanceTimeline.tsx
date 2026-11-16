@@ -2,6 +2,8 @@ import { motion } from "motion/react";
 import { useRef, type ReactNode } from "react";
 import { ApprovalCard } from "./ApprovalCard";
 import { cn } from "./cn";
+import { Flame } from "./Flame";
+import { Caret, Thinking } from "./Thinking";
 import { formatDuration, formatJson } from "./format";
 import { getLocale, tNow, useT } from "./i18n";
 import { kitMessages } from "./messages";
@@ -42,6 +44,8 @@ function nodeClass(entry: TimelineEntry): string {
   if (entry.kind === "user") return "border border-muted bg-bg";
   if (entry.kind === "message") return "bg-ecto shadow-[0_0_10px_var(--color-ecto)]";
   if (entry.kind === "notice") return entry.tone === "error" ? "bg-blood" : "bg-muted";
+  if (entry.kind === "thinking")
+    return entry.streaming ? "border border-ecto/60 bg-bg" : "border border-line bg-raised";
   switch (entry.status) {
     case "running":
       return "border border-ecto bg-bg";
@@ -68,6 +72,8 @@ export function timelineStatus(
 ): string {
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i];
+    if (e?.kind === "message" && e.streaming) return t.writing;
+    if (e?.kind === "thinking" && e.streaming) return t.thinking;
     if (e?.kind === "message" && i === entries.length - 1)
       return t.announceReply(e.text.length > 200 ? `${e.text.slice(0, 199)}…` : e.text);
     if (e?.kind !== "tool") continue;
@@ -114,50 +120,138 @@ function ToolStep({ step, props }: { step: ToolEntry; props: InnerProps }) {
     );
   }
 
+  const summary = step.status === "done" ? outputSummary(step.output, t) : null;
   return (
     <div className="min-w-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <code className="font-mono text-sm text-fg">{step.name}</code>
-        {label && <span className="text-xs text-muted">{label}</span>}
-        {risk && <Badge tone={risk.tone}>{risk.label}</Badge>}
-        <span
-          className={cn(
-            "text-xs",
-            step.status === "failed"
-              ? "text-blood"
-              : step.status === "done"
-                ? "text-ecto"
-                : "text-muted",
-          )}
-        >
-          {restored ? t.restored : t.status[step.status as ToolStepStatus]}
-        </span>
-        {step.durationMs !== undefined && (
-          <span className="ml-auto font-mono text-[11px] text-muted">
-            {formatDuration(step.durationMs)}
+      <details className="group/step -mx-2 rounded-lg border border-transparent transition-colors duration-150 open:border-line open:bg-raised/40">
+        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 transition-colors duration-150 hover:bg-raised/70 [&::-webkit-details-marker]:hidden">
+          <span
+            className={cn(
+              "min-w-0 truncate text-sm",
+              step.status === "running" ? "text-ecto" : "text-fg",
+            )}
+          >
+            {label ?? step.name}
           </span>
-        )}
-      </div>
+          {risk && (
+            <Badge tone={risk.tone} className="shrink-0 whitespace-nowrap px-1.5 py-0 text-[10px]">
+              {risk.label}
+            </Badge>
+          )}
+          {summary && (
+            <span className="shrink-0 whitespace-nowrap text-xs text-muted">{summary}</span>
+          )}
+          <span
+            className={cn(
+              "ml-auto shrink-0 text-xs",
+              step.status === "failed"
+                ? "text-blood"
+                : step.status === "done"
+                  ? "text-ecto"
+                  : "text-muted",
+            )}
+          >
+            {restored ? t.restored : t.status[step.status as ToolStepStatus]}
+          </span>
+          {step.durationMs !== undefined && (
+            <span className="shrink-0 font-mono text-[11px] text-muted">
+              {formatDuration(step.durationMs)}
+            </span>
+          )}
+          <span
+            aria-hidden
+            className="shrink-0 text-muted transition-transform duration-150 group-open/step:rotate-90"
+          >
+            ›
+          </span>
+        </summary>
+        <div className="space-y-1.5 px-2 pb-2 pt-1">
+          {label && <code className="block font-mono text-[11px] text-muted">{step.name}</code>}
+          <JsonBlock label={t.input} value={step.input} />
+          {step.status === "done" && <JsonBlock label={t.output} value={step.output} />}
+        </div>
+      </details>
       {step.error && step.status !== "rejected" && (
         <p className="mt-1 text-xs text-blood">
           {step.error.type}: {step.error.message}
         </p>
       )}
-      <div className="mt-2 space-y-1.5">
-        <JsonBlock label={t.input} value={step.input} />
-        {step.status === "done" && <JsonBlock label={t.output} value={step.output} />}
-      </div>
       {step.status === "done" && step.undoToken && props.onUndo && !restored && (
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 -ml-3"
+          className="mt-1 -ml-3 text-candle hover:text-candle"
           onClick={() => props.onUndo?.(step.undoToken as string)}
         >
+          <span aria-hidden>↶</span>
           {t.undo}
         </Button>
       )}
     </div>
+  );
+}
+
+/** A short count from a tool's output, such as "3 results". Null when there is nothing to count. */
+export function outputSummary(output: unknown, t: Kit): string | null {
+  if (typeof output !== "object" || output === null) return null;
+  const o = output as Record<string, unknown>;
+  if (typeof o.total === "number") return t.resultsN(o.total);
+  for (const k of ["results", "updated", "banished", "restored", "messages", "labelled"]) {
+    const v = o[k];
+    if (Array.isArray(v)) return t.itemsN(v.length);
+  }
+  return null;
+}
+
+/** Two or more finished reads in a row, shown as one line. */
+type ReadRun = { kind: "reads"; id: string; steps: ToolEntry[] };
+
+const isSettledRead = (e: TimelineEntry): e is ToolEntry =>
+  e.kind === "tool" && e.risk === "read" && (e.status === "done" || e.status === "failed");
+
+/**
+ * Fold runs of finished read steps into one line, like "Used 3 tools". Steps that write or hide
+ * data always stay on their own line, because they changed something and may offer Undo.
+ */
+export function groupReads(entries: TimelineEntry[]): (TimelineEntry | ReadRun)[] {
+  const out: (TimelineEntry | ReadRun)[] = [];
+  let run: ToolEntry[] = [];
+  const flush = () => {
+    if (run.length >= 2) out.push({ kind: "reads", id: `reads:${run[0]?.id}`, steps: run });
+    else out.push(...run);
+    run = [];
+  };
+  for (const e of entries) {
+    if (isSettledRead(e)) run.push(e);
+    else {
+      flush();
+      out.push(e);
+    }
+  }
+  flush();
+  return out;
+}
+
+function ReadGroup({ steps, props }: { steps: ToolEntry[]; props: InnerProps }) {
+  const names = [...new Set(steps.map((s) => props.toolLabels?.[s.name] ?? s.name))];
+  return (
+    <details className="group/reads min-w-0">
+      <summary className="-mx-2 flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors duration-150 hover:bg-raised/70 [&::-webkit-details-marker]:hidden">
+        <span className="shrink-0 text-fg">{props.t.toolsUsed(steps.length)}</span>
+        <span className="min-w-0 truncate text-xs text-muted">{names.join(" · ")}</span>
+        <span
+          aria-hidden
+          className="ml-auto shrink-0 text-muted transition-transform duration-150 group-open/reads:rotate-90"
+        >
+          ›
+        </span>
+      </summary>
+      <div className="mt-1 space-y-1 border-l border-line pl-3">
+        {steps.map((s) => (
+          <ToolStep key={s.id} step={s} props={props} />
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -170,15 +264,22 @@ function EntryBody({ entry, props }: { entry: TimelineEntry; props: InnerProps }
   switch (entry.kind) {
     case "user":
       return (
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-            {props.t.you}
+        <div className="flex flex-col items-end">
+          <p className="sr-only">{props.t.you}</p>
+          <p className="max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md border border-line bg-raised px-3.5 py-2 text-sm text-fg">
+            {entry.text}
           </p>
-          <p className="mt-0.5 whitespace-pre-wrap text-sm">{entry.text}</p>
         </div>
       );
     case "message":
-      return <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{entry.text}</p>;
+      return (
+        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-fg">
+          {entry.text}
+          {entry.streaming && <Caret />}
+        </p>
+      );
+    case "thinking":
+      return <Thinking entry={entry} t={props.t} />;
     case "notice":
       return (
         <p
@@ -232,7 +333,7 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
             aria-label={t.agentRun}
             className="relative space-y-4 py-4 pl-4 pr-4 outline-none"
           >
-            {entries.map((entry) => (
+            {groupReads(entries).map((entry) => (
               <motion.li
                 key={entry.id}
                 initial={{ opacity: 0, y: 4 }}
@@ -240,9 +341,22 @@ export function SeanceTimeline(props: SeanceTimelineProps) {
                 className="relative grid grid-cols-[1.5rem_minmax(0,1fr)] gap-3"
               >
                 <span aria-hidden className="flex justify-center pt-1.5">
-                  <span className={cn("size-2.5 rounded-full", nodeClass(entry))} />
+                  {entry.kind === "tool" && entry.status === "running" ? (
+                    <Flame className="-mt-1" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "size-2.5 rounded-full",
+                        entry.kind === "reads" ? "bg-ecto/80" : nodeClass(entry),
+                      )}
+                    />
+                  )}
                 </span>
-                <EntryBody entry={entry} props={inner} />
+                {entry.kind === "reads" ? (
+                  <ReadGroup steps={entry.steps} props={inner} />
+                ) : (
+                  <EntryBody entry={entry} props={inner} />
+                )}
               </motion.li>
             ))}
           </ol>

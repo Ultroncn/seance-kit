@@ -4,6 +4,7 @@ export type {
   Provider,
   ProviderReply,
   Reasoning,
+  StreamDelta,
   ToolCall,
   ToolSpec,
 } from "./types";

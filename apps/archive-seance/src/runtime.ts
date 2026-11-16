@@ -13,6 +13,8 @@ export const search = createArchiveSearch(storage);
 export const registry = createArchiveRegistry({ search });
 export const mock = new MockProvider({
   scripts: archiveScripts,
+  // Scripted replies type out like a model's. Tests leave this at 0.
+  typingMs: 14,
   unknownPromptText: () => tNow(archiveDemoMessages).unknown,
 });
 

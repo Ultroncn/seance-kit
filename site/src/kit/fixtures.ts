@@ -4,6 +4,12 @@ import type { TimelineEntry } from "@seance/ui";
 export const galleryRun: TimelineEntry[] = [
   { kind: "user", id: "u1", text: "Find my oldest chats about sourdough and tag them." },
   {
+    kind: "thinking",
+    id: "th1",
+    text: "Search for sourdough, oldest first. Read the first hit before summarizing, then tag it so it is easy to find again.",
+    durationMs: 2400,
+  },
+  {
     kind: "tool",
     id: "c1",
     name: "search_conversations",

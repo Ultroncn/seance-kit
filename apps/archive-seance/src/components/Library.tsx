@@ -1,5 +1,15 @@
 import { restoreItems } from "@seance/core";
-import { Badge, Button, Input, PaneHeader, cn, useT, useToast } from "@seance/ui";
+import {
+  Badge,
+  Button,
+  GhostItem,
+  GhostList,
+  Input,
+  PaneHeader,
+  cn,
+  useT,
+  useToast,
+} from "@seance/ui";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import {
   CONVERSATIONS,
@@ -218,18 +228,19 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
         )}
       </div>
 
-      <ul
+      <GhostList
+        key={[filters.view, filters.query, filters.source, filters.from, filters.to].join("\u0000")}
         className="flex-1 overflow-y-auto px-2 pb-3"
         aria-label={filters.view === "banished" ? t.banishedChats : t.chatsList}
       >
         {visible.map((c) => (
-          <li key={c.id}>
+          <GhostItem key={c.id}>
             <button
               type="button"
               onClick={() => onSelect(c.id)}
               aria-current={selectedId === c.id ? "true" : undefined}
               className={cn(
-                "group w-full rounded-md px-3 py-2 text-left hover:bg-raised",
+                "group w-full rounded-md px-3 py-2 text-left transition-colors duration-150 hover:bg-raised/70 relative before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ecto before:opacity-0 before:transition-opacity before:duration-150 aria-[current=true]:before:opacity-100",
                 "aria-[current=true]:bg-raised",
               )}
             >
@@ -250,9 +261,9 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
                 </span>
               )}
             </button>
-          </li>
+          </GhostItem>
         ))}
-      </ul>
+      </GhostList>
       {data.all && shown.length === 0 && (
         <p className="px-5 py-8 text-center text-sm text-muted">
           {filters.view === "banished"

@@ -1,5 +1,6 @@
-import { ensureOk, parseToolArguments, type FetchLike } from "./http";
-import type { ChatMessage, CompleteRequest, Provider, ProviderReply, ToolCall } from "./types";
+import { ensureOk, isEventStream, type FetchLike } from "./http";
+import { readOpenAiStream, toReply, type WireReply } from "./openai-stream";
+import type { ChatMessage, CompleteRequest, Provider, ProviderReply } from "./types";
 
 export interface OpenAiCompatibleOptions {
   /** Provider id shown in the UI. "openai-compatible" by default, "ollama" for Ollama. */
@@ -82,6 +83,7 @@ export class OpenAiCompatibleProvider implements Provider {
       body: JSON.stringify({
         ...this.options.extraBody,
         model,
+        ...(request.onDelta ? { stream: true } : {}),
         messages: toOpenAiMessages(request.messages, request.system),
         ...(request.tools.length > 0
           ? {
@@ -94,29 +96,13 @@ export class OpenAiCompatibleProvider implements Provider {
       }),
     });
     await ensureOk(res, this.id === "ollama" ? "Ollama" : "Provider");
-    const body = (await res.json()) as {
-      choices?: {
-        message?: {
-          content?: string | null;
-          tool_calls?: WireToolCall[];
-          reasoning_content?: string | null;
-        };
-      }[];
-    };
-    const message = body.choices?.[0]?.message;
-    const toolCalls: ToolCall[] = (message?.tool_calls ?? []).map((c, i) => ({
-      id: c.id || `call-${i}`,
-      name: c.function.name,
-      input: parseToolArguments(c.function.arguments),
-    }));
-    const reasoning = message?.reasoning_content;
-    return {
-      text: message?.content ?? "",
-      toolCalls,
-      ...(typeof reasoning === "string" && reasoning !== ""
-        ? { reasoning: { format: "reasoning_content" as const, text: reasoning } }
-        : {}),
-    };
+    // A server may ignore `stream` and answer with one JSON body; both are read.
+    if (isEventStream(res)) return readOpenAiStream(res, request.onDelta);
+    const body = (await res.json()) as { choices?: { message?: WireReply }[] };
+    const reply = toReply(body.choices?.[0]?.message ?? {});
+    if (reply.reasoning?.format === "reasoning_content")
+      request.onDelta?.({ kind: "reasoning", text: reply.reasoning.text });
+    return reply;
   }
 }
 

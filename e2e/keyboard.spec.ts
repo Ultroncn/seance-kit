@@ -8,7 +8,13 @@ async function tabTo(page: Page, name: RegExp, max = 40) {
     await page.keyboard.press("Tab");
     const label = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
-      return el ? (el.getAttribute("aria-label") ?? el.textContent ?? "").trim() : "";
+      if (!el) return "";
+      const label = el.getAttribute("aria-label");
+      if (label) return label.trim();
+      // Like an accessible name: decorative, aria-hidden glyphs are not part of it.
+      const copy = el.cloneNode(true) as HTMLElement;
+      copy.querySelectorAll("[aria-hidden]").forEach((n) => n.remove());
+      return (copy.textContent ?? "").trim();
     });
     if (name.test(label)) return;
   }

@@ -55,6 +55,8 @@ export { DemoBadge } from "./DemoBadge";
 export { SettingsDialog, isAllowedEndpoint, type SettingsDialogProps } from "./SettingsDialog";
 export { useProviderCommands } from "./providerCommands";
 export { ModelPicker, withModelChoice } from "./ModelPicker";
+export { Flame } from "./Flame";
+export { GhostItem, GhostList } from "./GhostList";
 export { ToastProvider, useToast, type ToastInput } from "./Toast";
 export { AgentPanel, type AgentPanelProps } from "./AgentPanel";
 export {

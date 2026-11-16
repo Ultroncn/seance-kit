@@ -29,6 +29,9 @@ const badge = (page: Page) => page.getByTestId("demo-badge");
  * used without a mouse.
  */
 async function openSubmenu(page: Page, sub: "Model" | "Reasoning") {
+  // A pointer resting over the menu (left there by the last click) opens whichever submenu it
+  // hovers, and fights the keyboard. Park it away from the menu first.
+  await page.mouse.move(0, 0);
   await page.getByRole("button", { name: /^Model and reasoning:/ }).focus();
   await page.keyboard.press("Enter");
   await page.getByRole("menuitem", { name: new RegExp(`^${sub}`) }).focus();

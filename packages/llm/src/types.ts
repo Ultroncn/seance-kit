@@ -27,11 +27,23 @@ export type ChatMessage =
   | { role: "assistant"; content: string; toolCalls?: ToolCall[]; reasoning?: Reasoning }
   | { role: "tool"; toolCallId: string; name: string; content: string; isError?: boolean };
 
+/** A piece of a reply as it arrives. */
+export interface StreamDelta {
+  kind: "text" | "reasoning";
+  text: string;
+}
+
 export interface CompleteRequest {
   messages: ChatMessage[];
   tools: ToolSpec[];
   system?: string;
   signal?: AbortSignal;
+  /**
+   * Called with each piece of text and reasoning as it arrives. A provider that cannot stream
+   * still reports its reasoning here once, so the UI can show it. The resolved reply is complete
+   * either way and is what goes into the history.
+   */
+  onDelta?: (delta: StreamDelta) => void;
 }
 
 export interface ProviderReply {

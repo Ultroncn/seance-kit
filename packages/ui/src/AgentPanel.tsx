@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { EmptyState, PaneHeader } from "./AppShell";
 import { useT } from "./i18n";
 import { kitMessages } from "./messages";
@@ -42,6 +42,13 @@ export interface AgentPanelProps {
 export function AgentPanel(p: AgentPanelProps) {
   const t = useT(kitMessages);
   const [prompt, setPrompt] = useState("");
+  const scroller = useRef<HTMLDivElement>(null);
+  const pinned = useRef(true);
+  // Follow the reply as it streams, unless the reader has scrolled up to read something.
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (el && pinned.current) el.scrollTop = el.scrollHeight;
+  }, [p.entries]);
 
   const submit = (ev?: FormEvent) => {
     ev?.preventDefault();
@@ -63,7 +70,14 @@ export function AgentPanel(p: AgentPanelProps) {
           )
         }
       />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scroller}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+        }}
+        className="min-h-0 flex-1 overflow-y-auto"
+      >
         <SeanceTimeline
           entries={p.entries}
           onApprove={p.onApprove}

@@ -13,6 +13,8 @@ export const search = createInboxSearch(storage);
 export const registry = createInboxRegistry({ search });
 export const mock = new MockProvider({
   scripts: inboxScripts,
+  // Scripted replies type out like a model's. Tests leave this at 0.
+  typingMs: 14,
   unknownPromptText: () => tNow(inboxDemoMessages).unknown,
 });
 /** Resolves once the saved search index is restored or rebuilt. Never rejects: the list must load. */

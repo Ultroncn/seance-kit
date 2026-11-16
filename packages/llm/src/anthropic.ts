@@ -1,5 +1,6 @@
-import { ensureOk, type FetchLike, type ToolMessage } from "./http";
-import type { ChatMessage, CompleteRequest, Provider, ProviderReply, ToolCall } from "./types";
+import { readAnthropicStream, toAnthropicReply } from "./anthropic-stream";
+import { ensureOk, isEventStream, type FetchLike, type ToolMessage } from "./http";
+import type { ChatMessage, CompleteRequest, Provider, ProviderReply } from "./types";
 
 export interface AnthropicOptions {
   apiKey: string;
@@ -106,6 +107,7 @@ export class AnthropicProvider implements Provider {
         ...this.options.extraBody,
         model,
         max_tokens: maxTokens,
+        ...(request.onDelta ? { stream: true } : {}),
         ...(request.system ? { system: request.system } : {}),
         messages: toAnthropicMessages(request.messages),
         ...(request.tools.length > 0
@@ -120,23 +122,15 @@ export class AnthropicProvider implements Provider {
       }),
     });
     await ensureOk(res, "Anthropic");
+    if (isEventStream(res)) return readAnthropicStream(res, request.onDelta);
     const body = (await res.json()) as { content?: Block[] };
-    let text = "";
-    const toolCalls: ToolCall[] = [];
-    const thinking: Block[] = [];
-    for (const block of body.content ?? []) {
-      if (block.type === "thinking" || block.type === "redacted_thinking") thinking.push(block);
-      else if (block.type === "text") text += block.text;
-      else if (block.type === "tool_use") {
-        toolCalls.push({ id: block.id, name: block.name, input: block.input });
-      }
+    const reply = toAnthropicReply(body.content ?? []);
+    if (reply.reasoning?.format === "anthropic_thinking") {
+      const said = reply.reasoning.blocks
+        .map((b) => String((b as { thinking?: unknown }).thinking ?? ""))
+        .join("");
+      if (said) request.onDelta?.({ kind: "reasoning", text: said });
     }
-    return {
-      text,
-      toolCalls,
-      ...(thinking.length > 0
-        ? { reasoning: { format: "anthropic_thinking" as const, blocks: thinking } }
-        : {}),
-    };
+    return reply;
   }
 }

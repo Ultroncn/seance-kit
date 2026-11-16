@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 test("landing page loads and links to both apps", async ({ page }) => {
@@ -45,10 +46,35 @@ test("inbox shell loads", async ({ page }) => {
 test("landing demo: the approval gate works without stealing focus on load", async ({ page }) => {
   await page.goto("/");
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  // The demo plays once it is scrolled into view, and ends at the approval gate.
+  await page.getByRole("heading", { name: "Every change waits for you" }).scrollIntoViewIfNeeded();
   const card = page.getByRole("group", { name: /Allow Hide chats/ });
+  await expect(card).toBeVisible();
   await expect(card).not.toBeFocused();
   await card.getByRole("button", { name: "Allow" }).click();
   await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
   await page.getByRole("button", { name: "Replay" }).click();
   await expect(page.getByRole("group", { name: /Allow Hide chats/ })).toBeVisible();
+});
+
+test("landing: every section appears once scrolled to, and the whole page passes axe", async ({
+  page,
+}) => {
+  await page.goto("/");
+  for (const h of await page.getByRole("heading", { level: 2 }).all()) {
+    await h.scrollIntoViewIfNeeded();
+    await expect(h).toBeInViewport();
+  }
+  // Revealed sections reach full opacity, so axe checks their real contrast.
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("main section")].every(
+      (s) => getComputedStyle(s).opacity === "1",
+    ),
+  );
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(
+    violations
+      .filter((v) => v.impact === "serious" || v.impact === "critical")
+      .map((v) => `${v.id}: ${v.nodes[0]?.target}`),
+  ).toEqual([]);
 });

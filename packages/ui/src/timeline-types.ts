@@ -7,7 +7,10 @@ export type ToolStepStatus = "running" | "awaiting_approval" | "rejected" | "don
 
 export type TimelineEntry =
   | { kind: "user"; id: string; text: string }
-  | { kind: "message"; id: string; text: string }
+  /** `streaming` while the model is still writing it. */
+  | { kind: "message"; id: string; text: string; streaming?: boolean }
+  /** The model's reasoning for one step. `durationMs` is set once it has finished thinking. */
+  | { kind: "thinking"; id: string; text: string; streaming?: boolean; durationMs?: number }
   | {
       kind: "tool";
       id: string;

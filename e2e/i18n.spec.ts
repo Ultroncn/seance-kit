@@ -24,6 +24,7 @@ test("landing: switch to Chinese, remembered on reload and in the apps", async (
     "一个下午，做出你自己的 Agent 应用。",
   );
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await page.getByRole("heading", { name: "每一次改动都等你点头" }).scrollIntoViewIfNeeded();
   await expect(page.getByRole("button", { name: "允许" })).toBeVisible();
   await expect(page.getByRole("link", { name: "试用对话降灵" })).toHaveAttribute(
     "href",
@@ -80,6 +81,12 @@ test("inbox in Chinese: sample loads, categories and badge are translated", asyn
     .getByRole("button", { name: "给我的收件箱分类" })
     .click();
   const card = page.getByRole("group", { name: /允许 归入分类/ });
+  await expect(card).toBeFocused();
+  // Focusing the card must not scroll the page shell. The shift seen once depended on timing
+  // (focus before the pane scrolled), so this guards it rather than reproducing it every time.
+  expect(
+    await page.evaluate(() => document.querySelector("header")?.getBoundingClientRect().top),
+  ).toBe(0);
   await expect(card).toContainText("待回复");
   await expectAccessible(page);
   await card.getByRole("button", { name: "允许" }).click();

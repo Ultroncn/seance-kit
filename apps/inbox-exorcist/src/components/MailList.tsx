@@ -1,5 +1,15 @@
 import { restoreItems } from "@seance/core";
-import { Badge, Button, Input, PaneHeader, cn, useT, useToast } from "@seance/ui";
+import {
+  Badge,
+  Button,
+  GhostItem,
+  GhostList,
+  Input,
+  PaneHeader,
+  cn,
+  useT,
+  useToast,
+} from "@seance/ui";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 import { CATEGORIES, EMAILS, type Category, type Email } from "../domain/types";
 import { inboxMessages } from "../messages";
@@ -271,18 +281,25 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
               </Button>
             )}
           </div>
-          <ul
+          <GhostList
+            key={[
+              filters.view,
+              filters.query,
+              filters.category,
+              filters.label,
+              filters.mailbox,
+            ].join("\u0000")}
             className="flex-1 overflow-y-auto px-2 pb-3"
             aria-label={filters.view === "banished" ? t.banishedEmails : t.emailsList}
           >
             {visible.map((e) => (
-              <li key={e.id}>
+              <GhostItem key={e.id}>
                 <button
                   type="button"
                   onClick={() => onSelect(e.id)}
                   aria-current={selectedId === e.id ? "true" : undefined}
                   className={cn(
-                    "group w-full rounded-md px-3 py-2 text-left hover:bg-raised",
+                    "group w-full rounded-md px-3 py-2 text-left transition-colors duration-150 hover:bg-raised/70 relative before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ecto before:opacity-0 before:transition-opacity before:duration-150 aria-[current=true]:before:opacity-100",
                     "aria-[current=true]:bg-raised",
                   )}
                 >
@@ -304,9 +321,9 @@ export const MailList = forwardRef<HTMLInputElement, Props>(function MailList(
                     </span>
                   )}
                 </button>
-              </li>
+              </GhostItem>
             ))}
-          </ul>
+          </GhostList>
           {shown.length > visible.length && (
             <div className="px-3 pb-3">
               <Button
