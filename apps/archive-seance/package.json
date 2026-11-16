@@ -12,6 +12,7 @@
   "dependencies": {
     "@seance/core": "workspace:^",
     "@seance/llm": "workspace:*",
+    "@seance/react": "workspace:^",
     "@seance/storage": "workspace:*",
     "@seance/ui": "workspace:*",
     "fflate": "^0.8",

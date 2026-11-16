@@ -8,7 +8,7 @@ Kiroween 2026 entry, category Skeleton Crew.
 
 Live demo: https://seance-kit.mask988888888.workers.dev/ ([Archive Séance](https://seance-kit.mask988888888.workers.dev/archive/), [Inbox Exorcist](https://seance-kit.mask988888888.workers.dev/inbox/))
 
-> Status: scaffolding (milestone M0). The apps are shells. See `.kiro/specs/seance-kit/tasks.md`.
+> Status: Archive Séance works end to end (milestone M2). Inbox Exorcist is next. See `.kiro/specs/seance-kit/tasks.md`.
 
 ## Develop
 

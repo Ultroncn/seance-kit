@@ -50,6 +50,9 @@ importers:
       '@seance/llm':
         specifier: workspace:*
         version: link:../../packages/llm
+      '@seance/react':
+        specifier: workspace:^
+        version: link:../../packages/react
       '@seance/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -156,6 +159,37 @@ importers:
       fast-check:
         specifier: ^4.0.0
         version: 4.10.2
+
+  packages/react:
+    dependencies:
+      '@seance/core':
+        specifier: workspace:*
+        version: link:../core
+      '@seance/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@seance/storage':
+        specifier: workspace:*
+        version: link:../storage
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^16
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/react':
+        specifier: ^19
+        version: 19.3.0
+      jsdom:
+        specifier: ^26
+        version: 26.1.0
+      react:
+        specifier: ^19
+        version: 19.3.1
+      react-dom:
+        specifier: ^19
+        version: 19.3.1(react@19.3.1)
+      zod:
+        specifier: ^4
+        version: 4.6.7
 
   packages/storage:
     dependencies:

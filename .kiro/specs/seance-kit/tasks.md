@@ -58,18 +58,19 @@ Exit: public URL works, CI green, `.kiro` committed.
 
 ## M2. Archive Séance (Nov 21-24)
 
-- [ ] 2.1 Fixtures: small sanitized ChatGPT, Claude, Markdown exports.
-- [ ] 2.2 Importers with tolerant parsing. PBT P1, P2. (R5.1)
-- [ ] 2.3 Dedup on import. PBT P3. (R5.2)
-- [ ] 2.4 Import UI: drag and drop, progress, error report.
-- [ ] 2.5 Library view: list, filters (text, date, source). (R5.3)
-- [ ] 2.6 Conversation reader.
-- [ ] 2.7 Tools: search, read, summarize, tag, banish, resurrect. (R5.4)
-- [ ] 2.8 Store and show summaries and tags. (R5.5)
-- [ ] 2.9 Agent pane with séance timeline and approvals. (R5.6)
-- [ ] 2.10 Seeded demo archive and Mock scripts for 4-5 prompts.
-- [ ] 2.11 Banished view with undo.
-- [ ] 2.12 Playwright smoke plus axe. (R7.6)
+- [x] 2.1 Fixtures: small sanitized ChatGPT, Claude, Markdown exports.
+- [x] 2.2 Importers with tolerant parsing. PBT P1, P2. (R5.1)
+- [x] 2.3 Dedup on import. PBT P3. (R5.2)
+- [x] 2.4 Import UI: drag and drop, progress, error report.
+- [x] 2.5 Library view: list, filters (text, date, source). (R5.3)
+- [x] 2.6 Conversation reader.
+- [x] 2.7 Tools: search, read, summarize, tag, banish, resurrect. (R5.4)
+- [x] 2.8 Store and show summaries and tags. (R5.5)
+- [x] 2.9 Agent pane with séance timeline and approvals. (R5.6)
+- [x] 2.10 Seeded demo archive and Mock scripts for 4-5 prompts.
+- [x] 2.11 Banished view with undo.
+- [x] 2.12 Playwright smoke plus axe. (R7.6)
+- [x] 2.12a `@seance/react` package with `useAgentRun`, shared by both apps and the template.
 - [ ] 2.13 Deploy and verify. Real-provider manual test.
 
 ## M3. Inbox Exorcist (Nov 25-28)

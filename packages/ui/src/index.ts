@@ -52,3 +52,4 @@ export {
 } from "./ProviderMode";
 export { DemoBadge } from "./DemoBadge";
 export { SettingsDialog, type SettingsDialogProps } from "./SettingsDialog";
+export { ToastProvider, useToast, type ToastInput } from "./Toast";

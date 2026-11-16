@@ -35,3 +35,13 @@ Decision: remove `_redirects` and add a small Worker (`worker/index.js`) that se
 ### Secrets never leave through an export
 
 The first draft stored the API key with other settings, which meant "Export all data" would have written it into a JSON file that people share or feed to the MCP server. We added a reserved `secrets` collection that every Storage adapter leaves out of `exportAll`. The shared contract suite enforces it, and an e2e test downloads a real export and checks that the key is absent. The steering file `tech.md` now carries the rule.
+
+### Tests that caught real problems in M2
+
+- **Markdown round-trip (P1).** A message containing a line such as `## User` would split into two messages on re-import. The property found it in its first runs, and the fix escapes marker-like lines. Removing the escape makes the property fail with that exact counterexample.
+- **Search extraction.** MiniSearch also reads the `id` field through the custom field extractor. A unit test showed every id coming back empty. The search service now always reads `id` itself.
+- **Accents.** A tool test expected "pastel de nata" to find the Lisbon chat, which says "pastéis". The search was right and the test was wrong, but it showed that typing without accents found nothing. Search now folds accents.
+
+### A shared React layer
+
+Running the agent from React (events into the timeline, approval promises, stop, undo) is identical in both apps and the template. We added `@seance/react` with `useAgentRun` instead of copying it, so `core` stays framework-free and `ui` stays presentational. The steering file `structure.md` records the rule.

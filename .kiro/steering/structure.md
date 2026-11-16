@@ -5,7 +5,8 @@
 apps/archive-seance/   app 1
 apps/inbox-exorcist/   app 2
 site/                  landing page (served at `/`), not part of apps/
-packages/core/         agent loop, tool registry, approvals, events
+packages/core/         agent loop, tool registry, approvals, events, search, timeline reducer
+packages/react/        React bindings for core (useAgentRun)
 packages/llm/          providers incl. Mock
 packages/storage/      Storage interface + IndexedDB, memory, file adapters
 packages/ui/           tokens, components, timeline, palette, DemoBadge
@@ -19,7 +20,8 @@ worker/                Cloudflare Worker: per-app SPA fallback (JS, no build ste
 
 ## Dependency rules
 
-- `apps/*` may import `core`, `llm`, `storage`, `ui`.
+- `apps/*` may import `core`, `react`, `llm`, `storage`, `ui`.
+- `react` imports `core`, `llm`, `storage`. It holds no UI. `ui` stays presentational and never imports `core` or `react`.
 - `site` imports only `ui`.
 - `core` imports the `Storage` interface type and the `Provider`/message types from `llm` (types only, plus `zod`). No React, no DOM.
 - `llm`, `storage`, `ui` never import `core`. `llm` owns the provider and chat-message types.
