@@ -94,6 +94,17 @@ describe("ToolRegistry", () => {
     expect(JSON.stringify(echo?.inputSchema)).toContain("text");
   });
 
+  it("treats fields with defaults as optional inputs, and lists object outputs for MCP", () => {
+    const [echo] = fixtureRegistry().toJsonSchema();
+    expect(echo?.inputSchema.required).toEqual(["text"]);
+    const mcp = fixtureRegistry().toMcpTools();
+    expect(mcp.find((t) => t.name === "echo")?.outputSchema).toMatchObject({
+      type: "object",
+      required: ["text"],
+    });
+    expect(mcp.find((t) => t.name === "explodes")?.outputSchema).toBeUndefined();
+  });
+
   it("marks MCP annotations from risk", () => {
     const byName = Object.fromEntries(
       fixtureRegistry()

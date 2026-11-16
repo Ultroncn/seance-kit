@@ -26,7 +26,7 @@ const kiro = [
   },
   {
     title: "MCP",
-    body: "Coming next: our own MCP server so Kiro can call the apps' tools.",
+    body: "Both apps ship an MCP server with the same tools, so Kiro can search, sort and draft from the chat.",
     href: `${REPO}/tree/main/.kiro`,
   },
 ] as const;

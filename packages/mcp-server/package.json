@@ -1,0 +1,22 @@
+{
+  "name": "@seance/mcp-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32",
+    "@seance/core": "workspace:*",
+    "@seance/storage": "workspace:*",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^22"
+  }
+}

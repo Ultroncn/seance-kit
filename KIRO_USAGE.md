@@ -20,7 +20,11 @@ We skipped hooks on Nov 16. They are not required for submission. The same check
 
 ## MCP
 
-Planned (M4): `packages/mcp-server` exposes the apps' tool registry, and `.kiro/settings/mcp.json` registers it so Kiro can call the tools.
+Both apps run as MCP servers (`packages/mcp-server`, plus `apps/*/mcp/`). They expose the same tool registry as the browser agent: six tools each, schemas derived from zod, risk mapped to MCP annotations. `docs/kiro-mcp.json` registers both with Kiro. Read tools are auto-approved, and Kiro asks before every write.
+
+Setup: copy `docs/kiro-mcp.json` to `.kiro/settings/mcp.json`. Kiro blocks agents from writing there, so this step is manual. Then ask Kiro, for example, "use archive-seance to find my Lisbon chats". The servers start on the sample data. Pass your own export with `--import` (Settings → Export all data, or a raw `conversations.json` / `.mbox`).
+
+Building it surfaced a core bug. Input schemas were converted in zod's "output" view, so every field with a default (`limit`, `sort`, `query`) was sent to models and MCP clients as required. A regression test now checks that defaulted fields are optional.
 
 ## Decision log
 

@@ -7,11 +7,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "mcp": "tsx mcp/main.ts"
   },
   "dependencies": {
     "@seance/core": "workspace:^",
     "@seance/llm": "workspace:*",
+    "@seance/mcp-server": "workspace:^",
     "@seance/react": "workspace:^",
     "@seance/storage": "workspace:*",
     "@seance/ui": "workspace:*",
@@ -21,6 +23,7 @@
     "zod": "^4"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32",
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

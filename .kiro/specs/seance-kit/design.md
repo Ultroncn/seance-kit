@@ -174,7 +174,11 @@ Large files are read in chunks and imported in batches so the UI stays responsiv
 
 ## 9. MCP server
 
-`packages/mcp-server` takes an app's registry module and a data directory, then serves it over stdio using the official MCP TypeScript SDK. Tools come from `registry.toMcpTools()`. Risky tools over MCP rely on the MCP client's own approval prompt (Kiro asks before running). `.kiro/settings/mcp.json` points at `pnpm --filter mcp-server start -- --app archive-seance --data ./.local-data`. The apps' "Export" action writes a file this server can read.
+`packages/mcp-server` is generic: `createMcpServer` serves any `ToolRegistry` over MCP with the SDK's low-level `Server`, and `runCli` adds stdio, flags and imports. Tool names, descriptions, input schemas (zod "input" view, so defaulted fields are optional) and output schemas come from the registry, the same definitions the browser agent uses (R9.3). Risk becomes `readOnlyHint` / `destructiveHint`. Results carry text and `structuredContent`. Failures return `isError` with the typed error.
+
+Each app has `mcp/app.ts` (its registry, search and importers over `FileStorage`) and `mcp/main.ts`. Flags: `--data <dir>`, `--import <file>` (a Séance export from Settings, or a raw export the app reads), `--read-only`. Relative paths resolve against the repo root, so the server works whatever directory the client starts it from. Logs go to stderr.
+
+Kiro config: `docs/kiro-mcp.json`, to be copied to `.kiro/settings/mcp.json`. Kiro's built-in scope rule blocks agents from writing `.kiro/settings/`, so the user copies it. Read tools are auto-approved. Kiro asks before every write and destructive tool. The Kiro docs do not say that annotations change approval, so we rely on `autoApprove` only. Each start imports the sample data, and P3 makes re-imports no-ops.
 
 ## 10. UI and visual direction
 

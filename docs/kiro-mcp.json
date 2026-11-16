@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "archive-seance": {
+      "command": "pnpm",
+      "args": [
+        "--silent",
+        "exec",
+        "tsx",
+        "apps/archive-seance/mcp/main.ts",
+        "--data",
+        ".local-data/archive",
+        "--import",
+        "apps/archive-seance/public/sample/chatgpt-conversations.json",
+        "--import",
+        "apps/archive-seance/public/sample/claude-conversations.json"
+      ],
+      "disabled": false,
+      "autoApprove": ["search_conversations", "read_conversation"]
+    },
+    "inbox-exorcist": {
+      "command": "pnpm",
+      "args": [
+        "--silent",
+        "exec",
+        "tsx",
+        "apps/inbox-exorcist/mcp/main.ts",
+        "--data",
+        ".local-data/inbox",
+        "--import",
+        "apps/inbox-exorcist/public/sample/inbox.mbox"
+      ],
+      "disabled": false,
+      "autoApprove": ["search_emails", "read_email"]
+    }
+  }
+}

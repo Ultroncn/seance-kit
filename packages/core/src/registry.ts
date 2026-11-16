@@ -22,11 +22,20 @@ export interface McpToolDefinition {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  /** Present when the tool's output is an object, as MCP requires for structured results. */
+  outputSchema?: Record<string, unknown>;
   annotations: { readOnlyHint: boolean; destructiveHint: boolean };
 }
 
-function jsonSchemaOf(schema: z.ZodType): Record<string, unknown> {
-  const { $schema: _ignored, ...rest } = z.toJSONSchema(schema) as Record<string, unknown>;
+/**
+ * JSON Schema for a tool input or output. Inputs use zod's "input" view, so fields with a
+ * `.default()` are optional for the caller instead of required.
+ */
+function jsonSchemaOf(schema: z.ZodType, io: "input" | "output"): Record<string, unknown> {
+  const { $schema: _ignored, ...rest } = z.toJSONSchema(schema, {
+    io,
+    unrepresentable: "any",
+  }) as Record<string, unknown>;
   return rest;
 }
 
@@ -35,6 +44,11 @@ function describeIssues(error: z.ZodError): string {
     .slice(0, 5)
     .map((i) => `${i.path.length > 0 ? i.path.join(".") : "(input)"}: ${i.message}`)
     .join("; ");
+}
+
+function outputSchemaOf(schema: z.ZodType): { outputSchema?: Record<string, unknown> } {
+  const out = jsonSchemaOf(schema, "output");
+  return out.type === "object" ? { outputSchema: out } : {};
 }
 
 export class ToolRegistry {
@@ -64,7 +78,7 @@ export class ToolRegistry {
     return this.list().map((t) => ({
       name: t.name,
       description: t.description,
-      inputSchema: jsonSchemaOf(t.input),
+      inputSchema: jsonSchemaOf(t.input, "input"),
     }));
   }
 
@@ -73,7 +87,8 @@ export class ToolRegistry {
     return this.list().map((t) => ({
       name: t.name,
       description: t.description,
-      inputSchema: jsonSchemaOf(t.input),
+      inputSchema: jsonSchemaOf(t.input, "input"),
+      ...outputSchemaOf(t.output),
       annotations: { readOnlyHint: t.risk === "read", destructiveHint: t.risk === "destructive" },
     }));
   }
