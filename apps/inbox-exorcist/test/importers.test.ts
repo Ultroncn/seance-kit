@@ -95,6 +95,26 @@ describe("mbox splitter on sloppy files", () => {
 });
 
 describe("htmlToText", () => {
+  it("stays linear on hostile HTML (unclosed tags, comments, angle brackets)", () => {
+    const hostile = [
+      "<style>".repeat(70_000),
+      "<a href='https://x.example'>".repeat(20_000),
+      "<!--".repeat(120_000),
+      "<".repeat(500_000),
+      "<li".repeat(150_000),
+    ];
+    for (const html of hostile) {
+      const t = performance.now();
+      htmlToText(html);
+      expect(performance.now() - t).toBeLessThan(300);
+    }
+  });
+
+  it("drops the rest of an unclosed style or script block instead of showing code", () => {
+    expect(htmlToText("<p>Hello</p><style>p{color:red}")).toBe("Hello");
+    expect(htmlToText("<p>Hi</p><script>alert(1)")).toBe("Hi");
+  });
+
   it("keeps structure and link targets, drops styles, scripts and entities", () => {
     expect(
       htmlToText(
