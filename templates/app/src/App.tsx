@@ -11,11 +11,13 @@ import {
   Kbd,
   PaneHeader,
   ProviderModeProvider,
+  ProviderSwitch,
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
   tNow,
   usePaletteHotkey,
+  useProviderCommands,
   useProviderMode,
   useT,
   withReplyLanguage,
@@ -34,6 +36,7 @@ const ready = search.load();
 
 function Workspace() {
   const { provider, isMock } = useProviderMode();
+  const providerCommands = useProviderCommands();
   const t = useT(messages);
   const prompts = useT(demoMessages).prompts;
   const [notes, setNotes] = useState<Note[]>([]);
@@ -66,6 +69,7 @@ function Workspace() {
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
               {t.commands} <Kbd>⌘K</Kbd>
             </Button>
+            <ProviderSwitch />
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
               {t.settings}
             </Button>
@@ -110,6 +114,7 @@ function Workspace() {
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
         commands={[
+          ...providerCommands,
           {
             id: "settings",
             label: t.openSettings,

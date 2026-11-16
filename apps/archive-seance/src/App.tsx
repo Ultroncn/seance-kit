@@ -7,10 +7,12 @@ import {
   EmptyState,
   Kbd,
   ProviderModeProvider,
+  ProviderSwitch,
   SeanceProvider,
   SettingsDialog,
   ToastProvider,
   usePaletteHotkey,
+  useProviderCommands,
   useProviderMode,
   useT,
   useToast,
@@ -33,6 +35,7 @@ function Workspace() {
   const t = useT(archiveMessages);
   const prompts = useT(archiveDemoMessages).prompts;
   const { provider, isMock } = useProviderMode();
+  const providerCommands = useProviderCommands();
   const data = useArchive();
   const importer = useImporter(data.refresh);
   const agent = useAgentRun({
@@ -181,6 +184,7 @@ function Workspace() {
         keywords: ["reset", "clear"],
         onSelect: agent.reset,
       },
+      ...providerCommands,
       {
         id: "settings",
         label: t.cmdSettings,
@@ -189,7 +193,7 @@ function Workspace() {
         onSelect: () => setSettingsOpen(true),
       },
     ],
-    [pickFiles, loadSample, filters.view, agent, empty, t, prompts],
+    [pickFiles, loadSample, filters.view, agent, empty, t, prompts, providerCommands],
   );
 
   return (
@@ -208,6 +212,7 @@ function Workspace() {
             <Button variant="ghost" size="sm" onClick={() => setPaletteOpen(true)}>
               {t.commands} <Kbd>⌘K</Kbd>
             </Button>
+            <ProviderSwitch />
             <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
               {t.settings}
             </Button>

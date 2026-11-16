@@ -9,6 +9,7 @@ import {
   DemoBadge,
   ProviderModeProvider,
   SeanceProvider,
+  ProviderSwitch,
   SettingsDialog,
   useProviderMode,
 } from "../src/index";
@@ -46,7 +47,14 @@ function App({
       <ProviderModeProvider storage={storage} mock={mock} createReal={fakeReal}>
         <DemoBadge onClick={() => setOpen(true)} />
         <ProviderId />
-        <SettingsDialog open={open} onOpenChange={setOpen} download={download} exportName="test" />
+        <ProviderSwitch />
+        <SettingsDialog
+          open={open}
+          onOpenChange={setOpen}
+          download={download}
+          exportName="test"
+          loadModels={async () => ["model-b", "model-a"]}
+        />
       </ProviderModeProvider>
     </SeanceProvider>
   );
@@ -63,6 +71,28 @@ const readBlob = (blob: Blob) =>
     r.readAsText(blob);
   });
 
+/** Add a provider through the editor and make it the active one. */
+async function addProvider(vendor: string, key: string, model: string) {
+  await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
+  await userEvent.selectOptions(screen.getByLabelText("Vendor"), vendor);
+  if (key) await userEvent.type(screen.getByLabelText(/^API key/), key);
+  const m = screen.getByLabelText("Model");
+  await userEvent.clear(m);
+  if (model) await userEvent.type(m, model);
+  await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
+}
+const seed = (storage: MemoryStorage, ...names: string[]) =>
+  storage.put("secrets", {
+    id: "providers",
+    activeId: names.length ? "p1" : null,
+    profiles: names.map((name, i) => ({
+      id: `p${i + 1}`,
+      name,
+      preset: "anthropic",
+      config: { kind: "anthropic", apiKey: `sk-secret-${i + 1}`, model: "m" },
+    })),
+  });
+
 describe("Demo-mode badge and settings", () => {
   it("shows the badge in demo mode, and it opens settings", async () => {
     render(<App storage={new MemoryStorage()} />);
@@ -72,62 +102,57 @@ describe("Demo-mode badge and settings", () => {
     expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy();
   });
 
-  it("saving a real provider hides the badge and switches the agent's provider, and it persists", async () => {
+  it("adding a provider hides the badge and switches the agent's provider, and it persists", async () => {
     const storage = new MemoryStorage();
     const { unmount } = render(<App storage={storage} />);
     await userEvent.click(badge()!);
-    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
-    const key = screen.getByLabelText("API key");
-    expect(key.getAttribute("type")).toBe("password");
-    await userEvent.type(key, "sk-test");
+    await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
+    await userEvent.selectOptions(screen.getByLabelText("Vendor"), "anthropic");
+    expect(screen.getByLabelText("API key").getAttribute("type")).toBe("password");
+    expect(screen.getByRole("link", { name: /Get an API key/ }).getAttribute("rel")).toContain(
+      "noopener",
+    );
+    await userEvent.type(screen.getByLabelText("API key"), "sk-test");
     await userEvent.type(screen.getByLabelText("Model"), "some-model");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-
+    await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
     await waitFor(() => expect(badge()).toBeNull());
     expect(screen.getByTestId("provider").textContent).toBe("anthropic:false");
-
+    expect(screen.getByRole("status").textContent).toBe("Now using Anthropic (Claude).");
     unmount();
     render(<App storage={storage} />);
     await waitFor(() => expect(screen.getByTestId("provider").textContent).toBe("anthropic:false"));
     expect(badge()).toBeNull();
   });
 
-  it("going back to demo removes the key and brings the badge back", async () => {
+  it("switches between demo and saved providers without losing them, like CC Switch", async () => {
     const storage = new MemoryStorage();
-    await storage.put("secrets", {
-      id: "provider",
-      kind: "anthropic",
-      apiKey: "sk-test",
-      model: "m",
-    });
-    const Opener = () => {
-      const [open, setOpen] = useState(true);
-      return (
-        <SeanceProvider>
-          <ProviderModeProvider storage={storage} mock={mock} createReal={fakeReal}>
-            <DemoBadge />
-            <SettingsDialog open={open} onOpenChange={setOpen} />
-          </ProviderModeProvider>
-        </SeanceProvider>
-      );
-    };
-    render(<Opener />);
-    await waitFor(() =>
-      expect((screen.getByRole("radio", { name: "Anthropic" }) as HTMLInputElement).checked).toBe(
-        true,
-      ),
-    );
-    await userEvent.click(screen.getByRole("radio", { name: "Demo (scripted)" }));
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    render(<App storage={storage} />);
+    await userEvent.click(badge()!);
+    await addProvider("deepseek", "sk-ds", "deepseek-chat");
+    await addProvider("anthropic", "sk-ant", "m");
+    await waitFor(() => expect(screen.getByTestId("provider").textContent).toBe("anthropic:false"));
+    await userEvent.click(screen.getByRole("radio", { name: /Demo \(scripted\)/ }));
     await waitFor(() => expect(badge()).not.toBeNull());
-    expect(await storage.get("secrets", "provider")).toBeUndefined();
+    expect(screen.getByRole("status").textContent).toBe(
+      "Demo mode on. Your saved providers are kept.",
+    );
+    await userEvent.click(screen.getByRole("radio", { name: /DeepSeek/ }));
+    await waitFor(() =>
+      expect(screen.getByTestId("provider").textContent).toBe("openai-compatible:false"),
+    );
+    // The header switch shows the same choice and can change it too.
+    const header = screen.getByLabelText("Model in use") as HTMLSelectElement;
+    expect(header.selectedOptions[0]?.textContent).toBe("DeepSeek");
+    await userEvent.selectOptions(header, "Anthropic (Claude)");
+    await waitFor(() => expect(screen.getByTestId("provider").textContent).toBe("anthropic:false"));
+    const saved = (await storage.get("secrets", "providers")) as unknown as { profiles: unknown[] };
+    expect(saved.profiles).toHaveLength(2);
   });
 
   it("refuses to save incomplete settings and says why", async () => {
     render(<App storage={new MemoryStorage()} />);
     await userEvent.click(badge()!);
-    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await addProvider("anthropic", "", "m");
     expect(screen.getByRole("status").textContent).toBe("Enter your API key.");
     expect(badge()).not.toBeNull();
   });
@@ -135,7 +160,8 @@ describe("Demo-mode badge and settings", () => {
   it("tests the connection without saving, and reports failures without the key", async () => {
     render(<App storage={new MemoryStorage()} />);
     await userEvent.click(badge()!);
-    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
+    await userEvent.selectOptions(screen.getByLabelText("Vendor"), "anthropic");
     await userEvent.type(screen.getByLabelText("API key"), "sk-good");
     await userEvent.type(screen.getByLabelText("Model"), "m");
     await userEvent.click(screen.getByRole("button", { name: "Test connection" }));
@@ -143,7 +169,6 @@ describe("Demo-mode badge and settings", () => {
       expect(screen.getByRole("status").textContent).toBe("Connected. The model replied: OK"),
     );
     expect(badge()).not.toBeNull();
-
     await userEvent.clear(screen.getByLabelText("API key"));
     await userEvent.type(screen.getByLabelText("API key"), "bad");
     await userEvent.click(screen.getByRole("button", { name: "Test connection" }));
@@ -151,7 +176,24 @@ describe("Demo-mode badge and settings", () => {
     expect(screen.getByRole("status").textContent).not.toContain("bad");
   });
 
-  it("exports data without the key, and wipes everything only after confirming", async () => {
+  it("loads the vendor's model list into the Model field's suggestions", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await userEvent.click(badge()!);
+    await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
+    await userEvent.selectOptions(screen.getByLabelText("Vendor"), "siliconflow");
+    await userEvent.click(screen.getByRole("button", { name: "Load model list" }));
+    expect(screen.getByRole("status").textContent).toBe("Enter your API key.");
+    await userEvent.type(screen.getByLabelText("API key"), "sk-x");
+    await userEvent.click(screen.getByRole("button", { name: "Load model list" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toMatch(/^2 models found/));
+    const list = document.getElementById(screen.getByLabelText("Model").getAttribute("list")!);
+    expect([...(list?.querySelectorAll("option") ?? [])].map((o) => o.value)).toEqual([
+      "model-b",
+      "model-a",
+    ]);
+  });
+
+  it("exports data without the key, migrates an old saved key, and wipes only after confirming", async () => {
     const storage = new MemoryStorage();
     await storage.put("secrets", {
       id: "provider",
@@ -177,7 +219,6 @@ describe("Demo-mode badge and settings", () => {
       </SeanceProvider>,
     );
     await waitFor(() => expect(screen.getByText("Now: real model")).toBeTruthy());
-
     await userEvent.click(screen.getByRole("button", { name: "Export all data" }));
     await waitFor(() => expect(download).toHaveBeenCalledOnce());
     const [blob, filename] = download.mock.calls[0] as [Blob, string];
@@ -185,72 +226,69 @@ describe("Demo-mode badge and settings", () => {
     const text = await readBlob(blob);
     expect(text).toContain("Old chat");
     expect(text).not.toContain("sk-secret");
-
     await userEvent.click(screen.getByRole("button", { name: "Delete all local data…" }));
     expect(screen.getByRole("alert").textContent).toContain("permanently deletes");
     expect(await storage.get("conversations", "c1")).toBeDefined();
     await userEvent.click(screen.getByRole("button", { name: "Delete everything" }));
-
     await waitFor(() => expect(onAfterWipe).toHaveBeenCalledOnce());
     expect(await storage.list("conversations")).toEqual([]);
-    expect(await storage.get("secrets", "provider")).toBeUndefined();
+    expect(await storage.list("secrets")).toEqual([]);
     await waitFor(() => expect(badge()).not.toBeNull());
   });
 
-  it("keeps each provider's key separate, so a saved key never fills another provider's form", async () => {
+  it("a new vendor never inherits the previous vendor's key, and deleting forgets the key", async () => {
     const storage = new MemoryStorage();
-    await storage.put("secrets", {
-      id: "provider",
-      kind: "anthropic",
-      apiKey: "sk-ant-secret",
-      model: "m",
-    });
+    await seed(storage, "Work");
     render(
       <SeanceProvider>
         <ProviderModeProvider storage={storage} mock={mock} createReal={fakeReal}>
+          <DemoBadge />
           <SettingsDialog open onOpenChange={() => {}} />
         </ProviderModeProvider>
       </SeanceProvider>,
     );
-    await waitFor(() =>
-      expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("sk-ant-secret"),
-    );
-    await userEvent.click(screen.getByRole("radio", { name: "OpenAI-compatible" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Edit Work" }));
+    expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("sk-secret-1");
+    await userEvent.selectOptions(screen.getByLabelText("Vendor"), "openai");
     expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("");
-    expect((screen.getByLabelText("Model") as HTMLInputElement).value).toBe("");
-    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
-    expect((screen.getByLabelText("API key") as HTMLInputElement).value).toBe("sk-ant-secret");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete Work" }));
+    await waitFor(() => expect(badge()).not.toBeNull());
+    expect(screen.getByRole("status").textContent).toBe("Deleted Work and its key.");
+    expect(JSON.stringify(await storage.list("secrets"))).not.toContain("sk-secret-1");
   });
 
   it("refuses plain-http base URLs except for local servers", async () => {
     render(<App storage={new MemoryStorage()} />);
     await userEvent.click(badge()!);
-    await userEvent.click(screen.getByRole("radio", { name: "OpenAI-compatible" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
+    await userEvent.selectOptions(screen.getByLabelText("Vendor"), "custom-openai");
     const url = screen.getByLabelText("Base URL");
     await userEvent.clear(url);
     await userEvent.type(url, "http://llm.example.com/v1");
     await userEvent.type(screen.getByLabelText("API key"), "sk-x");
     await userEvent.type(screen.getByLabelText("Model"), "m");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
     expect(screen.getByRole("status").textContent).toMatch(/https/);
     expect(badge()).not.toBeNull();
-
     await userEvent.clear(url);
     await userEvent.type(url, "http://localhost:1234/v1");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
     await waitFor(() => expect(badge()).toBeNull());
   });
 
-  it("keeps the Saved message visible after saving", async () => {
+  it("keeps saved names unique, so the switch and the palette can tell them apart", async () => {
     render(<App storage={new MemoryStorage()} />);
     await userEvent.click(badge()!);
-    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
-    await userEvent.type(screen.getByLabelText("API key"), "sk-test");
-    await userEvent.type(screen.getByLabelText("Model"), "m");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(badge()).toBeNull());
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByRole("status").textContent).toMatch(/^Saved/);
+    await addProvider("deepseek", "sk-1", "deepseek-chat");
+    await userEvent.click(screen.getByRole("button", { name: "Add a provider" }));
+    await userEvent.selectOptions(screen.getByLabelText("Vendor"), "deepseek");
+    expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("DeepSeek 2");
+    await userEvent.clear(screen.getByLabelText("Name"));
+    await userEvent.type(screen.getByLabelText("Name"), "DeepSeek");
+    await userEvent.type(screen.getByLabelText("API key"), "sk-2");
+    await userEvent.click(screen.getByRole("button", { name: "Save and use" }));
+    await waitFor(() => expect(screen.getByRole("radio", { name: /DeepSeek 2/ })).toBeTruthy());
   });
 
   it("moves focus to Cancel when asking to confirm a wipe, and back when cancelled", async () => {

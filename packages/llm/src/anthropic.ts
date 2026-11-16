@@ -86,7 +86,7 @@ export class AnthropicProvider implements Provider {
 
   async complete(request: CompleteRequest): Promise<ProviderReply> {
     const { apiKey, model, maxTokens = 4096, baseUrl = "https://api.anthropic.com" } = this.options;
-    const res = await this.doFetch(`${baseUrl}/v1/messages`, {
+    const res = await this.doFetch(`${baseUrl.replace(/\/+$/, "")}/v1/messages`, {
       method: "POST",
       signal: request.signal,
       headers: {

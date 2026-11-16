@@ -193,6 +193,7 @@ Kiro config: `docs/kiro-mcp.json`, to be copied to `.kiro/settings/mcp.json`. Ki
 - **Toasts** sit at the bottom centre. The side panes keep controls at their bottom edge.
 - **Kit gallery**: `/kit/` shows every component live with canned data. It is part of the template story and is covered by e2e and axe.
 - **Languages (EN / 中文)**: a small typed layer in `packages/ui/src/i18n.ts`, no library (i18next and friends add ~50 KB, string keys and a build step). Each package keeps `defineMessages(en, zh)`; the Chinese dictionary must have the same keys and parameter types or `tsc` fails. `useT` re-renders on change, `tNow` serves code outside React (demo scripts). The choice is stored in `localStorage` (`seance.locale`), so the landing page and both apps switch together, and `<html lang>` follows it. Dates use `Intl` in UTC. Sample data, tool outputs and the MCP server stay English. Mock scripts match the prompt in either language and reply in the current one. A real model gets one extra system-prompt line asking it to answer in Chinese, while email drafts stay in the language of the thread. The `EN / 中文` switch sits at the far right of every header, after a divider, so it reads as a setting, not a link. CJK text uses system fonts (PingFang SC, Microsoft YaHei, Noto Sans CJK).
+- **Providers (CC Switch style)**: Settings keeps a list of saved profiles (name, vendor preset, settings) in the `secrets` record `providers`, plus the active one. Picking a profile switches the agent at once, and so does the header select (`ProviderSwitch`) or ⌘K. Demo mode is one more choice, and saved keys stay when you pick it; Delete forgets a key. Presets in `packages/llm/src/presets.ts` prefill the URL and protocol for OpenAI, Anthropic, OpenRouter, Gemini, Groq, Mistral, xAI, DeepSeek, Qwen, Doubao, SiliconFlow, Qianfan, MiniMax, Hunyuan, Kimi, GLM, Ollama and LM Studio, and Custom works for any OpenAI- or Anthropic-compatible URL. Each preset records whether a browser may call it, checked with a CORS preflight from the live origin on Nov 16: Kimi and GLM refuse, so the form says to reach them through SiliconFlow or OpenRouter. "Load model list" asks the vendor's `/models` instead of shipping names that go stale. Signing in with a ChatGPT or Claude subscription is not offered: those credentials belong to the vendors' own apps, and using them elsewhere breaks their terms.
 - **Copy**: lightly spooky labels ("Resurrect", "Banish") over plain descriptions in tooltips. Never at the cost of clarity.
 
 ## 11. Landing page (`site/`)
@@ -243,6 +244,7 @@ GitHub Actions runs checks. Cloudflare's Git integration builds and deploys `mai
 | P9 | For any generated call sequence, no non-read tool runs without a recorded approval. |
 | P10 | `banish` then `undo` restores the original item. Banished items never appear in default search. |
 | P11 | `toMcpTools()` and `toJsonSchema()` list exactly the registered tools with matching names. |
+| P12 | Provider profiles survive save and load unchanged and never reach an export. Parsing any input gives unique ids and an active id that exists, or demo mode. |
 
 ### Other layers
 

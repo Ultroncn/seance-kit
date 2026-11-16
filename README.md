@@ -17,6 +17,7 @@ Your data stays in your browser (IndexedDB). There is no backend and no account.
 - **Typed tools.** One zod schema per tool drives validation, the JSON Schema sent to models, and the MCP definition.
 - **Soft deletes with undo** (Banish), local full-text search, and storage adapters for IndexedDB, memory and files.
 - **A polished dark UI** (`packages/ui`): app shell, séance timeline, approval cards, ⌘K palette, settings, Demo badge. Reduced motion is respected, and axe checks run in CI.
+- **Bring your own model, many vendors.** Save several providers (OpenAI, Anthropic, DeepSeek, Qwen, Doubao, SiliconFlow, OpenRouter, Ollama and more, or any compatible URL) and switch between them from the header, like CC Switch.
 - **English and Chinese** with a typed, dependency-free i18n layer. A missing translation is a type error.
 - **An MCP server** (`packages/mcp-server`) that serves any app's tools to Kiro or another MCP client.
 - **Property-based tests** (fast-check) for importers, storage, search, the agent loop and approvals.

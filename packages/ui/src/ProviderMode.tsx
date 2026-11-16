@@ -1,10 +1,12 @@
 import {
-  clearProviderConfig,
+  EMPTY_PROFILES,
   createProvider,
-  loadProviderConfig,
-  saveProviderConfig,
+  loadProviderProfiles,
+  saveProviderProfiles,
   type Provider,
   type ProviderConfig,
+  type ProviderProfile,
+  type ProviderProfiles,
 } from "@seance/llm";
 import type { Storage } from "@seance/storage";
 import {
@@ -13,6 +15,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -22,14 +25,22 @@ export interface ProviderModeValue {
   provider: Provider;
   /** Read from `provider` itself, never stored separately. Drives the Demo-mode badge. */
   isMock: boolean;
-  /** Saved real-provider settings, or null in demo mode. */
+  /** Settings of the active profile, or null in demo mode. */
   config: ProviderConfig | null;
+  /** Every saved provider, like the entries of CC Switch. */
+  profiles: ProviderProfile[];
+  /** The profile in use, or null for demo mode. */
+  activeId: string | null;
   /** False until saved settings have been read. The mock is used until then. */
   ready: boolean;
-  /** Why saved settings could not be used, if they could not. */
+  /** Why the active profile could not be used, if it could not. */
   error: string | null;
-  /** Save a real provider, or pass null to forget the key and return to demo mode. */
-  save: (config: ProviderConfig | null) => Promise<void>;
+  /** Add or replace a profile. `activate` also switches the agent to it. */
+  saveProfile: (profile: ProviderProfile, activate?: boolean) => Promise<void>;
+  /** Forget a profile and its key. Removing the active one returns to demo mode. */
+  removeProfile: (id: string) => Promise<void>;
+  /** Switch the agent to a saved profile, or to demo mode with null. */
+  activate: (id: string | null) => Promise<void>;
   /** Re-read settings, for example after wiping all data. */
   reload: () => Promise<void>;
   /** Build a provider from settings without saving them. Used by "Test connection". */
@@ -54,11 +65,16 @@ export function ProviderModeProvider({
   createReal = createProvider,
   children,
 }: ProviderModeProviderProps) {
-  const [config, setConfig] = useState<ProviderConfig | null>(null);
+  const [state, setState] = useState<ProviderProfiles>(EMPTY_PROFILES);
   const [ready, setReady] = useState(false);
+  // Writes go through one queue, so two quick switches can never save out of order.
+  const latest = useRef(state);
+  const queue = useRef(Promise.resolve());
 
   const reload = useCallback(async () => {
-    setConfig(await loadProviderConfig(storage));
+    const next = await loadProviderProfiles(storage);
+    latest.current = next;
+    setState(next);
     setReady(true);
   }, [storage]);
 
@@ -66,16 +82,52 @@ export function ProviderModeProvider({
     void reload();
   }, [reload]);
 
-  const save = useCallback(
-    async (next: ProviderConfig | null) => {
-      if (next) await saveProviderConfig(storage, next);
-      else await clearProviderConfig(storage);
-      setConfig(next);
+  const commit = useCallback(
+    (change: (current: ProviderProfiles) => ProviderProfiles) => {
+      const run = queue.current.then(async () => {
+        const next = change(latest.current);
+        await saveProviderProfiles(storage, next);
+        latest.current = next;
+        setState(next);
+      });
+      queue.current = run.catch(() => undefined);
+      return run;
     },
     [storage],
   );
 
+  const saveProfile = useCallback(
+    (profile: ProviderProfile, activate = false) =>
+      commit((cur) => {
+        const exists = cur.profiles.some((p) => p.id === profile.id);
+        return {
+          activeId: activate ? profile.id : cur.activeId,
+          profiles: exists
+            ? cur.profiles.map((p) => (p.id === profile.id ? profile : p))
+            : [...cur.profiles, profile],
+        };
+      }),
+    [commit],
+  );
+  const removeProfile = useCallback(
+    (id: string) =>
+      commit((cur) => ({
+        activeId: cur.activeId === id ? null : cur.activeId,
+        profiles: cur.profiles.filter((p) => p.id !== id),
+      })),
+    [commit],
+  );
+  const activate = useCallback(
+    (id: string | null) =>
+      commit((cur) => ({
+        ...cur,
+        activeId: id !== null && cur.profiles.some((p) => p.id === id) ? id : null,
+      })),
+    [commit],
+  );
+
   const value = useMemo<ProviderModeValue>(() => {
+    const config = state.profiles.find((p) => p.id === state.activeId)?.config ?? null;
     let provider = mock;
     let error: string | null = null;
     if (config) {
@@ -89,14 +141,18 @@ export function ProviderModeProvider({
       provider,
       isMock: provider.isMock,
       config,
+      profiles: state.profiles,
+      activeId: config ? state.activeId : null,
       ready,
       error,
-      save,
+      saveProfile,
+      removeProfile,
+      activate,
       reload,
       build: createReal,
       storage,
     };
-  }, [mock, config, ready, save, reload, createReal, storage]);
+  }, [mock, state, ready, saveProfile, removeProfile, activate, reload, createReal, storage]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

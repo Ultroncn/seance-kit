@@ -39,7 +39,8 @@ for (const app of [
 
       await page.getByRole("button", { name: "Settings", exact: true }).click();
       const dialog = page.getByRole("dialog", { name: "Settings" });
-      await dialog.getByRole("radio", { name: "OpenAI-compatible" }).check();
+      await dialog.getByRole("button", { name: "Add a provider" }).click();
+      await dialog.getByLabel("Vendor").selectOption("custom-openai");
       await dialog.getByLabel("Base URL").fill(FAKE_BASE);
       await dialog.getByLabel("API key").fill(FAKE_KEY);
       await dialog.getByLabel("Model").fill("fake-model");
@@ -48,7 +49,7 @@ for (const app of [
       await expect(dialog.getByRole("status")).toHaveText("Connected. The model replied: OK");
       await expect(badge(page)).toBeVisible(); // Testing does not save.
 
-      await dialog.getByRole("button", { name: "Save" }).click();
+      await dialog.getByRole("button", { name: "Save and use" }).click();
       await expect(badge(page)).toHaveCount(0);
 
       // The agent must use the provider behind the badge: its reply comes from the fake endpoint.
@@ -64,10 +65,11 @@ for (const app of [
       await expect(page.getByRole("heading", { level: 1, name: app.title })).toBeVisible();
       await expect(badge(page)).toHaveCount(0);
 
-      await page.getByRole("button", { name: "Settings", exact: true }).click();
-      await page.getByRole("radio", { name: "Demo (scripted)" }).check();
-      await page.getByRole("button", { name: "Save" }).click();
+      // The header switch goes back to demo mode in one step, and the saved provider stays.
+      await page.getByLabel("Model in use").selectOption({ label: "Demo (scripted)" });
       await expect(badge(page)).toBeVisible();
+      await page.getByLabel("Model in use").selectOption({ label: "Custom (OpenAI-compatible)" });
+      await expect(badge(page)).toHaveCount(0);
     });
 
     test("export never contains the API key, and settings pass axe", async ({ page }) => {
@@ -86,10 +88,11 @@ for (const app of [
       );
       await page.keyboard.press("Enter");
       const dialog = page.getByRole("dialog", { name: "Settings" });
-      await dialog.getByRole("radio", { name: "Anthropic" }).check();
+      await dialog.getByRole("button", { name: "Add a provider" }).click();
+      await dialog.getByLabel("Vendor").selectOption("anthropic");
       await dialog.getByLabel("API key").fill(FAKE_KEY);
       await dialog.getByLabel("Model").fill("fake-model");
-      await dialog.getByRole("button", { name: "Save" }).click();
+      await dialog.getByRole("button", { name: "Save and use" }).click();
       await expect(badge(page)).toHaveCount(0);
 
       const { violations } = await new AxeBuilder({ page }).analyze();
@@ -115,9 +118,10 @@ for (const app of [
 test("the two apps keep separate settings on the shared origin", async ({ page }) => {
   await page.goto("/archive/");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await page.getByRole("radio", { name: "Ollama (local)" }).check();
+  await page.getByRole("button", { name: "Add a provider" }).click();
+  await page.getByLabel("Vendor").selectOption("ollama");
   await page.getByLabel("Model").fill("llama-test");
-  await page.getByRole("button", { name: "Save" }).click();
+  await page.getByRole("button", { name: "Save and use" }).click();
   await expect(badge(page)).toHaveCount(0);
 
   await page.goto("/inbox/");

@@ -5,7 +5,9 @@ import type { Provider } from "./types";
 
 /** Saved in settings. Contains secrets, so it only ever lives in the browser's IndexedDB. */
 export type ProviderConfig =
-  | { kind: "anthropic"; apiKey: string; model: string }
+  /** `baseUrl` points at another Anthropic-compatible server, for example DeepSeek's. */
+  | { kind: "anthropic"; apiKey: string; model: string; baseUrl?: string }
+  /** `apiKey` may be empty for local servers such as LM Studio. */
   | { kind: "openai-compatible"; baseUrl: string; apiKey: string; model: string }
   | { kind: "ollama"; model: string; host?: string };
 
@@ -19,10 +21,11 @@ export function createProvider(config: ProviderConfig, fetchImpl?: FetchLike): P
       return new AnthropicProvider({
         apiKey: config.apiKey,
         model: config.model,
+        ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
         fetch: fetchImpl,
       });
     case "openai-compatible":
-      requireFields(config, ["baseUrl", "apiKey", "model"]);
+      requireFields(config, ["baseUrl", "model"]);
       return new OpenAiCompatibleProvider({ ...config, fetch: fetchImpl });
     case "ollama":
       requireFields(config, ["model"]);

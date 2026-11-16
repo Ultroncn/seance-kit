@@ -25,9 +25,16 @@ export {
 export { createProvider, type ProviderConfig, type ProviderKind } from "./factory";
 export type { FetchLike } from "./http";
 export {
+  EMPTY_PROFILES,
+  PROVIDER_PROFILES_ID,
   PROVIDER_SETTINGS_ID,
-  clearProviderConfig,
   loadProviderConfig,
+  loadProviderProfiles,
   parseProviderConfig,
-  saveProviderConfig,
+  parseProviderProfiles,
+  saveProviderProfiles,
+  type ProviderProfile,
+  type ProviderProfiles,
 } from "./settings";
+export { listModels } from "./models";
+export { PROVIDER_PRESETS, presetById, type BrowserAccess, type ProviderPreset } from "./presets";
