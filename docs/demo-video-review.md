@@ -1,6 +1,6 @@
 # Demo video review — November 17, 2026
 
-The reviewed local publication artifact is `seance-kit-demo-publish.mp4`: **1:44.67**, 1920×1080, H.264 video and AAC mono audio. It is below the three-minute limit. It has not been uploaded or publicly published. The video and its checksum manifest remain local submission artifacts rather than repository binaries.
+The reviewed local publication artifact is `seance-kit-demo-publish.mp4`: **1:44.67**, 1920×1080, H.264 video and AAC mono audio. It is below the three-minute limit. The owner approved public upload; it was [published on YouTube](https://youtu.be/r6lZfKDDlno) on November 17. The original media and checksum manifest remain local submission artifacts rather than repository binaries.
 
 Final video SHA-256: `673c26a719d93cdcfc13b84ee3768603bac4b801a53a0da780ce0b4d470b431d`.
 
@@ -18,7 +18,7 @@ The earlier screenshot-only 2:44.63 candidate was rejected and superseded. Revie
 
 Complete local Whisper base.en transcription matches the narration script after the equivalent number spelling “eighteen”/“18” is normalized. Captions were aligned to those word boundaries with 80 ms leading/140 ms trailing padding, bounded by scene changes and the next cue. The final subtitle render preserves the exact AAC payload that was transcribed. Full-file decoding and black-frame checks completed without error; the audio scan found no NaN/Inf samples and the decoded peak is below full scale.
 
-This review combines frame inspection, full automated transcription and technical audio checks. It does not claim human listening, a complete uninterrupted real-time playback, or guaranteed pronunciation quality. Local logs, capture manifests, caption timing checks, source hashes and the final checksum are kept with the publication package. The owner still reviews the exact file before authorizing upload.
+This review combines frame inspection, full automated transcription and technical audio checks. It does not claim human listening, a complete uninterrupted real-time playback, or guaranteed pronunciation quality. Local logs, capture manifests, caption timing checks, source hashes and the final checksum are kept with the publication package. The owner subsequently authorized public upload of this exact reviewed file.
 
 Independent reviewer inspected all caption contact sheets, extra real-approval frames from 62.5–65.5s, Kiro/closing links, scripts/ASR/timing/AAC identity and four-document diff. No publication-blocking finding. Not human listening or complete real-time playback.
 
@@ -34,6 +34,8 @@ The documentation update was checked on Node 24.18.0 / pnpm 9.15.9, based on `20
 - Editing/technical checks: FFmpeg; local faster-whisper transcription. No audio was uploaded for transcription. Codex assisted capture, editing, narration generation and review; this is not claimed as Kiro-generated media.
 - Earlier private system-voice drafts are superseded and excluded from the publication package.
 
-## Remaining publication work
+## Publication status and remaining entry work
 
-Owner review and explicit public-upload authorization; successful public YouTube upload; actual link in Devpost and the landing page; final personal/eligibility fields and owner acceptance of entry terms. No placeholder video link or completed submission is claimed.
+YouTube showed “Video published” after Public was selected; its copyright check reported no issues at publication time. English SRT captions were imported and saved, and AI narration was disclosed. The real link (https://youtu.be/r6lZfKDDlno) was saved in Devpost, advancing the draft to 3/5, and configured on the landing page.
+
+Remaining: final personal/eligibility fields and owner acceptance of Devpost rules/terms and the prize-entry submission. No completed hackathon entry is claimed.

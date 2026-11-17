@@ -21,9 +21,9 @@ Sources: [Official rules](https://kiroween.devpost.com/rules), [submission final
 - The full deployed suite passed **57/57** in fresh Playwright contexts, including axe, keyboard flows, offline reload and first offline use of deferred importers/dialogs. This is automated clean-browser verification, not a manual incognito-window claim. The log is in `docs/kiro-evidence/production-e2e.log`.
 - Both Kiro MCP servers connected with seven tools each. Actual searches found the expected sourdough and boiler samples. A Storage.exportAll sample JSON was also imported into isolated FileStorage and queried from Kiro. Read calls still required one-time permission; no MCP write was exercised.
 - `KIRO_USAGE.md` now includes actual spec, steering, hooks, MCP, history and review/test screenshots, plus the configured real-model approval state in docs/runtime-evidence. Captions state the coverage limits.
-- The existing Devpost draft was renamed **Séance Kit**. Its project story, three technology tags, four links, Skeleton Crew category, testing instructions and technology disclosure were saved. The form still shows **DRAFT, 2/5 steps**; missing fields and terms have not been fabricated or accepted.
+- The existing Devpost draft was renamed **Séance Kit**. Its project story, three technology tags, four links, Skeleton Crew category, testing instructions and technology disclosure were saved. After saving the public demo video URL, the form shows **DRAFT, 3/5 steps**; missing personal fields and Devpost terms have not been fabricated or accepted.
 
-## Reviewed demo cut and remaining publication
+## Reviewed demo and publication status
 
 The local publication file is **seance-kit-demo-publish.mp4**, **1:44.67**, 1920×1080 H.264/AAC. It replaces the rejected screenshot-only candidate. Actual tab interactions are edited together with cropped Kiro evidence, synthetic English narration and subtitles. Source tabs were sampled at approximately four frames per second during actual actions and rendered at 30 fps; this is not native 30 fps capture or a one-take recording. Cuts and final-frame holds preserve the timing of the selected action ranges.
 
@@ -40,7 +40,7 @@ All 17 scene samples and all 26 caption frames were visually checked. Complete l
 
 Narration is locally generated with Kokoro-82M v1.0 (Apache-2.0), voice af_heart, through kokoro-onnx (MIT); it is not the owner's voice. The publication package contains captions, credits, the upload copy and a checksum manifest. Earlier system-voice drafts are superseded. No key, private archive, stock footage or music is included.
 
-**No upload or public video URL exists yet.** The owner still needs to review this specific file and authorize public YouTube publication. After successful upload, put the actual URL in Devpost and `VIDEO_URL` in `site/src/App.tsx`; do not insert a placeholder.
+**Published Nov 17:** [https://youtu.be/r6lZfKDDlno](https://youtu.be/r6lZfKDDlno). The owner explicitly approved channel creation/YouTube terms and public upload. YouTube showed “Video published” after Public was selected; its copyright check reported no issues at publication time. English SRT captions were imported and saved, and synthetic narration was disclosed through the AI setting. The actual URL was saved in Devpost (draft advanced to 3/5) and set as `VIDEO_URL` in `site/src/App.tsx`. This is video publication, not final hackathon submission.
 
 ## Saved Devpost copy
 
@@ -98,7 +98,7 @@ The owner configured a real provider using deepseek-flash. The browser showed an
 The Nov 17 build passed 332 unit/property tests and 57 browser tests locally. The same 57 browser tests passed against the deployed site in fresh browser contexts, including axe, keyboard flows, offline reloads and first offline use of deferred imports and dialogs. A fresh local clone passed a frozen-lockfile install, tests and build. GitHub CI and Cloudflare deployment passed for commit 71fc623.
 
 ## What's next
-Publish the final public demo video and complete the submission review, then improve the template based on developer feedback. The current scope stays focused on the two working applications and their shared foundation.
+Complete the final personal/eligibility and submission review, then improve the template based on developer feedback. The public demo video is available at https://youtu.be/r6lZfKDDlno. The current scope stays focused on the two working applications and their shared foundation.
 
 ### Testing instructions
 
@@ -115,7 +115,7 @@ The project uses standard third-party libraries and tools listed in the reposito
 ## Owner actions and final gate
 
 - [x] Owner-configured real-provider tool/approval path: owner confirmed working, and actual deepseek-flash browser state showed a successful search and five reads followed by a summary approval card. No write was approved during capture, and no key was recorded. The earlier gpt-6-luna error is not claimed fixed; other endpoints were not manually certified.
-- [ ] Review the 1:44.67 publication file, authorize public YouTube upload, and verify the resulting public video. Add its actual link to the landing page and Devpost. The edited video includes actual recorded interactions and Kiro evidence; it is not a one-take recording.
+- [x] Owner approved public upload; the 1:44.67 file was published on YouTube with English captions and synthetic narration disclosure. Actual URL: https://youtu.be/r6lZfKDDlno. Saved in Devpost and configured on the landing page. The edited video includes recorded interactions and Kiro evidence; it is not a one-take recording.
 - [x] Upload the three public sample cover/gallery images. On Nov 17, the approved landing-page cover and Archive/Inbox approval screenshots were uploaded through the native file picker; both gallery captions were saved and verified after navigation. The upload interface continued returning a file-permission error despite the owner reporting the flag already enabled. Its actual cause was not established; no extension setting change was needed for native upload.
 - [ ] Fill personal fields truthfully: residence, age/jurisdiction eligibility, submitter type, AWS employment, previous Kiroween participation and the two personal surveys. Do not infer these from the repository.
 - [ ] Review all saved fields and the public preview. Re-check remote commit, CI, deployed site and the final R1 checklist.

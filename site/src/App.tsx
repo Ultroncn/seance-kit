@@ -15,8 +15,8 @@ import { siteMessages } from "./messages";
 import { TimelineDemo } from "./LazyTimelineDemo";
 import { useInView } from "./useInView";
 
-/** Set once the demo video is uploaded (task 5.3). The section stays hidden until then. */
-const VIDEO_URL = "";
+/** Public demo video, published for task 5.3. */
+const VIDEO_URL = "https://youtu.be/r6lZfKDDlno";
 
 const apps = [
   { name: "Archive Séance", href: "/archive/" },
