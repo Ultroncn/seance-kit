@@ -1,93 +1,148 @@
 # How we used Kiro
 
-Draft, started in M0. Each section gets real examples and screenshots before submission (task 5.1).
+Séance Kit is a Kiroween Skeleton Crew entry: a reusable local-first agent template, demonstrated by Archive Séance and Inbox Exorcist. This write-up follows the tracked specs, steering, hooks, implementation and Git history through Nov 17, 2026. Screenshot capture is still pending, so task 5.1 remains open for that part.
+
+The earlier project notes attribute most development and the independent reviews to Kiro. Git establishes the changes and their order; it does not establish which IDE authored every line or provide a transcript of every agent session. The historical observations below are identified as such. The Nov 17 follow-up, performance changes and this documentation update were done with Codex, as disclosed under Other tools.
 
 ## Specs
 
-`.kiro/specs/seance-kit/` holds `requirements.md` (EARS), `design.md`, `tasks.md` and `submission.md`. We wrote and reviewed them before any code. `tasks.md` is the build plan, with milestones tied to requirement IDs.
+The spec was committed before the application scaffold: `5fc41b4` added the four files in [.kiro/specs/seance-kit](.kiro/specs/seance-kit/), `b247c63` added steering, and `6cfd931` created the monorepo, shells, CI and smoke tests.
+
+- [requirements.md](.kiro/specs/seance-kit/requirements.md) defines behavior in EARS form. For example, R2.5 requires approval before a write or destructive tool, R3.4 requires the persistent Mock badge, and R4.3 requires offline use after the first load.
+- [design.md](.kiro/specs/seance-kit/design.md) turns those requirements into interfaces: `ToolRegistry`, the `Provider` and `Storage` contracts, the event stream and the approval gate. Its property table names P1–P15; P9 checks that non-read tools never run without approval.
+- [tasks.md](.kiro/specs/seance-kit/tasks.md) links implementation tasks to requirement IDs. For example, 1.8 implements the approval gate and Banish/undo, while 1.9 names P8–P10 as its checks. The Review fixes section records subsequent corrections instead of hiding them inside checked milestone items.
+- [submission.md](.kiro/specs/seance-kit/submission.md) is a submission plan, including a 2:45 storyboard. It is not evidence that a video was recorded or that the entry was submitted.
+
+A useful correction came from checking the requirements again: R4.3 existed, but no task covered it and the apps had no service worker. `c9b502b` added scoped build-generated workers and offline e2e tests, recorded as R.16. Each worker precaches its own app output and falls back to that app's shell on offline navigation. The requirement led to both an implementation and an explicit test, not just another checked box.
+
+`TODO(screenshot): Show the requirements, design property table and tasks side by side in Kiro, including R4.3 and R.16.`
 
 ## Steering
 
-`.kiro/steering/` has `product.md`, `tech.md`, `structure.md`, `design-language.md` and `testing.md`. They hold the rules that are easy to forget mid-build: no app code in `core`, soft-delete only, the Demo-mode badge, design tokens, property-test naming.
+The five files in [.kiro/steering](.kiro/steering/) keep decisions available across tasks. Concrete examples in the repository are:
+
+| File                 | Rule                                                                            | Example of its effect                                                                                                                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `product.md`         | Local-first; honest demo; no dead-code tooling; the cut list stays cut.         | Both apps use distinct browser databases. Mock runs show a Demo mode badge. Inbox tools create drafts but never send mail. Gmail OAuth, a browser MCP client, semantic search and light mode remain outside the plan. |
+| `structure.md`       | App-specific tools stay in apps; core has no React; UI stays presentational.    | `5dd3036` introduced the shared `AgentPanel`, while `16990bb` added `@seance/react` and `useAgentRun`. App-specific approval wording stays in the two `AgentPane` components.                                         |
+| `tech.md`            | zod drives tool schemas; secrets stay in IndexedDB and never appear in exports. | The registry derives model and MCP definitions from the same tools. `d0d9f8a` added settings and the reserved `secrets` collection; `packages/storage/test/contract.ts` checks exclusion on each adapter.             |
+| `testing.md`         | Name properties P1–P15 and keep shrunk counterexamples.                         | `apps/archive-seance/test/importers.test.ts` retains the P3 example where one batch lists the same chat twice; P1 exercises Markdown bodies containing role markers such as `## User`.                                |
+| `design-language.md` | Neutral dark surfaces, shared tokens, visible focus and meaningful motion.      | `db35463` replaced the earlier decorative presentation with the current product UI. `packages/ui/test/tokens.test.ts` checks contrast pairs, and `e2e/kit.spec.ts` checks axe and reduced-motion behavior.            |
+
+The rules also explain why a fix sometimes belongs in a shared package: resetting an agent run is a core/react concern, while parsing a Claude export is an Archive concern. The language switch, resizable shell and timeline are reused; importers and tools remain app-specific.
+
+`TODO(screenshot): Show Kiro's steering files beside the shared AgentPanel and one app-specific tool, with the dependency direction visible.`
 
 ## Hooks
 
-`.kiro/hooks/` has three hooks:
+Three tracked hook definitions were added in `c7c8e50`. These are their actual configured triggers and actions:
 
-- **`shared-package-typecheck`** (PostFileSave, matching `packages/*/src/**/*.ts(x)`). Both apps and the template depend on the shared packages, so a change in `core` or `ui` can break an app that nobody opened. On save, the agent re-runs `pnpm typecheck` for the whole repo and fixes errors without weakening types.
-- **`spec-task-gate`** (PostTaskExec). After each spec task the agent runs lint, typecheck and tests, ticks the task in `tasks.md`, and logs any real bug a test caught in the decision log below, keeping shrunk counterexamples as regression tests.
-- **`session-start-status`** (SessionStart, a shell command). It runs the `.kiro`-not-ignored check and `git status`, and passes the output to the agent. Commits from other tools then show up before work starts.
+| Hook file                                                                              | Trigger                                                | Configured action and concrete purpose                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [.kiro/hooks/shared-package-typecheck.json](.kiro/hooks/shared-package-typecheck.json) | `PostFileSave`, matcher `packages/[^/]+/src/.+\.tsx?$` | An agent prompt runs `pnpm typecheck` for the whole repository and fixes errors without weakening types. Saving `packages/ui/src/AgentPanel.tsx`, for example, is meant to check both apps and `templates/app`, not just the package being edited.                        |
+| [.kiro/hooks/spec-task-gate.json](.kiro/hooks/spec-task-gate.json)                     | `PostTaskExec`                                         | An agent prompt runs `pnpm lint && pnpm typecheck && pnpm test`, updates the task, and records real test-found bugs in this decision log, retaining any shrunk counterexample. The duplicate-chat P3 regression illustrates the kind of evidence the prompt asks to keep. |
+| [.kiro/hooks/session-start-status.json](.kiro/hooks/session-start-status.json)         | `SessionStart`                                         | A command runs `pnpm -s check:kiro && git status --short --branch`, with a 30-second timeout. This exposes ignored guidance or work from another tool before the agent starts editing.                                                                                    |
 
-We planned these in M0 (task 0.11), but every `createHook` call was denied by workspace permission rules until M5. Until then, the same checks ran only in GitHub Actions, on every push and pull request: the `.kiro` check, typecheck, lint, unit and property tests, build, and Playwright smoke tests.
+The history records a limitation rather than uninterrupted automation: `e64b809` marked hooks skipped after the earlier notes reported permission-denied `createHook` attempts; `c7c8e50` later committed the JSON definitions. Their presence proves configuration, not that each hook fired successfully in a particular Kiro session. No hook execution log is supplied here. These are not Git pre-commit hooks, and the task gate itself does not run build or e2e.
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml) separately configures the `.kiro` check, typecheck, lint, tests, build and Playwright, plus generated-template validation. A workflow definition is not a claim that a particular remote CI run passed. In this Codex follow-up the checks were invoked directly; Kiro hooks were not treated as automatically active here.
+
+`TODO(screenshot): Capture the three hooks in Kiro's hook panel. If showing a successful invocation, include its real output; do not use the configuration alone as execution evidence.`
 
 ## MCP
 
-Both apps run as MCP servers (`packages/mcp-server`, plus `apps/*/mcp/`). They expose the same tool registry as the browser agent: seven tools each (including `undo_banish`), schemas derived from zod, risk mapped to MCP annotations. `docs/kiro-mcp.json` registers both with Kiro. Read tools are auto-approved, and Kiro asks before every write.
+`5ce3e12` added the generic MCP server, app entry points and sample configuration. [packages/mcp-server](packages/mcp-server/) wraps the same `ToolRegistry` used by the browser. Each app currently exposes seven tools, including `undo_banish`; zod supplies the input and output schemas. Risk becomes MCP `readOnlyHint` and `destructiveHint` annotations.
 
-Setup: copy `docs/kiro-mcp.json` to `.kiro/settings/mcp.json`. Kiro blocks agents from writing there, so this step is manual. Then ask Kiro, for example, "use archive-seance to find my Lisbon chats". The servers start on the sample data. Pass your own export with `--import` (Settings → Export all data, or a raw `conversations.json` / `.mbox`).
+The configuration is [docs/kiro-mcp.json](docs/kiro-mcp.json). To register it, the user copies it to `.kiro/settings/mcp.json`. That manual step and verification in Kiro's MCP panel are still open as task 4.2. This follow-up did not write `.kiro/settings/` or claim that registration succeeded.
 
-Building it surfaced a core bug. Input schemas were converted in zod's "output" view, so every field with a default (`limit`, `sort`, `query`) was sent to models and MCP clients as required. A regression test now checks that defaulted fields are optional.
+The Archive entry runs the equivalent of this command from the repository root:
+
+```sh
+pnpm --silent exec tsx apps/archive-seance/mcp/main.ts \
+  --data .local-data/archive \
+  --import apps/archive-seance/public/sample/chatgpt-conversations.json \
+  --import apps/archive-seance/public/sample/claude-conversations.json
+```
+
+The Inbox entry uses `apps/inbox-exorcist/mcp/main.ts`, `.local-data/inbox` and `apps/inbox-exorcist/public/sample/inbox.mbox`. The data folders are file-backed MCP storage, separate from the browser's IndexedDB. `--import` can instead point to an app export from Settings or a supported raw archive. Re-imports are deduplicated.
+
+The config auto-approves only `search_conversations` and `read_conversation` for Archive, and `search_emails` and `read_email` for Inbox. Write and destructive tools are absent from `autoApprove`. MCP risk annotations describe tools; they are not relied upon to establish Kiro's approval behavior. A read-only server mode is also available through `--read-only`.
+
+Concrete automated evidence, distinct from a manual Kiro session:
+
+- `apps/archive-seance/test/mcp.test.ts` imports a ChatGPT sample and calls `search_conversations` with `sourdough`, expecting the starter conversation. It also restores a browser export and starts a real read-only Archive stdio process through Node + tsx from an unrelated working directory, calling `search_conversations` with `regex`. That process test is not the exact pnpm command in the Kiro config.
+- `apps/inbox-exorcist/test/mcp.test.ts` imports 18 messages, starts again without duplicating them, calls `search_emails` with `boiler`, and verifies there is no send/forward/SMTP tool.
+- `packages/mcp-server/test/server.test.ts` checks derived schemas, annotations, structured results, typed errors and read-only restrictions.
+
+After registration, an example user request would be “Use archive-seance to find my Lisbon chats.” This is a suggested request, not a transcript of a completed Kiro call.
+
+Building MCP exposed a real schema bug: zod conversion used the output view, so fields with defaults were incorrectly marked required. `5ce3e12` fixed the conversion; `packages/core/test/registry.test.ts` checks that defaulted inputs are optional. `05b3e8f` added undo support, and `4c78371` serialized MCP calls, locked data folders and batched FileStorage writes.
+
+`TODO(screenshot): After the user completes 4.2, capture Kiro listing the real tools and a successful read call with sanitized sample data. A write example must show Kiro asking for approval.`
 
 ## Other tools
 
-Kiro IDE built almost all of the project: specs, steering, every milestone, the reviews and the redesign. A few commits were made with Claude Code instead, and we list them here so nothing is hidden:
+The earlier write-up identifies these Claude Code contributions; the commit history preserves their changes and subsequent corrections:
 
-- `2342461` added one-click import, a mouse-only resizable pane layout and a `CLAUDE.md` file. `48c90d1` fixed syntax errors in it. Kiro then replaced the pane layout with a keyboard-accessible `Splitter` (property P15) and translated and typed the import dialog in `b141b60`.
-- `520aa4e` to `a24d078` tried to turn Archive Séance into an "AI Dev Workflow" app. That broke lint and 11 tests, and it no longer matched the specs, so we reverted all four commits in `adebbfc`.
+- `2342461` added one-click import, a mouse-only resizable pane layout and `CLAUDE.md`; `48c90d1` fixed syntax errors. `b141b60` then restored the shared shell, added keyboard resizing and P15, and translated and typed the import dialog.
+- `520aa4e`, `2654af2`, `5158c8f` and `a24d078` attempted a memory-bank/developer-workflow pivot. `adebbfc` reverted those four changes to restore Archive Séance and the agreed scope. The earlier notes report lint and 11 test failures during that attempt; those historical failures were not reproduced for this write-up.
+- `c7c8e50` removed `CLAUDE.md` and `.claude/` and disclosed the other-tool work. `.kiro/` remains the project's tracked guidance.
 
-We then removed `CLAUDE.md` and the `.claude/` folder from the repo, so the project's only agent guidance is `.kiro/`.
+Codex performed this Nov 17 follow-up after the user supplied the five-task handoff. It checked the newly merged PR #3 (`56d54fc`), added the README/link-copy fix (`830ea78`), ran the three deployed offline tests successfully, and implemented dynamic loading (`27160a0`). It also ran a read-only independent review of the performance patch; no blocking finding was reported, and its budget-sampling observation led to waiting for startup network activity to settle in the test.
+
+The performance patch defers importers, MIME parsing, zip extraction, Settings, the command palette, the directory-import dialog and the existing below-the-fold landing demo. [design.md section 12b](.kiro/specs/seance-kit/design.md#12b-initial-javascript-measured-nov-17-2026) records before/after gzip sizes and the offline-cache tradeoff. App service workers still fetch deferred chunks for offline use, so a smaller startup bundle is not a claim of less total first-visit download traffic.
+
+A fresh local clone of `27160a0` passed `pnpm i --frozen-lockfile`, `pnpm test` (332 tests) and `pnpm build` on Node 24.18.0 / pnpm 9.15.9. Its temporary directory was deleted. This was a new checkout on the same machine, with the existing pnpm cache available, not a clean-machine certification. The source included unpushed local work, so it was cloned from the local repository rather than GitHub.
+
+`TODO(screenshot): Show the Git history distinguishing Kiro-attributed work, the reverted pivot, merged PR #3 and the local Codex follow-up. No API key, private archive or personal email should appear.`
 
 ## Decision log
 
-### Deploy: Workers static assets rejects `_redirects` SPA rewrites
+### Deployment: use a per-app Worker fallback
 
-The first Cloudflare deploy built cleanly, then failed at `wrangler deploy` with API error 100324 ("Infinite loop detected in this rule") on `/archive/* /archive/index.html 200`. The platform's validator rejects wildcard 200 rewrites whose destination re-matches the source.
+The earlier deployment record reports Cloudflare error 100324 (“Infinite loop detected in this rule”) for wildcard `_redirects` rewrites. `fd7a2dd` replaced them with [worker/index.js](worker/index.js). A root SPA fallback would send the landing page for app deep links, so the Worker serves the appropriate Archive or Inbox shell in place. `9c15d8e` corrected deep-link behavior and strengthened the e2e assertions to check URL and HTTP status. `scripts/serve-dist.mjs` runs the same fallback implementation for local e2e. See design section 12; this was not a new deployment during the Codex follow-up.
 
-`assets.not_found_handling = "single-page-application"` was no fix either, because it falls back only to the root `index.html` and would show the landing page on `/archive/` deep links.
+### Keep keys out of exports, not merely out of the UI
 
-Decision: remove `_redirects` and add a small Worker (`worker/index.js`) that serves assets first, then returns the right app's `index.html` for navigations under `/archive/` or `/inbox/`. Unknown root URLs still return 404. The local test server (`scripts/serve-dist.mjs`) runs the same Worker, so Playwright covers the deep-link behavior before every deploy. Recorded in `design.md` section 12.
+`d0d9f8a` placed provider settings in the reserved `secrets` collection. All three storage adapters exclude it from `exportAll`, and export import rejects a file containing it. `packages/storage/test/contract.ts`, `packages/storage/test/export-file.test.ts` and `e2e/provider-mode.spec.ts` check those boundaries. A hidden password field alone would not have protected a shared export.
 
-### Secrets never leave through an export
+### Let properties keep concrete counterexamples
 
-The first draft stored the API key with other settings, which meant "Export all data" would have written it into a JSON file that people share or feed to the MCP server. We added a reserved `secrets` collection that every Storage adapter leaves out of `exportAll`. The shared contract suite enforces it, and an e2e test downloads a real export and checks that the key is absent. The steering file `tech.md` now carries the rule.
+P1 covers Markdown role-marker lines so an exported message containing `## User` does not split into extra messages on re-import. P3 retains a shrunk duplicate-ID batch that previously flipped stored versions on each import. These examples live in `apps/archive-seance/test/importers.test.ts`; `451201d` fixed the duplicate-batch behavior. `a85f310` also stopped yielding after every tiny import: the earlier record says a slow P3 run exposed unnecessary per-import pauses.
 
-### Tests that caught real problems in M2
+For Inbox, `1cada2f` added the unescaped `From ` body-line regression because a well-formed mbox generator had escaped the case away. `e6b841d` replaced the quadratic HTML conversion path; `ea0b73d` tightened separators and made zipped mbox reads use slices. The fixtures and tests, rather than invented mail or a live account, define these cases.
 
-- **Markdown round-trip (P1).** A message containing a line such as `## User` would split into two messages on re-import. The property found it in its first runs, and the fix escapes marker-like lines. Removing the escape makes the property fail with that exact counterexample.
-- **Search extraction.** MiniSearch also reads the `id` field through the custom field extractor. A unit test showed every id coming back empty. The search service now always reads `id` itself.
-- **Accents.** A tool test expected "pastel de nata" to find the Lisbon chat, which says "pastéis". The search was right and the test was wrong, but it showed that typing without accents found nothing. Search now folds accents.
+### Share the React bridge, keep the core independent
 
-### A shared React layer
+`16990bb` introduced `@seance/react` with `useAgentRun` for event reduction, approval promises, Stop and Undo. `5dd3036` extracted `AgentPanel`. Both apps and the template consume the same bridge and UI, while domain tools and approval descriptions stay in the app folders. This implements the dependency direction in steering rather than copying each app's agent plumbing.
 
-Running the agent from React (events into the timeline, approval promises, stop, undo) is identical in both apps and the template. We added `@seance/react` with `useAgentRun` instead of copying it, so `core` stays framework-free and `ui` stays presentational. The steering file `structure.md` records the rule.
+### Review fixes R.1–R.16
 
-### Tests that caught real problems in M3
+The earlier project notes describe four Kiro reviewer sub-agents covering platform, Archive, Inbox, and UI/tooling. Their `.shots/review-*.md` reports are not tracked, so this document does not reconstruct their prompts or claim a fresh review of those reports. The following tracked fixes and tests are the checkable record. R numbers identify review/follow-up entries, not requirement numbers.
 
-- **mbox splitting (P4) had a blind spot.** A mutation check removed the rule that `From ` only starts a message after a blank line, and P4 still passed: a correct writer escapes every such line, so the property never sees one. Real exports are not always correct, so we added a test with an unescaped `From here on…` line in a body. It catches the mutation.
-- **Header-less junk imported as mail.** `postal-mime` reads text without headers as a body. The fixture's junk entry became an email. Entries with no headers are now reported as skipped.
-- **Double-spaced lists.** HTML newsletters came out with blank lines between list items. The fixture test showed it, and `htmlToText` was fixed.
-- **Axe in a real browser** found that a long approval list (18 emails to sort) scrolled but could not be focused, so keyboard users could not read what they were approving. The details region is now focusable and labelled.
-- **A 12-second test** was a real bug. Toasts sat over the library's Inbox, Drafts and Banished buttons and blocked clicks for six seconds. Toasts moved to the bottom centre.
-- **A flaky test** was a real bug too. cmdk's fuzzy matching let "api key" highlight "Draft a reply to Maya about dinner" about 3 times in 4, so Enter could start an agent run. The palette now uses a predictable filter (`paletteScore`) with its own unit tests. The full e2e suite then passed five runs in a row.
-- **A slow property was a slow import.** The Archive P3 property timed out under full-suite load because `importConversations` paused for the event loop after every import, even tiny ones. It now pauses only every 25 items. The property went from about 4.6 s to 22 ms.
+| Entry | Concrete change                                                                                                                                         | Git and verification evidence                                                                                                                       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R.1   | Reset/Stop no longer leave orphan tool results in the next conversation; tool-call IDs are unique and step budgets finite.                              | `17d0b28`; `packages/core/test/agent.test.ts`, `packages/react/test/useAgentRun.test.tsx`.                                                          |
+| R.2   | Anthropic conversion drops empty turns and merges neighboring turns of the same role.                                                                   | `e503d12`; `packages/llm/test/providers.test.ts`.                                                                                                   |
+| R.3   | Provider forms keep their own keys/models, constrain endpoints and preserve status and wipe-confirm focus.                                              | `0df33ae`; UI settings and review-regression tests.                                                                                                 |
+| R.4   | Archive imports retain newer data and annotations, skip zip junk/attachments, and prevent overlapping imports; demo copy stays honest.                  | `1f27a68`, `8fab8ee`; Archive importer and review-regression tests.                                                                                 |
+| R.5   | Inbox handles hostile HTML and real mbox boundaries, uses Reply-To, limits zipped imports and refreshes category reads.                                 | `e6b841d`, `ea0b73d`; Inbox importer and review-regression tests.                                                                                   |
+| R.6   | Rejected steps retain contrast, decisions keep focus in the timeline, replies are announced, toasts pause on hover and palette matching is predictable. | `9c15d8e`; UI tests, `e2e/archive.spec.ts`, `e2e/keyboard.spec.ts` and axe paths.                                                                   |
+| R.7   | Deep links stay at the requested URL, `.kiro` ignore checks use `--no-index`, and CI rejects flaky-only successes.                                      | `2d26a73`, `9c15d8e`, `b535908`; worker/script tests and `e2e/smoke.spec.ts`.                                                                       |
+| R.8   | MCP exposes undo, serializes calls and locks its data folder; FileStorage caches and batches writes.                                                    | `05b3e8f`, `4c78371`; MCP and storage tests. Historical timing remains in the R.8 task record, not a new benchmark here.                            |
+| R.9   | Typed EN/中文 dictionaries, shared language state and bilingual Mock scripts cover both apps and the site.                                              | `708991b`, `510549a`; i18n tests and `e2e/i18n.spec.ts`.                                                                                            |
+| R.10  | Saved profiles, vendor presets and model-list loading replace a single provider form.                                                                   | `28b976f`; LLM settings, UI settings and provider-mode e2e tests.                                                                                   |
+| R.11  | Inbox retains mailbox identity, filters by mailbox and documents export-based import.                                                                   | `aa191dc`; `apps/inbox-exorcist/test/mailboxes.test.ts` and the multi-mailbox e2e.                                                                  |
+| R.12  | The model menu groups saved providers and reasoning choices; returned reasoning is preserved for follow-up calls.                                       | `f8bf760`; `packages/ui/test/model-picker.test.ts`, provider tests and provider-mode e2e.                                                           |
+| R.13  | Providers parse SSE text/reasoning deltas and timelines retain arrived text when stopped.                                                               | `6a8ce47`; LLM/core streaming tests and P13/P14.                                                                                                    |
+| R.14  | The redesign uses neutral surfaces, one accent, consistent controls and real product screenshots on the landing page.                                   | `db35463`; tokens tests, `pnpm screenshots`, landing and kit e2e. The screenshot command exists; it was not rerun as part of writing this document. |
+| R.15  | Both apps use the shared shell; splitters support keyboard/pointer resizing and saved widths, with typed and translated one-click import.               | `b141b60`; `packages/ui/test/pane-widths.test.ts` (P15) and keyboard e2e.                                                                           |
+| R.16  | Apps and generated templates work offline after first load through scoped workers and complete-build precaching.                                        | `c9b502b`; `scripts/vite-offline.test.ts` and `e2e/offline.spec.ts`.                                                                                |
 
-### Tests that caught real problems in M4
+The review record's lesson is specific: a scripted provider can hide real protocol errors, a passing property can miss inputs excluded by its generator, and a test must assert the behavior named in its title. The follow-up merge `56d54fc` added further core, search, storage and Mock regressions; it was included before the Nov 17 checks rather than treated as a separate, unverified branch.
 
-- **Defaulted inputs were sent as required** to models and MCP clients. The bug was in core's schema conversion. Fixed, with a regression test.
-- **A random P3 run found an idempotency bug.** One export listing the same chat twice made every re-import flip the stored chat between the two versions. Within one import, the last version now wins. The shrunk counterexample is kept as a test, as the testing steering doc asks.
-- **Numbers were matched with typo tolerance.** A performance check searching for "1234" found 1224, 1233, 1235 and more, so in real data "LX4821" would also find "LX4831". Fuzzy matching now applies to words only.
-- **Our own measurement was wrong once.** A 1.1 s inbox search turned out to overlap with the one-time list reload after a 30,000-message import. A CPU profile showed 163 ms. We fixed the measurement and recorded both numbers in design.md section 12a.
-- **Axe on the landing page** flagged code samples that scrolled but could not be focused. They are now focusable and labelled.
+`TODO(screenshot): Capture R.1–R.16 in tasks.md with one representative regression test and its actual passing output. Add the scoped offline worker and a successful offline import as the R.16 example.`
 
-### An independent review, run with Kiro sub-agents
+## Remaining submission evidence
 
-Before polishing the submission we asked four reviewer sub-agents, each with a clean context, to review one part of the code against the spec: platform, Archive, Inbox, and UI with tooling. They reported 40-odd findings with file and line, many reproduced with small scripts. The serious ones:
-
-- **Pressing "New séance" while an approval was pending** left an orphan tool result in the next conversation. Real providers then reject every later request with HTTP 400. The scripted Mock never checks this, so neither the demo nor e2e caught it.
-- **A saved Anthropic key filled the OpenAI-compatible form**, so Test or Save would send it to whatever base URL was typed there.
-- **Importing an older export replaced a newer copy** of the same chat.
-- **One hostile HTML email froze the tab.** The regex-based converter was quadratic; 273 KB took 1.1 s.
-- **Our CI check for `.kiro` could never fail**: `git check-ignore` ignores tracked files unless given `--no-index`.
-- **Deep links on the live site were redirected** to the app root, and our smoke test only looked at the heading.
-
-We fixed every high and medium finding the same way: first a test that fails on the old code, then the fix. The list is in `tasks.md` under "Review fixes". Two lessons: a scripted provider hides protocol bugs, so e2e now checks that the agent really uses the provider behind the badge; and a test must assert the thing it names (the deep-link test now checks the URL and the status code).
+The text portion of task 5.1 is filled in; every screenshot placeholder still needs a real capture. Task 1.11 still requires the user's own real-provider verification through Settings → Test connection. Task 4.2 still requires MCP registration and a call from Kiro. Video recording/upload, the real-provider video segment and Devpost remain pending. No key was requested in chat, no registration was fabricated, and these local follow-up commits were not pushed or deployed.

@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.20 Complete the KIRO_USAGE text from tracked specs, steering, hooks and history; distinguish configuration, automated evidence and pending manual Kiro checks. Screenshot placeholders remain TODO; task 5.1 is not marked fully done.
 - [x] R.19 Verified the deployed apps offline on Nov 17 (`BASE_URL=https://seance-kit.mask988888888.workers.dev pnpm e2e e2e/offline.spec.ts`): 3/3 passed before local performance changes; no deployment made.
 - [x] R.18 Split importers, email parsing, zip extraction, Settings, the command palette and the directory-import dialog on demand; defer the existing landing timeline until near the viewport. Keep all chunks precached for offline use; add initial-executable-JS budgets and offline first-use coverage. Measurements and limits in design.md section 12b.
 - [x] R.17 Document offline availability in README and remove the redundant app-link arrows from both landing-page translations and rendering.
@@ -127,11 +128,11 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 
 ## M5. Video, write-up, Devpost (Dec 1)
 
-- [ ] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5)
+- [ ] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5) _Text completed Nov 17 with spec/steering examples, exact hook behavior, MCP test evidence, R.1–R.16 commit references and other-tool disclosure. `TODO(screenshot)` captures remain pending._
 - [ ] 5.2 Record the demo per `submission.md` storyboard. Include the real-provider switch. (R3.6)
 - [ ] 5.3 Verify video length is under 3:00. Upload and put the link on the landing page.
 - [ ] 5.4 Fill Devpost fields from `submission.md`.
-- [ ] 5.5 Fresh-clone test: clone, `pnpm i`, `pnpm test`, `pnpm build` on a clean machine or directory.
+- [x] 5.5 Fresh-clone test (Nov 17): cloned local commit `27160a0` with `git clone --no-local` to a fresh temporary directory; `pnpm i --frozen-lockfile`, `pnpm test` (332 tests), and `pnpm build` passed on Node 24.18.0 / pnpm 9.15.9. Directory deleted. Same machine and pnpm cache, not a clean-machine test.
 
 ## Dec 2. Buffer and freeze
 
