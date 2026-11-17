@@ -20,12 +20,12 @@ Sources: [Official rules](https://kiroween.devpost.com/rules), [submission final
 - Commit `71fc623` passed [GitHub CI](https://github.com/Ultroncn/seance-kit/actions/runs/44009744731) and Cloudflare deployment. Later local commits must be pushed and their remote checks verified separately.
 - The full deployed suite passed **57/57** in fresh Playwright contexts, including axe, keyboard flows, offline reload and first offline use of deferred importers/dialogs. This is automated clean-browser verification, not a manual incognito-window claim. The log is in `docs/kiro-evidence/production-e2e.log`.
 - Both Kiro MCP servers connected with seven tools each. Actual searches found the expected sourdough and boiler samples. A Storage.exportAll sample JSON was also imported into isolated FileStorage and queried from Kiro. Read calls still required one-time permission; no MCP write was exercised.
-- `KIRO_USAGE.md` now includes actual spec, steering, hooks, MCP, history and review/test screenshots, with truthful limits on what each proves.
+- `KIRO_USAGE.md` now includes actual spec, steering, hooks, MCP, history and review/test screenshots, plus the configured real-model approval state in docs/runtime-evidence. Captions state the coverage limits.
 - The existing Devpost draft was renamed **Séance Kit**. Its project story, three technology tags, four links, Skeleton Crew category, testing instructions and technology disclosure were saved. The form still shows **DRAFT, 2/5 steps**; missing fields and terms have not been fabricated or accepted.
 
 ## Demo cut and remaining recording
 
-The local review cut measures **2:42.04** (1920×1080, H.264/AAC). It is an edited montage of actual browser/Kiro screenshots with synthetic English narration and subtitles. It is **not continuous screen recording** and **not the final submission video**. It includes a clearly labelled pending real-model segment. Do not upload it as evidence of a real-provider run.
+The current English candidate measures **2:44.63** (1920×1080, H.264/AAC). It is an edited montage of actual browser/Kiro screenshots with synthetic English narration and subtitles, **not continuous screen recording**. The pending-model placeholder has been replaced with the actual deepseek-flash search/read/summary-approval state. No key or private archive is recorded. The candidate still needs owner review and authorization for a public YouTube upload; no final video URL exists yet.
 
 The final video should follow this 2:45 outline, leaving 15 seconds below the limit:
 
@@ -34,7 +34,7 @@ The final video should follow this 2:45 outline, leaving 15 seconds below the li
 | 0:00–0:12 | Landing page and two app links | One reusable local-first agent template, two concrete apps. |
 | 0:12–0:32 | Tool definition and shared UI | zod schema, risk, agent loop, storage; `pnpm new:app`. |
 | 0:32–1:02 | Archive public sample, search/tag approval, Reject | Demo badge stays visible; the script invokes actual tools and respects rejection. |
-| 1:02–1:27 | Owner-configured real provider and one actual prompt | Hide key-entry fields while recording. Show successful connection, selected model, no Mock badge and actual tool/approval result. This segment is still pending. |
+| 1:02–1:27 | Owner-configured real provider and one actual prompt | Hide key-entry fields while recording. Show successful connection, selected model, no Mock badge and actual tool/approval result. This state has been captured with deepseek-flash; the video candidate uses a still-image montage, not a continuous settings-switch recording. |
 | 1:27–1:57 | Inbox sample, Banish approval, Allow, Undo | Five listed messages, Inbox 18→13→18, recoverable local changes; never sends. |
 | 1:57–2:37 | Kiro specs, steering/hook configuration and actual MCP read result | Distinguish configured hooks from observed execution; disclose other-tool follow-up. |
 | 2:37–2:45 | Public demo and repository links | No account for the labelled demo; bring your own provider for a real model. |
@@ -92,11 +92,12 @@ Reviews exposed protocol and lifecycle issues that a scripted provider could hid
 Cloudflare static-asset rewrite constraints led to a small Worker that serves each app's own shell on deep links. Scoped workers cache all app output for offline use. Lazy loading reduces startup JavaScript, but background precaching still downloads deferred code; we report those separately.
 
 ## Accomplishments
+The owner configured a real provider using deepseek-flash. The browser showed an actual archive search, five conversation reads and a proposed summary paused at the write-approval gate, with no Mock badge. The captured acceptance state did not approve the write. This verifies that configured path, not every model or provider endpoint.
+
 The Nov 17 build passed 332 unit/property tests and 57 browser tests locally. The same 57 browser tests passed against the deployed site in fresh browser contexts, including axe, keyboard flows, offline reloads and first offline use of deferred imports and dialogs. A fresh local clone passed a frozen-lockfile install, tests and build. GitHub CI and Cloudflare deployment passed for commit 71fc623.
 
 ## What's next
-Finish real-provider acceptance and the public demo video, then improve the template based on developer feedback. The current scope stays focused on the two working applications and their shared foundation.
-
+Publish the final public demo video and complete the submission review, then improve the template based on developer feedback. The current scope stays focused on the two working applications and their shared foundation.
 
 ### Testing instructions
 
@@ -112,8 +113,8 @@ The project uses standard third-party libraries and tools listed in the reposito
 
 ## Owner actions and final gate
 
-- [ ] Complete real-provider acceptance after the owner finishes configuration. A real OpenAI-compatible gpt-6-luna tool prompt reproduced HTTP 400 on Nov 17 (function tools plus reasoning setting on /v1/chat/completions). That model had no reasoning levels in the app menu. This is a failed runtime check, not a key/configuration success or a confirmed code root cause. Do not send the key in chat or commit it.
-- [ ] Replace the pending real-model segment, review the final video, and upload a public YouTube video. Add its actual link to the app landing page and Devpost.
+- [x] Owner-configured real-provider tool/approval path: owner confirmed working, and actual deepseek-flash browser state showed a successful search and five reads followed by a summary approval card. No write was approved during capture, and no key was recorded. The earlier gpt-6-luna error is not claimed fixed; other endpoints were not manually certified.
+- [ ] Review the candidate containing the actual real-model state, approve the publication, and upload a public YouTube video. Add its actual link to the landing page and Devpost. The candidate is a screenshot montage, not a continuous recording.
 - [x] Upload the three public sample cover/gallery images. On Nov 17, the approved landing-page cover and Archive/Inbox approval screenshots were uploaded through the native file picker; both gallery captions were saved and verified after navigation. The upload interface continued returning a file-permission error despite the owner reporting the flag already enabled. Its actual cause was not established; no extension setting change was needed for native upload.
 - [ ] Fill personal fields truthfully: residence, age/jurisdiction eligibility, submitter type, AWS employment, previous Kiroween participation and the two personal surveys. Do not infer these from the repository.
 - [ ] Review all saved fields and the public preview. Re-check remote commit, CI, deployed site and the final R1 checklist.

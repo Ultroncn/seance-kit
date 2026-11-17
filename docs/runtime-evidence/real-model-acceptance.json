@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-17",
+  "evidence_type": "manually recorded visible browser state plus owner confirmation",
+  "application": "Archive S\u00e9ance",
+  "model_displayed": "deepseek-flash",
+  "prompt": "Summarize my oldest chats",
+  "observed": {
+    "mock_badge_present": false,
+    "search_results": 10,
+    "read_conversation_calls": 5,
+    "proposed_tool": "summarize_conversation",
+    "proposed_summary_target": "Sourdough starter keeps dying",
+    "state": "waiting for write approval"
+  },
+  "write_approved_during_capture": false,
+  "key_or_endpoint_captured": false,
+  "coverage": "This configured real-model tool/approval path. Other model/provider combinations were not manually certified.",
+  "earlier_failure": "gpt-6-luna returned HTTP 400 on its function-tool/reasoning combination; no claim that this model was fixed.",
+  "screenshot": "real-model-approval.png"
+}

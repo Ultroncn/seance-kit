@@ -46,7 +46,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 1.8 Approval gate and Banish/undo. (R2.5, R2.7)
 - [x] 1.9 PBT P8, P9, P10 for the loop and gates.
 - [x] 1.10 `packages/llm`: Provider interface, Mock provider with scripts. (R3.1)
-- [ ] 1.11 Anthropic, OpenAI-compatible, Ollama adapters (manual verify against real endpoints). _Adapters, fake-fetch tests and a routed e2e of the OpenAI-compatible path done. Nov 17: the owner configured a real OpenAI-compatible profile. A read-only tool prompt on gpt-6-luna reproduced HTTP 400: the endpoint rejects function tools with its reasoning setting on /v1/chat/completions and suggests Responses or reasoning_effort=none. The UI offered no reasoning levels for that model. Root cause and a successful real-provider run remain unverified; the owner was still adjusting profiles. No key was read or shared._
+- [x] 1.11 Anthropic, OpenAI-compatible and Ollama adapters, plus manual acceptance with an owner-configured real provider. _Adapters and fake-fetch/routed tests were already implemented. On Nov 17 the owner confirmed the real model working; the actual Archive browser state showed deepseek-flash, no Mock badge, a search returning 10 sample chats, five conversation reads and a proposed summary waiting for write approval. No write was approved during capture. This accepts the demonstrated configured path, not every adapter/model endpoint. The earlier gpt-6-luna HTTP 400 is not claimed fixed. Evidence: docs/runtime-evidence/._
 - [x] 1.12 Settings panel: provider choice, key storage in IndexedDB. (R3.2, R3.5)
 - [x] 1.13 `<DemoBadge/>` and `useProviderMode`. Unit test. (R3.4)
 - [x] 1.14 UI kit: layout panes, buttons, inputs, command palette, séance timeline, approval card. (R7)
@@ -71,7 +71,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 2.11 Banished view with undo.
 - [x] 2.12 Playwright smoke plus axe. (R7.6)
 - [x] 2.12a `@seance/react` package with `useAgentRun`, shared by both apps and the template.
-- [x] 2.13 Deploy and verify (28 e2e tests pass against the live URL). _Real-provider acceptance remains incomplete; see 1.11._
+- [x] 2.13 Deploy and verify (28 e2e tests pass against the live URL). _Real-provider read/approval path observed in Archive; see 1.11._
 
 ## M3. Inbox Exorcist (Nov 25-28)
 
@@ -85,7 +85,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 - [x] 3.8 Seeded sample inbox and Mock scripts. (R6.6)
 - [x] 3.9 Drafts view (copy to clipboard, never send).
 - [x] 3.10 Playwright smoke plus axe.
-- [x] 3.11 Deploy and verify (37 e2e tests pass against the live URL). _Real-provider acceptance remains incomplete; see 1.11._
+- [x] 3.11 Deploy and verify (37 e2e tests pass against the live URL). _Shared real-provider path observed in Archive; no separate Inbox real-model run was performed in this acceptance._
 
 ## M4. MCP, template, landing, a11y (Nov 29-30)
 
@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.25 Record the owner-confirmed and visibly observed deepseek-flash tool/approval path; add actual public-sample runtime evidence and replace the video placeholder with that state. Keep the earlier model failure, untested endpoints and candidate/publication limits explicit.
 - [x] R.24 Upload the three authorized Devpost sample images and save gallery captions through the native file picker. Correct the earlier unverified permission diagnosis: the upload interface still returned a permission error despite the owner reporting the flag enabled; native upload succeeded. Record the actual real-model HTTP 400 without claiming acceptance.
 - [x] R.23 Save the Devpost project copy and testing instructions, record the full production clean-browser acceptance, and replace speculative submission text with verified status, official timing/freeze requirements and explicit owner/video gates.
 - [x] R.22 Complete KIRO_USAGE screenshots with actual Kiro spec, steering, hooks, MCP, history and review/test captures; update deployment and remaining-evidence claims.
@@ -133,8 +134,8 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 ## M5. Video, write-up, Devpost (Dec 1)
 
 - [x] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5) _Nov 17: six categories of actual Kiro captures in docs/kiro-evidence, plus real MCP read approval/export evidence; captions distinguish configuration, saved test logs and observed calls. No real-provider or final-submission claim._
-- [ ] 5.2 Record the demo per `submission.md` storyboard. Include the real-provider switch. (R3.6)
-- [ ] 5.3 Verify video length is under 3:00. Upload and put the link on the landing page.
+- [ ] 5.2 Record the demo per `submission.md` storyboard. Include the real-provider switch. (R3.6) _An English candidate now includes the actual deepseek-flash read/approval state. It is an edited montage of actual UI screenshots with synthetic narration/subtitles, not continuous recording; owner review remains._
+- [ ] 5.3 Verify video length is under 3:00. Upload and put the link on the landing page. _The current candidate measures 2:44.63 at 1920×1080 H.264/AAC. Public YouTube upload and actual URL are still pending._
 - [ ] 5.4 Fill Devpost fields from `submission.md`. _Nov 17: story, tags, four links, category, testing and Kiro disclosures saved in the existing draft. Video and owner eligibility/personal fields remain; the approved landing cover and Archive/Inbox approval gallery images with captions were uploaded and their saved records verified using the native file picker; draft shows 2/5 steps. No terms accepted or final submission._
 - [x] 5.5 Fresh-clone test (Nov 17): cloned local commit `27160a0` with `git clone --no-local` to a fresh temporary directory; `pnpm i --frozen-lockfile`, `pnpm test` (332 tests), and `pnpm build` passed on Node 24.18.0 / pnpm 9.15.9. Directory deleted. Same machine and pnpm cache, not a clean-machine test.
 
