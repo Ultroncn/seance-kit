@@ -112,9 +112,9 @@ The project uses standard third-party libraries and tools listed in the reposito
 
 ## Owner actions and final gate
 
-- [ ] Configure a real provider privately in the already-open app Settings, then run connection and actual tool-flow acceptance. Do not send the key in chat or commit it.
+- [ ] Complete real-provider acceptance after the owner finishes configuration. A real OpenAI-compatible gpt-6-luna tool prompt reproduced HTTP 400 on Nov 17 (function tools plus reasoning setting on /v1/chat/completions). That model had no reasoning levels in the app menu. This is a failed runtime check, not a key/configuration success or a confirmed code root cause. Do not send the key in chat or commit it.
 - [ ] Replace the pending real-model segment, review the final video, and upload a public YouTube video. Add its actual link to the app landing page and Devpost.
-- [ ] Upload the three public sample cover/gallery images. The owner approved this upload on Nov 17. The attempt failed because the Chrome extension lacks local file URL access; the owner will enable it and notify us before another attempt. No image is claimed uploaded, and approval need not be requested again.
+- [x] Upload the three public sample cover/gallery images. On Nov 17, the approved landing-page cover and Archive/Inbox approval screenshots were uploaded through the native file picker; both gallery captions were saved and verified after navigation. The upload interface continued returning a file-permission error despite the owner reporting the flag already enabled. Its actual cause was not established; no extension setting change was needed for native upload.
 - [ ] Fill personal fields truthfully: residence, age/jurisdiction eligibility, submitter type, AWS employment, previous Kiroween participation and the two personal surveys. Do not infer these from the repository.
 - [ ] Review all saved fields and the public preview. Re-check remote commit, CI, deployed site and the final R1 checklist.
 - [ ] The owner reviews/accepts the official rules and terms and performs the final prize-entry submission. Verify Devpost shows complete, not Draft.
