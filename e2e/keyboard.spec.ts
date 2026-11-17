@@ -43,11 +43,13 @@ test("archive: load, search, open, ask, approve and undo with the keyboard only"
 }) => {
   await page.goto("/archive/");
 
+  // The document can load before React mounts the app's focusable controls.
+  await expect(page.getByRole("button", { name: "Load the sample archive" })).toBeVisible();
+
   // Skip link first.
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
 
-  await expect(page.getByRole("button", { name: "Load the sample archive" })).toBeVisible();
   await tabTo(page, /^Load the sample archive$/);
   await page.keyboard.press("Enter");
   await expect(page.getByRole("list", { name: "Chats" }).getByRole("listitem")).toHaveCount(12);
