@@ -6,6 +6,14 @@ import { defineConfig } from "vite";
 export default defineConfig({
   base: "/",
   plugins: [react(), tailwindcss()],
+  // Dev only: mirror the deployed layout (/, /archive/, /inbox/ on one origin)
+  // by forwarding app paths to their own dev servers. ws carries Vite HMR.
+  server: {
+    proxy: {
+      "^/archive(/|$)": { target: "http://localhost:5174", ws: true },
+      "^/inbox(/|$)": { target: "http://localhost:5175", ws: true },
+    },
+  },
   build: {
     rollupOptions: {
       input: {
