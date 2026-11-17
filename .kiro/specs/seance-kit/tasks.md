@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.22 Complete KIRO_USAGE screenshots with actual Kiro spec, steering, hooks, MCP, history and review/test captures; update deployment and remaining-evidence claims.
 - [x] R.21 Register and verify both MCP servers in Kiro, including an isolated sample-export import; correct documentation that overstated observed read auto-approval.
 - [x] R.20 Complete the KIRO_USAGE text from tracked specs, steering, hooks and history; distinguish configuration, automated evidence and pending manual Kiro checks. Screenshot placeholders remain TODO; task 5.1 is not marked fully done.
 - [x] R.19 Verified the deployed apps offline on Nov 17 (`BASE_URL=https://seance-kit.mask988888888.workers.dev pnpm e2e e2e/offline.spec.ts`): 3/3 passed before local performance changes; no deployment made.
@@ -129,7 +130,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 
 ## M5. Video, write-up, Devpost (Dec 1)
 
-- [ ] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5) _Text completed Nov 17 with spec/steering examples, exact hook behavior, MCP test evidence, R.1–R.16 commit references and other-tool disclosure. `TODO(screenshot)` captures remain pending._
+- [x] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5) _Nov 17: six categories of actual Kiro captures in docs/kiro-evidence, plus real MCP read approval/export evidence; captions distinguish configuration, saved test logs and observed calls. No real-provider or final-submission claim._
 - [ ] 5.2 Record the demo per `submission.md` storyboard. Include the real-provider switch. (R3.6)
 - [ ] 5.3 Verify video length is under 3:00. Upload and put the link on the landing page.
 - [ ] 5.4 Fill Devpost fields from `submission.md`.

@@ -1,6 +1,6 @@
 # How we used Kiro
 
-Séance Kit is a Kiroween Skeleton Crew entry: a reusable local-first agent template, demonstrated by Archive Séance and Inbox Exorcist. This write-up follows the tracked specs, steering, hooks, implementation and Git history through Nov 17, 2026. Screenshot capture is still pending, so task 5.1 remains open for that part.
+Séance Kit is a Kiroween Skeleton Crew entry: a reusable local-first agent template, demonstrated by Archive Séance and Inbox Exorcist. This write-up follows the tracked specs, steering, hooks, implementation and Git history through Nov 17, 2026. Actual Kiro captures from the Nov 17 acceptance session are included below; their captions distinguish configuration from observed execution.
 
 The earlier project notes attribute most development and the independent reviews to Kiro. Git establishes the changes and their order; it does not establish which IDE authored every line or provide a transcript of every agent session. The historical observations below are identified as such. The Nov 17 follow-up, performance changes and this documentation update were done with Codex, as disclosed under Other tools.
 
@@ -15,7 +15,9 @@ The spec was committed before the application scaffold: `5fc41b4` added the four
 
 A useful correction came from checking the requirements again: R4.3 existed, but no task covered it and the apps had no service worker. `c9b502b` added scoped build-generated workers and offline e2e tests, recorded as R.16. Each worker precaches its own app output and falls back to that app's shell on offline navigation. The requirement led to both an implementation and an explicit test, not just another checked box.
 
-`TODO(screenshot): Show the requirements, design property table and tasks side by side in Kiro, including R4.3 and R.16.`
+![The tracked requirements open in Kiro](docs/kiro-evidence/kiro-specs.png)
+
+The requirements editor and Kiro spec navigation, captured Nov 17. This is a current view of the tracked spec, not a reconstructed development session.
 
 ## Steering
 
@@ -31,7 +33,9 @@ The five files in [.kiro/steering](.kiro/steering/) keep decisions available acr
 
 The rules also explain why a fix sometimes belongs in a shared package: resetting an agent run is a core/react concern, while parsing a Claude export is an Archive concern. The language switch, resizable shell and timeline are reused; importers and tools remain app-specific.
 
-`TODO(screenshot): Show Kiro's steering files beside the shared AgentPanel and one app-specific tool, with the dependency direction visible.`
+![Testing steering open in Kiro](docs/kiro-evidence/kiro-steering.png)
+
+Kiro lists the five workspace steering files; the open testing rule names P1–P15, shared storage contracts and retained counterexamples. The dependency examples above are supported by the linked code and commits.
 
 ## Hooks
 
@@ -43,17 +47,19 @@ Three tracked hook definitions were added in `c7c8e50`. These are their actual c
 | [.kiro/hooks/spec-task-gate.json](.kiro/hooks/spec-task-gate.json)                     | `PostTaskExec`                                         | An agent prompt runs `pnpm lint && pnpm typecheck && pnpm test`, updates the task, and records real test-found bugs in this decision log, retaining any shrunk counterexample. The duplicate-chat P3 regression illustrates the kind of evidence the prompt asks to keep. |
 | [.kiro/hooks/session-start-status.json](.kiro/hooks/session-start-status.json)         | `SessionStart`                                         | A command runs `pnpm -s check:kiro && git status --short --branch`, with a 30-second timeout. This exposes ignored guidance or work from another tool before the agent starts editing.                                                                                    |
 
-The history records a limitation rather than uninterrupted automation: `e64b809` marked hooks skipped after the earlier notes reported permission-denied `createHook` attempts; `c7c8e50` later committed the JSON definitions. Their presence proves configuration, not that each hook fired successfully in a particular Kiro session. No hook execution log is supplied here. These are not Git pre-commit hooks, and the task gate itself does not run build or e2e.
+The history records a limitation rather than uninterrupted automation: `e64b809` marked hooks skipped after the earlier notes reported permission-denied `createHook` attempts; `c7c8e50` later committed the JSON definitions. Their presence proves configuration, not that each hook fired successfully in a particular Kiro session. The Nov 17 Kiro MCP session displayed the SessionStart hook row, but its command output was not inspected; no successful hook exit status is claimed. These are not Git pre-commit hooks, and the task gate itself does not run build or e2e.
 
 [.github/workflows/ci.yml](.github/workflows/ci.yml) separately configures the `.kiro` check, typecheck, lint, tests, build and Playwright, plus generated-template validation. A workflow definition is not a claim that a particular remote CI run passed. In this Codex follow-up the checks were invoked directly; Kiro hooks were not treated as automatically active here.
 
-`TODO(screenshot): Capture the three hooks in Kiro's hook panel. If showing a successful invocation, include its real output; do not use the configuration alone as execution evidence.`
+![The enabled spec-task gate configuration in Kiro](docs/kiro-evidence/kiro-hooks.png)
+
+All three hook names are visible in the sidebar. The open gate shows its actual trigger and prompt, with Hook enabled. This image proves configuration. The MCP session below also displayed a SessionStart Run Command Hook row; its command output and exit status were not inspected.
 
 ## MCP
 
 `5ce3e12` added the generic MCP server, app entry points and sample configuration. [packages/mcp-server](packages/mcp-server/) wraps the same `ToolRegistry` used by the browser. Each app currently exposes seven tools, including `undo_banish`; zod supplies the input and output schemas. Risk becomes MCP `readOnlyHint` and `destructiveHint` annotations.
 
-The configuration is [docs/kiro-mcp.json](docs/kiro-mcp.json). To register it, the user copies it to `.kiro/settings/mcp.json`. That manual step and verification in Kiro's MCP panel are still open as task 4.2. This follow-up did not write `.kiro/settings/` or claim that registration succeeded.
+With the user's explicit authorization, [docs/kiro-mcp.json](docs/kiro-mcp.json) was copied to the now-tracked [.kiro/settings/mcp.json](.kiro/settings/mcp.json). Kiro loaded both servers and showed Connected with seven tools each. Task 4.2 was completed by actual calls in Kiro, including an isolated sample-export check.
 
 The Archive entry runs the equivalent of this command from the repository root:
 
@@ -66,7 +72,7 @@ pnpm --silent exec tsx apps/archive-seance/mcp/main.ts \
 
 The Inbox entry uses `apps/inbox-exorcist/mcp/main.ts`, `.local-data/inbox` and `apps/inbox-exorcist/public/sample/inbox.mbox`. The data folders are file-backed MCP storage, separate from the browser's IndexedDB. `--import` can instead point to an app export from Settings or a supported raw archive. Re-imports are deduplicated.
 
-The config auto-approves only `search_conversations` and `read_conversation` for Archive, and `search_emails` and `read_email` for Inbox. Write and destructive tools are absent from `autoApprove`. MCP risk annotations describe tools; they are not relied upon to establish Kiro's approval behavior. A read-only server mode is also available through `--read-only`.
+The config lists only `search_conversations` and `read_conversation` for Archive, and `search_emails` and `read_email` for Inbox in `autoApprove`. In the tested Accept file changes session, Kiro still requested one-time approval for the reads. This observed behavior is recorded rather than assuming the list suppresses every client prompt. Write and destructive tools are absent from `autoApprove`. MCP risk annotations describe tools; they are not relied upon to establish Kiro's approval behavior. A read-only server mode is also available through `--read-only`.
 
 Concrete automated evidence, distinct from a manual Kiro session:
 
@@ -74,11 +80,21 @@ Concrete automated evidence, distinct from a manual Kiro session:
 - `apps/inbox-exorcist/test/mcp.test.ts` imports 18 messages, starts again without duplicating them, calls `search_emails` with `boiler`, and verifies there is no send/forward/SMTP tool.
 - `packages/mcp-server/test/server.test.ts` checks derived schemas, annotations, structured results, typed errors and read-only restrictions.
 
-After registration, an example user request would be “Use archive-seance to find my Lisbon chats.” This is a suggested request, not a transcript of a completed Kiro call.
+The actual Kiro acceptance request called `search_conversations({query: "sourdough", limit: 3})` and `search_emails({query: "boiler", limit: 3})`. Each returned total 1: “Sourdough starter keeps dying” and “Boiler service next Tuesday”. No MCP writes were called. A second Archive call succeeded after importing a JSON export into a new isolated data directory. That export was produced with the project Storage.exportAll API from public fixtures, not a verified browser download.
 
 Building MCP exposed a real schema bug: zod conversion used the output view, so fields with defaults were incorrectly marked required. `5ce3e12` fixed the conversion; `packages/core/test/registry.test.ts` checks that defaulted inputs are optional. `05b3e8f` added undo support, and `4c78371` serialized MCP calls, locked data folders and batched FileStorage writes.
 
-`TODO(screenshot): After the user completes 4.2, capture Kiro listing the real tools and a successful read call with sanitized sample data. A write example must show Kiro asking for approval.`
+![Kiro results from both actual MCP servers](docs/kiro-evidence/kiro-mcp-results.png)
+
+Both servers are connected and the actual read results contain only repository fictional sample data.
+
+![Kiro asks for one-time approval of a read tool](docs/kiro-evidence/kiro-mcp-approval.png)
+
+This is a read approval, not evidence of a write approval. Each read was allowed once; Always allow was not selected.
+
+![Kiro searches the isolated exported archive](docs/kiro-evidence/kiro-mcp-export.png)
+
+The export check used the project Storage.exportAll API on public sample data. The newly created FileStorage collection was separately inspected and contained 12 conversations; this single query returned one matching record. It does not by itself establish the collection count. The final checked-in configuration was restored to portable sample paths. [Acceptance record](docs/kiro-evidence/mcp-acceptance.json).
 
 ## Other tools
 
@@ -94,13 +110,15 @@ The performance patch defers importers, MIME parsing, zip extraction, Settings, 
 
 A fresh local clone of `27160a0` passed `pnpm i --frozen-lockfile`, `pnpm test` (332 tests) and `pnpm build` on Node 24.18.0 / pnpm 9.15.9. Its temporary directory was deleted. This was a new checkout on the same machine, with the existing pnpm cache available, not a clean-machine certification. The source included unpushed local work, so it was cloned from the local repository rather than GitHub.
 
-`TODO(screenshot): Show the Git history distinguishing Kiro-attributed work, the reverted pivot, merged PR #3 and the local Codex follow-up. No API key, private archive or personal email should appear.`
+![Actual recent Git history in the Kiro terminal](docs/kiro-evidence/kiro-history.png)
+
+The history shows merged PR #3, the scope-restoring revert and the Codex follow-up. At capture time local main and origin/main were both 71fc623; the later MCP and evidence commits are local follow-up work.
 
 ## Decision log
 
 ### Deployment: use a per-app Worker fallback
 
-The earlier deployment record reports Cloudflare error 100324 (“Infinite loop detected in this rule”) for wildcard `_redirects` rewrites. `fd7a2dd` replaced them with [worker/index.js](worker/index.js). A root SPA fallback would send the landing page for app deep links, so the Worker serves the appropriate Archive or Inbox shell in place. `9c15d8e` corrected deep-link behavior and strengthened the e2e assertions to check URL and HTTP status. `scripts/serve-dist.mjs` runs the same fallback implementation for local e2e. See design section 12; this was not a new deployment during the Codex follow-up.
+The earlier deployment record reports Cloudflare error 100324 (“Infinite loop detected in this rule”) for wildcard `_redirects` rewrites. `fd7a2dd` replaced them with [worker/index.js](worker/index.js). A root SPA fallback would send the landing page for app deep links, so the Worker serves the appropriate Archive or Inbox shell in place. `9c15d8e` corrected deep-link behavior and strengthened the e2e assertions to check URL and HTTP status. `scripts/serve-dist.mjs` runs the same fallback implementation for local e2e. See design section 12. After the user authorized pushing the three initial follow-up commits, GitHub CI and Cloudflare deployment passed for 71fc623; this does not imply that later local evidence commits have already deployed.
 
 ### Keep keys out of exports, not merely out of the UI
 
@@ -141,8 +159,14 @@ The earlier project notes describe four Kiro reviewer sub-agents covering platfo
 
 The review record's lesson is specific: a scripted provider can hide real protocol errors, a passing property can miss inputs excluded by its generator, and a test must assert the behavior named in its title. The follow-up merge `56d54fc` added further core, search, storage and Mock regressions; it was included before the Nov 17 checks rather than treated as a separate, unverified branch.
 
-`TODO(screenshot): Capture R.1–R.16 in tasks.md with one representative regression test and its actual passing output. Add the scoped offline worker and a successful offline import as the R.16 example.`
+![Tracked follow-up tasks and actual production test output](docs/kiro-evidence/kiro-review-validation.png)
+
+R.16–R.20 are visible above the actual terminal output of the full production suite: 57 passed in 41.6 seconds. The terminal displays a saved test log, not a new test run launched by a hook. The [complete production log](docs/kiro-evidence/production-e2e.log) includes the offline first-use cases; the R.1–R.16 table above links the individual regression evidence.
 
 ## Remaining submission evidence
 
-The text portion of task 5.1 is filled in; every screenshot placeholder still needs a real capture. Task 1.11 still requires the user's own real-provider verification through Settings → Test connection. Task 4.2 still requires MCP registration and a call from Kiro. Video recording/upload, the real-provider video segment and Devpost remain pending. No key was requested in chat, no registration was fabricated, and these local follow-up commits were not pushed or deployed.
+Task 5.1 now includes six categories of actual Kiro captures, with additional MCP approval/export evidence. No screenshot contains a key or private archive. The text and captures distinguish earlier Kiro-attributed work from the Codex closeout, and hook configuration from verified tool execution.
+
+The three initial follow-up commits were pushed with the user's authorization. [GitHub CI for 71fc623](https://github.com/Ultroncn/seance-kit/actions/runs/44009744731) and its Cloudflare deployment passed. On Nov 17, the full suite against the deployed URL passed 57/57 in fresh Playwright contexts, including accessibility, keyboard and offline flows. This is automated clean-browser acceptance, not a claim of a manual private-window session or a real-model call.
+
+Task 1.11 still requires the user's provider configuration in Settings followed by actual real-model acceptance. A Devpost draft contains the project story, category, links and testing instructions; video and personal eligibility fields remain incomplete. It has not been submitted and no final eligibility or legal declaration has been accepted. Recording/upload and the real-provider video segment remain open.

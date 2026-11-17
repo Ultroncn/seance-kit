@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-17",
+  "client": "Kiro IDE",
+  "servers": {
+    "archive-seance": {
+      "connected": true,
+      "tools": 7,
+      "call": {
+        "tool": "search_conversations",
+        "arguments": {
+          "query": "sourdough",
+          "limit": 3
+        },
+        "total": 1,
+        "title": "Sourdough starter keeps dying"
+      }
+    },
+    "inbox-exorcist": {
+      "connected": true,
+      "tools": 7,
+      "call": {
+        "tool": "search_emails",
+        "arguments": {
+          "query": "boiler",
+          "limit": 3
+        },
+        "total": 1,
+        "subject": "Boiler service next Tuesday"
+      }
+    }
+  },
+  "approval": "Kiro requested Allow for each read despite autoApprove lists; each was approved once, not Always allow.",
+  "writes_tested": false,
+  "session_start_hook": "Run Command Hook row visible; did not inspect its command output.",
+  "export_check": {
+    "source": "Storage.exportAll on MemoryStorage after importing the repository public ChatGPT and Claude fixtures",
+    "format": 1,
+    "conversations": 12,
+    "isolated_file_storage_records": 12,
+    "query": "sourdough",
+    "total": 1,
+    "browser_download_verified": false,
+    "portable_config_restored": true
+  }
+}
