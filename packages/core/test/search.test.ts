@@ -274,3 +274,35 @@ describe("search review regressions", () => {
     expect(await next.load()).toBe("restored");
   });
 });
+
+it("does not bless stale indexed revisions when another client edits storage before flush", async () => {
+  const storage = new MemoryStorage();
+  const original = { id: "a", text: "oldcontent", updatedAt: "1" };
+  await storage.put("docs", original);
+  const service = makeService(storage);
+  await service.load();
+  await storage.put("docs", { ...original, text: "newcontent", updatedAt: "2" });
+  const local = { id: "b", text: "localcontent", updatedAt: "1" };
+  await storage.put("docs", local);
+  service.index(local);
+  await service.flush();
+  const next = makeService(storage);
+  expect(await next.load()).toBe("rebuilt");
+  expect((await next.search("newcontent", { fuzzy: 0 })).map((r) => r.id)).toEqual(["a"]);
+  expect(await next.search("oldcontent", { fuzzy: 0 })).toEqual([]);
+});
+
+it("rebuilds version 3 caches that may have signed unindexed external changes", async () => {
+  const storage = new MemoryStorage();
+  await storage.put("docs", { id: "a", text: "oldword", updatedAt: "1" });
+  await makeService(storage).load();
+  const stale = (await storage.get("searchIndex", "docs"))!;
+  await storage.put("docs", { id: "a", text: "newword", updatedAt: "2" });
+  await makeService(storage).load();
+  const current = (await storage.get("searchIndex", "docs"))!;
+  // Format 3 could persist the old index with the current storage's signature.
+  await storage.put("searchIndex", { ...stale, format: 3, signature: current.signature });
+  const next = makeService(storage);
+  expect(await next.load()).toBe("rebuilt");
+  expect((await next.search("newword", { fuzzy: 0 })).map((r) => r.id)).toEqual(["a"]);
+});

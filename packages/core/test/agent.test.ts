@@ -387,3 +387,27 @@ describe("reasoning", () => {
     });
   });
 });
+
+it.each(["approval", "approval_resolved", "tool_called"])(
+  "does not execute tools when cancelled at %s",
+  async (when) => {
+    const { agent, log } = setup([
+      { text: "", calls: [call("destructive_tool"), call("read_tool")] },
+    ]);
+    const controller = new AbortController();
+    const events: AgentEvent[] = [];
+    for await (const event of agent.run("go", {
+      signal: controller.signal,
+      approve: () => {
+        if (when === "approval") controller.abort();
+        return true;
+      },
+    })) {
+      events.push(event);
+      if (event.type === when) controller.abort();
+    }
+    expect(log.entries).toEqual([]);
+    expect(events.at(-1)).toEqual({ type: "run_finished", reason: "aborted" });
+    expect(historyIsValid(agent.messages)).toBe(true);
+  },
+);

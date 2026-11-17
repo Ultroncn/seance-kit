@@ -45,7 +45,7 @@ To use your own data, change the `--import` paths to a Séance export (Settings 
 
 ## Develop
 
-Requires Node 20+ and pnpm 9.
+Requires Node 22.13+ (22.x) or Node 24+ and pnpm 9.
 
 ```
 pnpm install

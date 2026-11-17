@@ -158,7 +158,7 @@ Kiro 配置在 `.kiro/settings/mcp.json`，可以用示例数据启动两个应�
 - **MiniSearch**（全文搜索）
 - **Vitest + fast-check**（测试）
 - **Playwright + axe**（E2E + a11y）
-- **Node 20+，pnpm 9**
+- **Node 22.13+（22.x）或 Node 24+，pnpm 9**
 
 约束：
 - 暗色主题专用，不支持浅色

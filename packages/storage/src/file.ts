@@ -106,7 +106,7 @@ export class FileStorage implements Storage {
     assertId(item?.id);
     const stored = cloneJson(item);
     return this.serial(async () => {
-      (await this.load(collection)).set(item.id, stored);
+      (await this.load(collection)).set(stored.id, stored);
       this.markDirty(collection);
     });
   }
