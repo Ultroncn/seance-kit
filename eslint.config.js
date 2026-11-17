@@ -21,7 +21,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["worker/**/*.js"],
+    files: ["worker/**/*.js", "scripts/offline-sw.js"],
     languageOptions: { globals: { ...globals.serviceworker } },
   },
   {
