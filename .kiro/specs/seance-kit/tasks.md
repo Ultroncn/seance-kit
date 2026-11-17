@@ -90,7 +90,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 ## M4. MCP, template, landing, a11y (Nov 29-30)
 
 - [x] 4.1 `packages/mcp-server` over stdio using the MCP SDK and File adapter. (R9.1, R9.3)
-- [~] 4.2 Register in `.kiro/settings/mcp.json`. Test from Kiro with an exported archive. (R9.2) _Config written to `docs/kiro-mcp.json` and verified by running its exact commands with an MCP client. Kiro blocks agent writes to `.kiro/settings/`, so the user copies it and checks the servers in Kiro's MCP panel._
+- [ ] 4.2 Register in `.kiro/settings/mcp.json`. Test from Kiro with an exported archive. (R9.2) _Config written to `docs/kiro-mcp.json` and verified by running its exact commands with an MCP client. Kiro blocks agent writes to `.kiro/settings/`, so the user copies it and checks the servers in Kiro's MCP panel._
 - [x] 4.3 `templates/app` minimal working app. (R10.1)
 - [x] 4.4 `pnpm new:app` script. CI job generates an app, builds and tests it. (R10.2)
 - [x] 4.5 README "afternoon path" in under ten steps. (R10.3)
