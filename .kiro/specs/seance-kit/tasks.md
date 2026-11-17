@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.23 Save the Devpost project copy and testing instructions, record the full production clean-browser acceptance, and replace speculative submission text with verified status, official timing/freeze requirements and explicit owner/video gates.
 - [x] R.22 Complete KIRO_USAGE screenshots with actual Kiro spec, steering, hooks, MCP, history and review/test captures; update deployment and remaining-evidence claims.
 - [x] R.21 Register and verify both MCP servers in Kiro, including an isolated sample-export import; correct documentation that overstated observed read auto-approval.
 - [x] R.20 Complete the KIRO_USAGE text from tracked specs, steering, hooks and history; distinguish configuration, automated evidence and pending manual Kiro checks. Screenshot placeholders remain TODO; task 5.1 is not marked fully done.
@@ -133,19 +134,19 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] 5.1 Finish `KIRO_USAGE.md` with concrete examples and screenshots. (R1.5) _Nov 17: six categories of actual Kiro captures in docs/kiro-evidence, plus real MCP read approval/export evidence; captions distinguish configuration, saved test logs and observed calls. No real-provider or final-submission claim._
 - [ ] 5.2 Record the demo per `submission.md` storyboard. Include the real-provider switch. (R3.6)
 - [ ] 5.3 Verify video length is under 3:00. Upload and put the link on the landing page.
-- [ ] 5.4 Fill Devpost fields from `submission.md`.
+- [ ] 5.4 Fill Devpost fields from `submission.md`. _Nov 17: story, tags, four links, category, testing and Kiro disclosures saved in the existing draft. Video and owner eligibility/personal fields remain; the three-image upload is already approved but blocked on Chrome extension file URL access, which the owner will enable and confirm; draft shows 2/5 steps. No terms accepted or final submission._
 - [x] 5.5 Fresh-clone test (Nov 17): cloned local commit `27160a0` with `git clone --no-local` to a fresh temporary directory; `pnpm i --frozen-lockfile`, `pnpm test` (332 tests), and `pnpm build` passed on Node 24.18.0 / pnpm 9.15.9. Directory deleted. Same machine and pnpm cache, not a clean-machine test.
 
 ## Dec 2. Buffer and freeze
 
 - [ ] 6.1 No new features. Fix bugs only.
 - [ ] 6.2 Final checklist against R1: public repo, `.kiro` present, two app folders, license, URL, video, write-up.
-- [ ] 6.3 Confirm the live URL in a private window with no stored data.
+- [x] 6.3 Confirm the live URL in a clean browser context with no stored data. _Nov 17: full 57-test production suite passed using fresh Playwright browser contexts, including axe, keyboard and offline flows. Automated isolation check; not a manual private-window session._
 
 ## Dec 3. Submit
 
 - [ ] 7.1 Submit on Devpost. Confirm the submission shows as complete.
-- [ ] 7.2 Tag `v1.0.0-kiroween`. Do not push to `main` after the tag except for emergencies.
+- [ ] 7.2 Tag `v1.0.0-kiroween` after final acceptance. After the official deadline, freeze repo, video, demo and all linked materials until winners are announced; no emergency-change exception is claimed.
 
 ## Cut list (do not start)
 
