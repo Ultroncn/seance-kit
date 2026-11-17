@@ -303,7 +303,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
       )}
 
       <div className="flex items-center justify-between px-4 pb-1 pt-3 text-xs text-muted">
-        <span aria-live="polite">{data.all ? `${shown.length} ${shown.length === 1 ? "conversation" : "conversations"}` : t.loading}</span>
+        <span aria-live="polite">{data.all ? t.chats(shown.length) : t.loading}</span>
         {filters.view === "banished" && shown.length > 0 && (
           <Button
             size="sm"
