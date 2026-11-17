@@ -171,7 +171,7 @@ export function App() {
                     ))}
                   </ul>
                   <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-accent">
-                    {t.openApp.replace(/\s*→$/, "")}
+                    {t.openApp}
                     <ArrowRight
                       aria-hidden
                       className="size-4 transition-transform duration-150 group-hover:translate-x-0.5"

@@ -11,6 +11,8 @@ Kiroween 2026 entry, category Skeleton Crew.
 
 Your data stays in your browser (IndexedDB). There is no backend and no account. The demo runs on a scripted provider and shows a **Demo mode** badge while it does. Open Settings and add your own Anthropic, OpenAI-compatible or Ollama key to use a real model. The key is stored only in this browser and never exported.
 
+Both apps work offline after the first load; only calls to a real model require a network connection.
+
 ## What the kit gives you
 
 - **An agent loop** (`packages/core`) with a step budget, schema-validated tools, and an approval gate. Every tool that writes or hides data waits for your Allow.
