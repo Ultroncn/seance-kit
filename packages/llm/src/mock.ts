@@ -42,7 +42,7 @@ const DEFAULT_UNKNOWN =
 
 function matches(match: MockScript["match"], text: string): boolean {
   if (typeof match === "string") return text.toLowerCase().includes(match.toLowerCase());
-  if (match instanceof RegExp) return match.test(text);
+  if (match instanceof RegExp) return new RegExp(match.source, match.flags).test(text);
   return match.some((m) => matches(m, text));
 }
 

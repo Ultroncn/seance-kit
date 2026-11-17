@@ -270,6 +270,11 @@ export class Agent {
       };
     };
 
+    if (signal.aborted) {
+      yield fail("Aborted", "Not run: the run was stopped");
+      return;
+    }
+
     // 1. Validate. Invalid input never reaches approval or the tool.
     const parsed = registry.parseInput(call.name, call.input);
     if (!parsed.ok) {
@@ -298,6 +303,12 @@ export class Agent {
         yield fail("Rejected", "The user rejected this action");
         return;
       }
+    }
+
+    // The consumer can cancel while approval is pending or while handling a yielded event.
+    if (signal.aborted) {
+      yield fail("Aborted", "Not run: the run was stopped");
+      return;
     }
 
     // 3. Run.

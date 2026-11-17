@@ -64,3 +64,25 @@ describe("FileStorage specifics", () => {
     }
   });
 });
+
+it("keeps the captured id when the caller mutates an item before the queued write", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "seance-file-"));
+  const storage = new FileStorage(dir, { flushDelayMs: 60_000 });
+  try {
+    await storage.put("things", { id: "b", value: "keep" });
+    const item = { id: "a", value: "new" };
+    const pending = storage.put("things", item);
+    item.id = "b";
+    await pending;
+    expect(await storage.get("things", "a")).toEqual({ id: "a", value: "new" });
+    expect(await storage.get("things", "b")).toEqual({ id: "b", value: "keep" });
+    await storage.flush();
+    expect(await new FileStorage(dir).list("things")).toEqual([
+      { id: "a", value: "new" },
+      { id: "b", value: "keep" },
+    ]);
+  } finally {
+    await storage.flush();
+    await rm(dir, { recursive: true, force: true });
+  }
+});

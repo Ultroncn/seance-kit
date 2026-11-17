@@ -104,3 +104,14 @@ describe("banish review regressions", () => {
     expect((await listActive(s, "chats")).map((c) => c.id)).toEqual(["a", "b", "c"]);
   });
 });
+
+it("gives colliding batches at the same instant independent undo records", async () => {
+  const storage = new MemoryStorage();
+  for (const id of ["Ab", "BA"]) await storage.put("chats", { id });
+  const first = await banishItems(storage, "chats", ["Ab"], NOW);
+  const second = await banishItems(storage, "chats", ["BA"], NOW);
+  expect(first.undoToken).not.toBe(second.undoToken);
+  expect((await undoBanish(storage, first.undoToken)).restored).toEqual(["Ab"]);
+  expect(isBanished((await storage.get("chats", "BA"))!)).toBe(true);
+  expect((await undoBanish(storage, second.undoToken)).restored).toEqual(["BA"]);
+});

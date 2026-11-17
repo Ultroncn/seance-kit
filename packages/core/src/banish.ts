@@ -29,11 +29,9 @@ export async function listActive<T extends StoredItem>(
   return (await storage.list<T>(collection)).filter((i) => !isBanished(i));
 }
 
-function newToken(at: Date, collection: string, ids: string[]): string {
-  // Deterministic for the same batch at the same instant, unique enough across batches.
-  let h = 5381;
-  for (const ch of `${collection}\0${ids.join("\0")}`) h = ((h << 5) + h + ch.charCodeAt(0)) | 0;
-  return `undo-${at.getTime().toString(36)}-${(h >>> 0).toString(36)}`;
+function newToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return `undo-${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
 /**
@@ -46,7 +44,7 @@ export async function banishItems(
   ids: string[],
   now: Date,
 ): Promise<BanishResult> {
-  const undoToken = newToken(now, collection, ids);
+  const undoToken = newToken();
   const targets: StoredItem[] = [];
   const skipped: string[] = [];
   for (const id of new Set(ids)) {

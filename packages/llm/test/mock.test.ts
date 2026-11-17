@@ -72,3 +72,14 @@ describe("MockProvider", () => {
     expect(p.suggestions).toEqual(["Banish my tests"]);
   });
 });
+
+it.each([/summarize/g, /summarize/y])(
+  "replays stateful regex scripts deterministically: %s",
+  async (match) => {
+    match.lastIndex = 3;
+    const p = new MockProvider({ scripts: [{ match, steps: [{ text: "matched" }] }] });
+    const request = { messages: [{ role: "user" as const, content: "summarize" }], tools: [] };
+    for (let i = 0; i < 3; i++) expect((await p.complete(request)).text).toBe("matched");
+    expect(match.lastIndex).toBe(3);
+  },
+);

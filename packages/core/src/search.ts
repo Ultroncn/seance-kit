@@ -7,7 +7,8 @@ export const SEARCH_INDEX_COLLECTION = "searchIndex";
 
 // 2: terms are lower-cased and accents are folded ("café" matches "cafe").
 // 3: also folds ß, ø, ł, æ, œ and ligatures. Older saved indexes are rebuilt.
-const INDEX_FORMAT = 3;
+// 4: signatures describe indexed revisions, not unindexed external writes.
+const INDEX_FORMAT = 4;
 
 /** Lower-case and strip accents, at index time and at query time. */
 /** Letters that are not "base letter + accent", so stripping marks does not reach them. */
@@ -113,6 +114,8 @@ export class SearchService {
   private mini: MiniSearch;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private dirty = false;
+  private version = 0;
+  private revisions = new Map<string, string>();
   private readonly revisionOf: (item: StoredItem) => string;
   private readonly extractField: (doc: Record<string, unknown>, field: string) => string;
 
@@ -159,13 +162,14 @@ export class SearchService {
           extractField: this.extractField,
           processTerm: foldTerm,
         });
+        this.revisions = new Map(items.map((item) => [item.id, this.revisionOf(item)]));
         return "restored";
       } catch {
         // A damaged saved index is not fatal. Fall through to a rebuild.
       }
     }
     this.buildFrom(items);
-    await this.persistNow(signature);
+    await this.persistNow();
     return "rebuilt";
   }
 
@@ -173,36 +177,44 @@ export class SearchService {
   async rebuild(): Promise<void> {
     const items = await this.options.storage.list(this.options.collection);
     this.buildFrom(items);
-    await this.persistNow(this.signatureOf(items));
+    await this.persistNow();
   }
 
   private buildFrom(items: StoredItem[]): void {
     this.mini = this.createIndex();
     this.mini.addAll(items);
+    this.revisions = new Map(items.map((item) => [item.id, this.revisionOf(item)]));
   }
 
   private signatureOf(items: StoredItem[]): string {
-    // Items arrive sorted by id, so the signature is stable. Two hashes cut collision odds.
+    return this.signatureOfRevisions(items.map((item) => [item.id, this.revisionOf(item)]));
+  }
+
+  private signatureOfRevisions(revisions: [string, string][]): string {
+    // Storage and the index must sign the same stable ordering. Two hashes cut collision odds.
+    revisions.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     let a = 0;
     let b = 0;
-    for (const item of items) {
-      const part = `${item.id}\u0000${this.revisionOf(item)}\u0001`;
+    for (const [id, revision] of revisions) {
+      const part = `${id}\u0000${revision}\u0001`;
       a = fnv1a(part, a || 0x811c9dc5);
       b = fnv1a(part, (b || 0x01234567) ^ 0x9e3779b9);
     }
-    return `${items.length}:${a.toString(16)}:${b.toString(16)}`;
+    return `${revisions.length}:${a.toString(16)}:${b.toString(16)}`;
   }
 
   /** Add an item or replace its earlier version. Call after every write to the item. */
   index(item: StoredItem): void {
     if (this.mini.has(item.id)) this.mini.replace(item);
     else this.mini.add(item);
+    this.revisions.set(item.id, this.revisionOf(item));
     this.schedulePersist();
   }
 
   /** Remove an item from the index. Banishing does not need this: search filters banished items. */
   unindex(id: string): void {
     if (this.mini.has(id)) this.mini.discard(id);
+    this.revisions.delete(id);
     this.schedulePersist();
   }
 
@@ -239,12 +251,12 @@ export class SearchService {
       this.timer = undefined;
     }
     if (!this.dirty) return;
-    const items = await this.options.storage.list(this.options.collection);
-    await this.persistNow(this.signatureOf(items));
+    await this.persistNow();
   }
 
   private schedulePersist(): void {
     this.dirty = true;
+    this.version++;
     const delay = this.options.persistDebounceMs ?? 500;
     if (delay <= 0) return;
     if (this.timer !== undefined) clearTimeout(this.timer);
@@ -257,22 +269,23 @@ export class SearchService {
   private saving: Promise<unknown> = Promise.resolve();
 
   /** Saves run one after another, so an older snapshot can never land after a newer one. */
-  private persistNow(signature: string): Promise<void> {
-    const run = this.saving.then(() => this.persistOnce(signature));
+  private persistNow(): Promise<void> {
+    const run = this.saving.then(() => this.persistOnce());
     this.saving = run.catch(() => undefined);
     return run;
   }
 
-  private async persistOnce(signature: string): Promise<void> {
+  private async persistOnce(): Promise<void> {
+    const version = this.version;
     const record: PersistedIndex = {
       id: this.options.name,
       format: INDEX_FORMAT,
       schemaVersion: this.options.schemaVersion ?? 0,
       fields: this.options.fields,
-      signature,
+      signature: this.signatureOfRevisions([...this.revisions]),
       index: this.mini.toJSON(),
     };
     await this.options.storage.put(SEARCH_INDEX_COLLECTION, record);
-    this.dirty = false;
+    if (this.version === version) this.dirty = false;
   }
 }
