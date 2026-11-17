@@ -1,4 +1,3 @@
-import { strFromU8, unzipSync } from "fflate";
 import { looksLikeChatGPT, parseChatGPT } from "./chatgpt";
 import { looksLikeClaude, parseClaude } from "./claude";
 import { parseMarkdown } from "./markdown";
@@ -61,6 +60,7 @@ export async function parseFile(
 ): Promise<ImportResult & { format: DetectedFormat }> {
   const name = file.name;
   if (/\.zip$/i.test(name)) {
+    const { strFromU8, unzipSync } = await import("fflate");
     let entries: Record<string, Uint8Array>;
     try {
       entries = unzipSync(new Uint8Array(await file.arrayBuffer()), {

@@ -23,10 +23,13 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { cn } from "./cn";
+import { isAllowedEndpoint } from "./endpoint";
 import { useT } from "./i18n";
 import { kitMessages } from "./messages";
 import { Badge, Button, IconButton, Input, Select } from "./primitives";
 import { useProviderMode } from "./ProviderMode";
+
+export { isAllowedEndpoint } from "./endpoint";
 
 type Kit = (typeof kitMessages)["en"];
 
@@ -101,18 +104,6 @@ function configFrom(f: Form): ProviderConfig {
     case "ollama":
       return { kind: "ollama", model, ...(url && url !== OLLAMA_DEFAULT ? { host: url } : {}) };
   }
-}
-
-/** Keys travel only over https. Plain http is allowed for servers on this machine. */
-export function isAllowedEndpoint(raw: string): boolean {
-  let url: URL;
-  try {
-    url = new URL(raw.trim());
-  } catch {
-    return false;
-  }
-  if (url.protocol === "https:") return url.hostname !== "";
-  return url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
 }
 
 const needsKey = (f: Form) => f.protocol !== "ollama" && (presetById(f.preset)?.needsKey ?? true);

@@ -3,7 +3,7 @@ import { tNow } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importEmails, type ImportCounts } from "./domain/store";
 import { DRAFTS, EMAILS, type Draft, type Email, type NormalizedEmail } from "./domain/types";
-import { ImportError, readEmails, type FileLike, type SkippedItem } from "./importers";
+import type { FileLike, SkippedItem } from "./importers";
 import { inboxMessages } from "./messages";
 import { search, searchReady, storage } from "./runtime";
 
@@ -127,6 +127,7 @@ export function useImporter(onDone: () => void): ImportState {
           let state: ImportProgress = { fileName: file.name, bytes: 0, total: file.size, added: 0 };
           setProgress(state);
           async function* emails(): AsyncGenerator<NormalizedEmail> {
+            const { readEmails } = await import("./importers");
             for await (const ev of readEmails(file)) {
               if (ev.kind === "email") yield ev.email;
               else if (ev.kind === "skipped") skipped.push(ev.item);
@@ -146,7 +147,7 @@ export function useImporter(onDone: () => void): ImportState {
             out.push({
               fileName: file.name,
               skipped,
-              error: err instanceof ImportError || err instanceof Error ? err.message : String(err),
+              error: err instanceof Error ? err.message : String(err),
             });
           }
         }

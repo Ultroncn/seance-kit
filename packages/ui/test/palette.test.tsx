@@ -69,6 +69,7 @@ describe("CommandPalette", () => {
       />,
     );
     await userEvent.keyboard("{Control>}k{/Control}");
+    await screen.findByRole("combobox");
     await userEvent.keyboard("api key");
     expect(screen.queryByText("Draft a reply to Maya about dinner")).toBeNull();
     await userEvent.keyboard("{Enter}");
@@ -95,6 +96,7 @@ describe("CommandPalette", () => {
     );
     expect(screen.queryByRole("dialog")).toBeNull();
     await userEvent.keyboard("{Control>}k{/Control}");
+    await screen.findByRole("combobox");
     expect(screen.getByRole("dialog", { name: "Command palette" })).toBeTruthy();
 
     await userEvent.keyboard("delete");
@@ -110,6 +112,7 @@ describe("CommandPalette", () => {
   it("toggles closed with the same hotkey and says so when nothing matches", async () => {
     render(<Harness commands={[{ id: "a", label: "Alpha", onSelect: () => {} }]} />);
     await userEvent.keyboard("{Meta>}k{/Meta}");
+    await screen.findByRole("combobox");
     await userEvent.keyboard("zzz");
     expect(screen.getByText("Nothing matches. Try a plainer word.")).toBeTruthy();
     await userEvent.keyboard("{Meta>}k{/Meta}");

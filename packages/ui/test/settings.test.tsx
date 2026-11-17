@@ -97,7 +97,7 @@ describe("Demo-mode badge and settings", () => {
     expect(badge()).not.toBeNull();
     expect(screen.getByTestId("provider").textContent).toBe("mock:true");
     await userEvent.click(badge()!);
-    expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: "Settings" })).toBeTruthy();
   });
 
   it("adding a provider hides the badge and switches the agent's provider, and it persists", async () => {

@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { CodeTabs } from "./CodeTabs";
 import { Hero, Nav, REPO } from "./Hero";
 import { siteMessages } from "./messages";
-import { TimelineDemo } from "./TimelineDemo";
+import { TimelineDemo } from "./LazyTimelineDemo";
 import { useInView } from "./useInView";
 
 /** Set once the demo video is uploaded (task 5.3). The section stays hidden until then. */

@@ -17,7 +17,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Popover from "@radix-ui/react-popover";
 import { CalendarDays, ChevronDown, FileCheck2, Sparkles, Upload, X } from "lucide-react";
-import { forwardRef, useEffect, useMemo, useState } from "react";
+import { forwardRef, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   CONVERSATIONS,
   SOURCES,
@@ -29,9 +29,12 @@ import { archiveMessages } from "../messages";
 import { storage } from "../runtime";
 import type { ArchiveData, ImportState } from "../useArchive";
 import { useSearchIds } from "../useArchive";
-import { AutoImportDialog } from "./AutoImportDialog";
 import { monthYear } from "./format";
 import { SourceIcon } from "./SourceIcon";
+
+const AutoImportDialog = lazy(() =>
+  import("./AutoImportDialog").then((module) => ({ default: module.AutoImportDialog })),
+);
 
 const PAGE = 300;
 
@@ -98,6 +101,7 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
   const visible = shown.slice(0, pageSize);
 
   const [autoImportOpen, setAutoImportOpen] = useState(false);
+  const [autoImportRequested, setAutoImportRequested] = useState(false);
 
   const restore = async (list: string[]) => {
     const r = await restoreItems(storage, CONVERSATIONS, list);
@@ -131,7 +135,10 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
                 className="z-50 min-w-48 rounded-lg border border-line bg-raised p-1 shadow-popover"
               >
                 <DropdownMenu.Item
-                  onSelect={() => setAutoImportOpen(true)}
+                  onSelect={() => {
+                    setAutoImportRequested(true);
+                    setAutoImportOpen(true);
+                  }}
                   className="flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2 text-sm text-fg outline-none data-[highlighted]:bg-surface-3"
                 >
                   <Sparkles className="size-4 text-muted" aria-hidden />
@@ -150,11 +157,15 @@ export const Library = forwardRef<HTMLInputElement, Props>(function Library(
         }
       />
 
-      <AutoImportDialog
-        open={autoImportOpen}
-        onClose={() => setAutoImportOpen(false)}
-        onFilesSelected={handleAutoImportFiles}
-      />
+      {autoImportRequested && (
+        <Suspense fallback={null}>
+          <AutoImportDialog
+            open={autoImportOpen}
+            onClose={() => setAutoImportOpen(false)}
+            onFilesSelected={handleAutoImportFiles}
+          />
+        </Suspense>
+      )}
 
       <div className="space-y-2 border-b border-line p-3">
         <Input

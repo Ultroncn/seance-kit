@@ -3,7 +3,7 @@ import { tNow } from "@seance/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { importConversations, type ImportCounts } from "./domain/store";
 import { CONVERSATIONS, type Conversation } from "./domain/types";
-import { ImportError, parseFile, type FileLike, type SkippedItem } from "./importers";
+import type { FileLike, SkippedItem } from "./importers";
 import { archiveMessages } from "./messages";
 import { search, searchReady, storage } from "./runtime";
 
@@ -112,6 +112,7 @@ export function useImporter(onDone: () => void): ImportState {
         await searchReady;
         for (const file of files) {
           try {
+            const { parseFile } = await import("./importers");
             const parsed = await parseFile(file);
             setProgress({ done: 0, total: parsed.conversations.length });
             const counts = await importConversations(
@@ -122,8 +123,7 @@ export function useImporter(onDone: () => void): ImportState {
             );
             out.push({ fileName: file.name, counts, skipped: parsed.skipped });
           } catch (err) {
-            const message =
-              err instanceof ImportError || err instanceof Error ? err.message : String(err);
+            const message = err instanceof Error ? err.message : String(err);
             out.push({ fileName: file.name, skipped: [], error: message });
           }
         }

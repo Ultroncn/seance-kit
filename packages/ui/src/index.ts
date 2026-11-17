@@ -41,14 +41,9 @@ export {
   type SelectProps,
 } from "./primitives";
 export { AppShell, EmptyState, PaneHeader, type AppShellProps } from "./AppShell";
-export {
-  CommandPalette,
-  isPaletteHotkey,
-  paletteScore,
-  usePaletteHotkey,
-  type CommandPaletteProps,
-  type PaletteCommand,
-} from "./CommandPalette";
+export { CommandPalette } from "./LazyCommandPalette";
+export { isPaletteHotkey, paletteScore, usePaletteHotkey } from "./palette";
+export type { CommandPaletteProps, PaletteCommand } from "./CommandPalette";
 export { ApprovalCard, type ApprovalCardProps } from "./ApprovalCard";
 export {
   SeanceTimeline,
@@ -64,7 +59,9 @@ export {
   type ProviderModeValue,
 } from "./ProviderMode";
 export { DemoBadge } from "./DemoBadge";
-export { SettingsDialog, isAllowedEndpoint, type SettingsDialogProps } from "./SettingsDialog";
+export { SettingsDialog } from "./LazySettingsDialog";
+export { isAllowedEndpoint } from "./endpoint";
+export type { SettingsDialogProps } from "./SettingsDialog";
 export { useProviderCommands } from "./providerCommands";
 export { ModelPicker, withModelChoice } from "./ModelPicker";
 export { BrandMark } from "./BrandMark";

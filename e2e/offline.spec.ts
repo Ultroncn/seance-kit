@@ -1,4 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
+// Use the app's existing dependency to build a tiny zip in memory, with no added dependency.
+const { zipSync } = createRequire(new URL("../apps/archive-seance/package.json", import.meta.url))(
+  "fflate",
+) as { zipSync(files: Record<string, Uint8Array>): Uint8Array };
 
 // R4.3: after the first load, both apps work offline (everything except real-provider calls).
 
@@ -63,3 +70,55 @@ test("each app's worker stays inside its own path", async ({ page }) => {
   );
   expect(scopes).toEqual(["/archive/"]);
 });
+
+for (const app of [
+  {
+    path: "/archive/",
+    fixture: "archive-seance/test/fixtures/chatgpt-small.json",
+    name: "conversations.json",
+    list: "Chats",
+    count: 2,
+  },
+  {
+    path: "/inbox/",
+    fixture: "inbox-exorcist/test/fixtures/boiler.eml",
+    name: "message.eml",
+    list: "Emails",
+    count: 1,
+  },
+]) {
+  test(`${app.path} opens settings and imports a zip for the first time offline`, async ({
+    page,
+  }) => {
+    await firstVisit(page, app.path);
+    await goOffline(page, app.path);
+    await page.reload();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    const settings = page.getByRole("dialog", { name: "Settings" });
+    await expect(settings).toBeVisible();
+    await settings.getByRole("button", { name: "Close settings" }).click();
+    await expect(settings).toHaveCount(0);
+    await page.keyboard.press("ControlOrMeta+k");
+    const palette = page.getByRole("dialog", { name: "Command palette" });
+    await expect(palette.getByRole("combobox")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(palette).toHaveCount(0);
+    if (app.path === "/archive/") {
+      await page.getByRole("button", { name: "Import", exact: true }).click();
+      await page.getByRole("menuitem", { name: "One-click import…", exact: true }).click();
+      const directoryImport = page.getByRole("dialog", { name: "One-click import", exact: true });
+      await expect(directoryImport).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(directoryImport).toHaveCount(0);
+    }
+    const bytes = readFileSync(new URL(`../apps/${app.fixture}`, import.meta.url));
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "export.zip",
+      mimeType: "application/zip",
+      buffer: Buffer.from(zipSync({ [app.name]: bytes })),
+    });
+    await expect(page.getByRole("list", { name: app.list }).getByRole("listitem")).toHaveCount(
+      app.count,
+    );
+  });
+}

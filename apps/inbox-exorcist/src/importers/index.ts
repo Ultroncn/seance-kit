@@ -1,5 +1,3 @@
-import { unzipSync } from "fflate";
-import PostalMime from "postal-mime";
 import { normalizeEmail } from "../domain/normalize";
 import type { NormalizedEmail } from "../domain/types";
 import { htmlToText } from "./html";
@@ -33,6 +31,7 @@ export type ReadEvent =
 
 /** Parse one raw RFC 5322 message (bytes, any charset) into a normalized email. */
 export async function parseMessage(bytes: Uint8Array): Promise<NormalizedEmail> {
+  const { default: PostalMime } = await import("postal-mime");
   const e = await PostalMime.parse(bytes);
   // postal-mime reads header-less input as a body. Every real message has headers.
   if (e.headers.length === 0) throw new ImportError("not an email (no headers)");
@@ -127,6 +126,7 @@ export async function* readEmails(file: FileLike): AsyncGenerator<ReadEvent> {
     let entries: Record<string, Uint8Array>;
     try {
       if (file.size > MAX_ZIP_BYTES) throw new Error("too big");
+      const { unzipSync } = await import("fflate");
       entries = unzipSync(new Uint8Array(await file.arrayBuffer()), {
         filter: (f) => /\.(mbox|eml)$/i.test(f.name),
       });

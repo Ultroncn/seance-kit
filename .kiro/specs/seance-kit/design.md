@@ -234,6 +234,25 @@ GitHub Actions runs checks. Cloudflare's Git integration builds and deploys `mai
 
 "Search" includes the 120 ms typing debounce. The search engine alone takes about 18 ms on 30,000 messages. Lists render 300 rows at a time, with a "Show more" button. Known limits: each app keeps every item in memory, about 37 KB per 12-message chat. A large `conversations.json` is parsed on the main thread in one block (about 165 ms at 67 MB). Moving parsing to a worker and keeping a light list index are the next steps if archives grow past about 10,000 chats.
 
+## 12b. Initial JavaScript (measured Nov 17, 2026)
+
+Measured from the production build on Node 24.18.0 / pnpm 9.15.9, after merge `56d54fc` and the README/link-copy fix. Sizes are decimal KB (1 KB = 1,000 bytes). "Initial" sums the entry and every static JavaScript dependency; it excludes CSS, fonts, images, service-worker precaching and modules requested only after interaction or scrolling. Each file is gzipped separately with Node's default `gzipSync` settings.
+
+| Entry | Before, raw KB | After, raw KB | Before, gzip KB | After, gzip KB |
+|---|---:|---:|---:|---:|
+| Landing `/` | 610.56 | 292.00 | 203.01 | 95.45 |
+| UI gallery `/kit/` | 637.46 | 502.94 | 212.81 | 167.83 |
+| Archive `/archive/` | 898.86 | 848.49 | 295.61 | 278.56 |
+| Inbox `/inbox/` | 981.47 | 848.96 | 325.05 | 278.35 |
+
+**Analysis.** A temporary Vite `generateBundle` plugin inspected each chunk's module `renderedLength`, without installing a dependency. The largest contributors before minification were React DOM (~654 KB), Motion DOM (~395 KB), Dexie (~289 KB), zod (~253 KB), and, in Inbox, postal-mime (~260 KB). These are rendered source lengths, not additive estimates of compressed bytes. The landing entry also pulled in Dexie through unused UI → LLM → Storage exports. React DOM, storage, schemas, search and the apps' on-screen UI remain eager because startup uses them.
+
+**Changes.** `useImporter` loads its app's parser inside the existing import guard and error handling. MIME parsing loads postal-mime on use; the zip branches load fflate. The public Settings and command-palette components load their UI on first opening and stay mounted afterwards, preserving Radix focus restoration; keyboard listeners remain eager. Archive's directory-import dialog loads on first selection. The existing landing timeline loads when approaching the viewport and reserves its original 23rem minimum height. Package `sideEffects` metadata lets unused exports disappear, while explicitly retaining UI i18n initialization and CSS.
+
+**Validation.** The executable-JS budget e2e failed for all three original entries before splitting. Its limits are 130,000 gzip bytes for the landing and 280,000 for each app. Functional e2e includes axe, keyboard flows, both offline sample imports, and first offline use of Settings, the command palette, zip extraction, MIME parsing and the directory-import dialog.
+
+**Offline tradeoff.** The existing service workers still precache every app build file, including deferred chunks. This reduces the JavaScript needed to start and execute the page, but does not reduce total first-visit app downloads: precaching still downloads the deferred code in the background, and all emitted JS totals 295.61 → 299.32 KB gzip for Archive and 325.05 → 337.47 KB for Inbox due to per-chunk compression and shared code. Changing that cache policy is outside this performance change. No new dependency, provider, app feature or deployment was added.
+
 ## 13. Testing
 
 ### Property-based (fast-check)
