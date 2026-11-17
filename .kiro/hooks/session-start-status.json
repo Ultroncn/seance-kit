@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Session start: .kiro tracked and repo status",
+      "trigger": "SessionStart",
+      "description": "At session start, checks that .kiro is not git-ignored and gives the agent the branch and working-tree status.",
+      "action": {
+        "type": "command",
+        "command": "pnpm -s check:kiro && git status --short --branch",
+        "timeout": 30
+      }
+    }
+  ]
+}

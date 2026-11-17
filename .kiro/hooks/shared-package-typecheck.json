@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Re-typecheck apps when a shared package changes",
+      "trigger": "PostFileSave",
+      "description": "When a file under packages/*/src is saved, the agent re-runs the repo typecheck so both apps and the template are checked against the change.",
+      "matcher": "packages/[^/]+/src/.+\\.tsx?$",
+      "action": {
+        "type": "agent",
+        "prompt": "A shared package under packages/ changed. Both apps and templates/app depend on it. Run `pnpm typecheck` from the repo root and fix every error before moving on. Do not weaken types or add `any` to make it pass."
+      }
+    }
+  ]
+}
