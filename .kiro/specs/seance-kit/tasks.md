@@ -29,7 +29,7 @@ Every milestone ends with a deployed Cloudflare build.
 - [x] 0.8a `worker/index.js` provides per-app SPA fallback, with unit tests and e2e coverage. Workers static assets rejects `_redirects` SPA rewrites (error 100324), so the fallback lives in the Worker. See design.md section 12.
 - [x] 0.9 Verify the live URL serves landing and both shells, and that `/archive/` and `/inbox/` deep links show the right app (`BASE_URL=<url> pnpm e2e`). Record the URL in README.
 - [x] 0.10 Playwright smoke: three URLs load. Add to CI.
-- [~] 0.11 ~~Add Kiro hooks (typecheck on save, tests on commit).~~ **Skipped** (Nov 16). `createHook` was blocked by workspace permission rules on every attempt, including after a clean `permissions.yaml` and a full restart. Not required for submission. CI already runs typecheck, lint and tests on every push. See `KIRO_USAGE.md`.
+- [x] 0.11 Add Kiro hooks. Blocked by workspace permission rules on Nov 16, done later in M5: `.kiro/hooks/` has `shared-package-typecheck` (PostFileSave), `spec-task-gate` (PostTaskExec) and `session-start-status` (SessionStart). CI still runs the same checks on every push. See `KIRO_USAGE.md`.
 - [x] 0.12 Start `KIRO_USAGE.md` with entries for specs, steering, hooks (hooks entry records the skip), decisions.
 
 Exit: public URL works, CI green, `.kiro` committed.
@@ -90,7 +90,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 ## M4. MCP, template, landing, a11y (Nov 29-30)
 
 - [x] 4.1 `packages/mcp-server` over stdio using the MCP SDK and File adapter. (R9.1, R9.3)
-- [~] 4.2 Register in `.kiro/settings/mcp.json`. Test from Kiro with an exported archive. (R9.2) _Config written to `docs/kiro-mcp.json` and verified by running its exact commands with an MCP client. Kiro blocks agent writes to `.kiro/settings/`, so the user copies it and checks the servers in Kiro's MCP panel._
+- [ ] 4.2 Register in `.kiro/settings/mcp.json`. Test from Kiro with an exported archive. (R9.2) _Config written to `docs/kiro-mcp.json` and verified by running its exact commands with an MCP client. Kiro blocks agent writes to `.kiro/settings/`, so the user copies it and checks the servers in Kiro's MCP panel._
 - [x] 4.3 `templates/app` minimal working app. (R10.1)
 - [x] 4.4 `pnpm new:app` script. CI job generates an app, builds and tests it. (R10.2)
 - [x] 4.5 README "afternoon path" in under ten steps. (R10.3)
@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.16 Offline after the first load (R4.3). Found in a requirements check on Nov 17: no task covered R4.3 and the apps had no service worker. Each app (and every app from `pnpm new:app`) gets a build-generated `sw.js` scoped to its own path: it precaches the app's build output, answers navigations network-first with the cached shell as fallback, and never touches cross-origin requests (provider calls). Offline e2e for both apps.
 - [x] R.15 One-click import and resizable panes, made consistent: both apps use the shared shell again (the language switch had dropped out of Archive Séance), panes resize by pointer or keyboard (WAI-ARIA window splitter) with widths saved per app, the import dialog follows the language switch and the kit's styles, typed File System Access calls instead of `@ts-ignore`. P15 property test.
 - [x] R.14 Product redesign after an independent UI review: candlelit decoration removed; neutral palette with one indigo accent; one type, spacing and control scale; restyled native selects; date filter in a popover; composer card with inline send and a single-level model menu; quiet tool rows and approval card; reader column; view tabs; two-step settings dialog; landing page with real product screenshots (`pnpm screenshots`) and tabbed code.
 - [x] R.13 Streaming replies and reasoning (OpenAI-compatible and Anthropic SSE), "Thought for N s", grouped read steps, typed demo replies; candlelit redesign of the landing page and both apps; P13 and P14 property tests.

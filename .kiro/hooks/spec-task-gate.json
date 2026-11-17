@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Gate every spec task",
+      "trigger": "PostTaskExec",
+      "description": "After a spec task runs, the agent runs lint, typecheck and tests, ticks the task and records real bugs in the decision log.",
+      "action": {
+        "type": "agent",
+        "prompt": "A spec task just finished. Before calling it done: 1) run `pnpm lint && pnpm typecheck && pnpm test` and fix failures without weakening tests; 2) tick the task in .kiro/specs/seance-kit/tasks.md; 3) if a test or property caught a real bug, add a short entry to the decision log in KIRO_USAGE.md and keep any shrunk counterexample as a regression test."
+      }
+    }
+  ]
+}

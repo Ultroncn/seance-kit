@@ -65,12 +65,6 @@ export function Hero({ t }: { t: SiteText }) {
           >
             {t.tryInbox}
           </a>
-          <a
-            href={REPO}
-            className="inline-flex h-11 items-center rounded-lg px-4 text-sm font-medium text-fg-2 transition-colors hover:text-fg"
-          >
-            {t.readCode}
-          </a>
         </div>
         <p className="mt-5 text-meta text-muted">{t.noSignup}</p>
         <figure className="mt-16 overflow-hidden rounded-xl border border-line bg-surface shadow-[0_40px_120px_-40px_color-mix(in_oklab,var(--color-accent-solid)_45%,transparent)]">

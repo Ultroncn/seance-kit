@@ -10,13 +10,15 @@ Draft, started in M0. Each section gets real examples and screenshots before sub
 
 `.kiro/steering/` has `product.md`, `tech.md`, `structure.md`, `design-language.md` and `testing.md`. They hold the rules that are easy to forget mid-build: no app code in `core`, soft-delete only, the Demo-mode badge, design tokens, property-test naming.
 
-## Hooks (skipped)
+## Hooks
 
-We planned three hooks (task 0.11): typecheck on saving a `.ts`/`.tsx` file, lint and tests after each spec task (`PostTaskExec`), and the `.kiro`-not-ignored check on saving `.gitignore`.
+`.kiro/hooks/` has three hooks:
 
-We could not create them. Every `createHook` attempt, through several retries, was denied by workspace permission rules. That included a retry after cleaning `permissions.yaml` and fully restarting Kiro. The deny rules reappeared after each attempt and `.kiro/hooks/` was never created. We did not work around the rule.
+- **`shared-package-typecheck`** (PostFileSave, matching `packages/*/src/**/*.ts(x)`). Both apps and the template depend on the shared packages, so a change in `core` or `ui` can break an app that nobody opened. On save, the agent re-runs `pnpm typecheck` for the whole repo and fixes errors without weakening types.
+- **`spec-task-gate`** (PostTaskExec). After each spec task the agent runs lint, typecheck and tests, ticks the task in `tasks.md`, and logs any real bug a test caught in the decision log below, keeping shrunk counterexamples as regression tests.
+- **`session-start-status`** (SessionStart, a shell command). It runs the `.kiro`-not-ignored check and `git status`, and passes the output to the agent. Commits from other tools then show up before work starts.
 
-We skipped hooks on Nov 16. They are not required for submission. The same checks run in GitHub Actions on every push and pull request: the `.kiro` check, typecheck, lint, unit and property tests, build, and Playwright smoke tests.
+We planned these in M0 (task 0.11), but every `createHook` call was denied by workspace permission rules until M5. Until then, the same checks ran only in GitHub Actions, on every push and pull request: the `.kiro` check, typecheck, lint, unit and property tests, build, and Playwright smoke tests.
 
 ## MCP
 
@@ -25,6 +27,15 @@ Both apps run as MCP servers (`packages/mcp-server`, plus `apps/*/mcp/`). They e
 Setup: copy `docs/kiro-mcp.json` to `.kiro/settings/mcp.json`. Kiro blocks agents from writing there, so this step is manual. Then ask Kiro, for example, "use archive-seance to find my Lisbon chats". The servers start on the sample data. Pass your own export with `--import` (Settings → Export all data, or a raw `conversations.json` / `.mbox`).
 
 Building it surfaced a core bug. Input schemas were converted in zod's "output" view, so every field with a default (`limit`, `sort`, `query`) was sent to models and MCP clients as required. A regression test now checks that defaulted fields are optional.
+
+## Other tools
+
+Kiro IDE built almost all of the project: specs, steering, every milestone, the reviews and the redesign. A few commits were made with Claude Code instead, and we list them here so nothing is hidden:
+
+- `2342461` added one-click import, a mouse-only resizable pane layout and a `CLAUDE.md` file. `48c90d1` fixed syntax errors in it. Kiro then replaced the pane layout with a keyboard-accessible `Splitter` (property P15) and translated and typed the import dialog in `b141b60`.
+- `520aa4e` to `a24d078` tried to turn Archive Séance into an "AI Dev Workflow" app. That broke lint and 11 tests, and it no longer matched the specs, so we reverted all four commits in `adebbfc`.
+
+We then removed `CLAUDE.md` and the `.claude/` folder from the repo, so the project's only agent guidance is `.kiro/`.
 
 ## Decision log
 

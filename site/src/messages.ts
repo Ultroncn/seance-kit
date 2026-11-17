@@ -17,7 +17,6 @@ export const siteMessages = defineMessages(
     appNames: ["Archive Séance", "Inbox Exorcist"],
     tryArchive: "Try Archive Séance",
     tryInbox: "Try Inbox Exorcist",
-    readCode: "Read the code →",
     noSignup: "No sign-up. The demo runs without a key, on sample data, and says so.",
     demoTitle: "Every change waits for you",
     demoIntro:
@@ -130,7 +129,6 @@ export const siteMessages = defineMessages(
     appNames: ["对话降灵", "收件箱驱魔"],
     tryArchive: "试用对话降灵",
     tryInbox: "试用收件箱驱魔",
-    readCode: "查看代码 →",
     noSignup: "无需注册。演示不需要 key，使用示例数据运行，并会明确标出这是演示。",
     demoTitle: "每一次改动都等你点头",
     demoIntro:
