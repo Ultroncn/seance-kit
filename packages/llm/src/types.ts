@@ -20,7 +20,12 @@ export interface ToolCall {
  */
 export type Reasoning =
   | { format: "reasoning_content"; text: string }
-  | { format: "anthropic_thinking"; blocks: unknown[] };
+  | { format: "anthropic_thinking"; blocks: unknown[] }
+  /**
+   * The OpenAI Responses API's output items for the turn (reasoning with `encrypted_content`,
+   * message, function_call), replayed in order because requests use `store: false`.
+   */
+  | { format: "openai_responses"; items: unknown[] };
 
 export type ChatMessage =
   | { role: "user"; content: string }

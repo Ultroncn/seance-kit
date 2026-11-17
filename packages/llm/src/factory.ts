@@ -1,6 +1,7 @@
 import { AnthropicProvider } from "./anthropic";
 import type { FetchLike } from "./http";
 import { OpenAiCompatibleProvider, createOllamaProvider } from "./openai";
+import { OpenAiResponsesProvider, isOpenAiPlatform } from "./openai-responses";
 import { reasoningParams, type ReasoningSetting } from "./reasoning";
 import type { Provider } from "./types";
 
@@ -40,6 +41,17 @@ export function createProvider(config: ProviderConfig, fetchImpl?: FetchLike): P
       });
     case "openai-compatible":
       requireFields(config, ["baseUrl", "model"]);
+      if (isOpenAiPlatform(config.baseUrl)) {
+        requireFields(config, ["apiKey"]);
+        const r = config.reasoning;
+        return new OpenAiResponsesProvider({
+          baseUrl: config.baseUrl,
+          apiKey: config.apiKey,
+          model: config.model,
+          ...(r?.style === "openai" && r.level !== "off" ? { reasoningEffort: r.level } : {}),
+          fetch: fetchImpl,
+        });
+      }
       return new OpenAiCompatibleProvider({
         baseUrl: config.baseUrl,
         apiKey: config.apiKey,

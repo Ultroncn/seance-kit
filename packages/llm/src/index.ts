@@ -24,6 +24,12 @@ export {
   type OllamaOptions,
   type OpenAiCompatibleOptions,
 } from "./openai";
+export {
+  OpenAiResponsesProvider,
+  isOpenAiPlatform,
+  toResponsesInput,
+  type OpenAiResponsesOptions,
+} from "./openai-responses";
 export { createProvider, type ProviderConfig, type ProviderKind } from "./factory";
 export type { FetchLike } from "./http";
 export {

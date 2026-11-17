@@ -170,6 +170,9 @@ describe("reasoning levels", () => {
     expect(reasoningOptions("anthropic", "claude-3-haiku-20240307")).toBeNull();
     expect(reasoningOptions("openai", "gpt-5.2")?.style).toBe("openai");
     expect(reasoningOptions("openai", "gpt-4o")).toBeNull();
+    expect(reasoningOptions("openai", "o3")?.style).toBe("openai");
+    expect(reasoningOptions("openai", "gpt-5-chat-latest")).toBeNull();
+    expect(reasoningOptions("openai", "gpt-5.1-chat-latest")).toBeNull();
     expect(reasoningOptions("openrouter", "x/y", { id: "x/y", reasoning: true })?.style).toBe(
       "openrouter",
     );

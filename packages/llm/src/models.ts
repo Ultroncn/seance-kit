@@ -1,8 +1,15 @@
 import type { ProviderConfig } from "./factory";
 import { ensureOk, type FetchLike } from "./http";
+import { isOpenAiPlatform } from "./openai-responses";
 import type { ModelInfo } from "./reasoning";
 
 const trim = (url: string) => url.replace(/\/+$/, "");
+
+/** OpenAI's list also holds audio, image, embedding and moderation models, which cannot chat. */
+const OPENAI_NOT_TEXT =
+  /(?:embedding|whisper|tts|transcribe|dall-e|image|realtime|audio|moderation|davinci|babbage|sora)/;
+
+export const isOpenAiTextModel = (id: string) => !OPENAI_NOT_TEXT.test(id.toLowerCase());
 
 /**
  * Model ids the vendor offers to this key, sorted. Vendors rename models often, so the settings
@@ -43,5 +50,7 @@ export async function listModels(
     const params = Array.isArray(m.supported_parameters) ? m.supported_parameters : [];
     byId.set(m.id, { id: m.id, ...(params.includes("reasoning") ? { reasoning: true } : {}) });
   }
+  if (config.kind === "openai-compatible" && isOpenAiPlatform(config.baseUrl))
+    for (const id of byId.keys()) if (!isOpenAiTextModel(id)) byId.delete(id);
   return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
 }

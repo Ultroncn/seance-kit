@@ -5,7 +5,9 @@
  *   low | high | max. https://api-docs.deepseek.com/guides/thinking_mode
  * - Anthropic: `output_config.effort` (low | medium | high) on the models its docs list.
  *   https://platform.claude.com/docs/en/build-with-claude/effort
- * - OpenAI: `reasoning_effort` on its reasoning models (o-series, GPT-5 family).
+ * - OpenAI: `reasoning.effort` (Responses API) on its reasoning models (o-series, GPT-5 and
+ *   later). Values are model-dependent; low | medium | high is the subset they share.
+ *   https://developers.openai.com/api/docs/guides/reasoning
  * - OpenRouter: `reasoning.effort`, offered when its model list says the model takes it.
  * Anything else gets no levels: an unknown parameter would fail the request.
  */
@@ -32,7 +34,9 @@ export interface ReasoningOptions {
 
 const ANTHROPIC_EFFORT =
   /^claude-(?:(?:fable|mythos|opus|sonnet|haiku)-5|opus-4-[5-8]|sonnet-4-6|mythos-preview)/;
-const OPENAI_REASONING = /^(?:o\d|gpt-5)/;
+const OPENAI_REASONING = /^(?:o\d|gpt-[5-9])/;
+/** Chat snapshots such as gpt-5-chat-latest reject `reasoning_effort`. */
+const OPENAI_CHAT_SNAPSHOT = /-chat(?:-|$)/;
 
 /** What this model offers, or null when it has no adjustable reasoning. */
 export function reasoningOptions(
@@ -50,7 +54,7 @@ export function reasoningOptions(
         ? { style: "anthropic", levels: ["low", "medium", "high"] }
         : null;
     case "openai":
-      return OPENAI_REASONING.test(m)
+      return OPENAI_REASONING.test(m) && !OPENAI_CHAT_SNAPSHOT.test(m)
         ? { style: "openai", levels: ["low", "medium", "high"] }
         : null;
     case "openrouter":
