@@ -1,140 +1,74 @@
 import { defineTool } from "@seance/core";
 import { z } from "zod";
-import type { ArchiveDeps } from "./shared";
 import { requireConversation } from "./shared";
 
-export interface GitHubIssue {
-  title: string;
-  description: string;
-  labels: string[];
-  priority: "P0" | "P1" | "P2";
-  assignee?: string;
-}
-
-export interface TaskList {
-  issues: GitHubIssue[];
-  summary: string;
-}
-
 const input = z.object({
-  conversation_id: z.string().min(1).describe("The conversation ID to extract tasks from"),
+  id: z.string().min(1).describe("The conversation ID to generate tasks from"),
 });
 
-export function buildKnowledgeGraph(deps: ArchiveDeps) {
-  return defineTool(
-    {
-      name: "build_knowledge_graph",
-      description:
-        "Extract actionable tasks from conversation and generate GitHub-formatted issues. Identifies next steps, todos, and followups.",
-      input,
-    },
-    async (params) => {
-      const conv = await requireConversation(deps, params.conversation_id);
-      const messages = conv.messages || [];
-      const fullText = messages.map((m) => m.content).join("\n");
+const output = z.string();
 
-      const taskList: TaskList = {
-        issues: [],
-        summary: "",
-      };
+export const buildKnowledgeGraph = () =>
+  defineTool({
+    name: "build_knowledge_graph",
+    description:
+      "Task Agent: generate GitHub-formatted issues from a development conversation. Identifies action items, todos, and follow-ups with priority labels.",
+    risk: "read",
+    input,
+    output,
+    async run({ id }, { storage }) {
+      const conv = await requireConversation(storage, id);
+      const fullText = conv.messages.map((m) => m.text).join("\n");
 
-      // Task extraction patterns
-      const taskPatterns = [
-        {
-          regex: /need to[\s:]([^.!?]{10,100})/gi,
-          label: "task",
-          priority: "P1" as const,
-        },
-        {
-          regex: /should[\s:]?([^.!?]{10,100})/gi,
-          label: "enhancement",
-          priority: "P2" as const,
-        },
-        {
-          regex: /todo[\s:]([^.!?]{10,100})/gi,
-          label: "todo",
-          priority: "P1" as const,
-        },
-        {
-          regex: /fix[\s:]?([^.!?]{10,100})/gi,
-          label: "bug",
-          priority: "P0" as const,
-        },
-        {
-          regex: /optimize[\s:]?([^.!?]{10,100})/gi,
-          label: "performance",
-          priority: "P1" as const,
-        },
-        {
-          regex: /refactor[\s:]?([^.!?]{10,100})/gi,
-          label: "refactor",
-          priority: "P2" as const,
-        },
+      interface Issue {
+        priority: "P0" | "P1" | "P2";
+        label: string;
+        title: string;
+      }
+
+      const issues: Issue[] = [];
+      const seen = new Set<string>();
+
+      const patterns: Array<{ re: RegExp; priority: "P0" | "P1" | "P2"; label: string }> = [
+        { re: /fix\s+(.{10,70})/gi, priority: "P0", label: "bug" },
+        { re: /(?:security|xss|injection|vulnerability)\s*[-:]?\s*(.{10,70})/gi, priority: "P0", label: "security" },
+        { re: /(?:optimize|performance|slow)\s+(.{10,70})/gi, priority: "P1", label: "performance" },
+        { re: /(?:add|implement|create)\s+(.{10,70})/gi, priority: "P1", label: "feature" },
+        { re: /(?:refactor|cleanup|clean up)\s+(.{10,70})/gi, priority: "P2", label: "refactor" },
+        { re: /(?:test|tests for)\s+(.{10,70})/gi, priority: "P2", label: "testing" },
+        { re: /todo[:\s]+(.{10,70})/gi, priority: "P1", label: "todo" },
+        { re: /should\s+(?:add|implement|fix|update)\s+(.{10,70})/gi, priority: "P2", label: "enhancement" },
       ];
 
-      const processedTasks = new Set<string>();
-
-      taskPatterns.forEach((pattern) => {
-        let match;
-        while ((match = pattern.regex.exec(fullText)) !== null) {
-          const taskText = match[1].trim();
-          if (!processedTasks.has(taskText) && taskText.length > 5) {
-            processedTasks.add(taskText);
-
-            taskList.issues.push({
-              title: taskText.substring(0, 70),
-              description: `**Context from conversation:** "${conv.title}"\n\n${taskText}\n\nOriginal task identified in discussion.`,
-              labels: [pattern.label, "from-ai-discussion"],
-              priority: pattern.priority,
-            });
+      patterns.forEach(({ re, priority, label }) => {
+        let m;
+        while ((m = re.exec(fullText)) !== null) {
+          const text = (m[1]?.trim() ?? "").substring(0, 70);
+          const key = text.substring(0, 25).toLowerCase();
+          if (text.length >= 10 && !seen.has(key)) {
+            seen.add(key);
+            issues.push({ priority, label, title: text });
           }
         }
       });
 
-      // If no explicit tasks found, generate from summary
-      if (taskList.issues.length === 0) {
-        const summary = conv.title;
-        taskList.issues.push(
-          {
-            title: `Implement: ${summary.substring(0, 50)}`,
-            description: `Based on conversation: "${conv.title}"\n\nImplement the discussed feature/fix.`,
-            labels: ["implementation", "from-ai-discussion"],
-            priority: "P1",
-          },
-          {
-            title: `Review: ${summary.substring(0, 50)}`,
-            description: `Code review needed for changes discussed in "${conv.title}"`,
-            labels: ["review", "from-ai-discussion"],
-            priority: "P2",
-          },
-          {
-            title: `Test: ${summary.substring(0, 50)}`,
-            description: `Add tests for functionality discussed in "${conv.title}"`,
-            labels: ["testing", "from-ai-discussion"],
-            priority: "P2",
-          }
+      // Fallback: generate sensible issues from title
+      if (issues.length === 0) {
+        const title = conv.title;
+        issues.push(
+          { priority: "P1", label: "implementation", title: `Implement: ${title.substring(0, 60)}` },
+          { priority: "P2", label: "review", title: `Code review: ${title.substring(0, 55)}` },
+          { priority: "P2", label: "testing", title: `Add tests for: ${title.substring(0, 55)}` },
         );
       }
 
-      // Limit to top 6 issues
-      taskList.issues = taskList.issues.slice(0, 6);
-      taskList.summary = `Generated ${taskList.issues.length} GitHub issues from "${conv.title}"`;
+      const top = issues.slice(0, 6);
 
-      return `## Generated GitHub Issues from "${conv.title}"
-
-${taskList.summary}
-
-${taskList.issues
-  .map(
-    (issue, i) => `
-### ${i + 1}. ${issue.title}
-- **Priority:** ${issue.priority}
-- **Labels:** ${issue.labels.join(", ")}
-- **Description:**
-  ${issue.description.split("\n").join("\n  ")}
-`
-  )
-  .join("\n")}`;
-    }
-  );
-}
+      return `## Generated GitHub Issues from "${conv.title}"\n\n**${top.length} issue${top.length > 1 ? "s" : ""} ready to create:**\n\n${top
+        .map(
+          (issue, i) =>
+            `### ${i + 1}. ${issue.title}\n- **Priority:** ${issue.priority}\n- **Labels:** ${issue.label}, from-ai-discussion`,
+        )
+        .join("\n\n")}`;
+    },
+  });

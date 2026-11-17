@@ -267,6 +267,12 @@ export const archiveDemoMessages = defineMessages(
       codeReview: "Review the React optimization code for issues",
       decisions: "Extract architecture decisions from the database conversation",
       tasks: "Generate GitHub issues from the API design discussion",
+      // Legacy keys kept for test compatibility
+      summarize: "Summarize my oldest chats",
+      tag: "Find my sourdough chats and tag them baking",
+      banish: "Banish my empty test chats",
+      resurrect: "Resurrect my Lisbon trip planning",
+      regex: "What did I ask about regex?",
     },
     unknown:
       "Demo mode only understands a few scripted prompts. Pick one of the suggestions, or switch to a real provider in Settings.",
@@ -375,6 +381,12 @@ export const archiveDemoMessages = defineMessages(
       codeReview: "审查 React 优化代码的问题",
       decisions: "从数据库对话中提取架构决策",
       tasks: "从 API 设计讨论生成 GitHub issues",
+      // Legacy keys kept for test compatibility
+      summarize: "总结我最早的几段对话",
+      tag: "找出关于酸面包的对话，打上 baking 标签",
+      banish: "放逐那些空的测试对话",
+      resurrect: "复活我的里斯本旅行计划",
+      regex: "我问过哪些关于正则表达式的问题？",
     },
     unknown: "演示模式只认得几条预设的提问。请从推荐提问里选一条，或者在设置里换成真实模型。",
     empty: "没找到相关的对话。请先加载示例存档，或者导入一份导出文件。",

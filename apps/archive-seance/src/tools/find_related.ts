@@ -1,132 +1,76 @@
 import { defineTool } from "@seance/core";
 import { z } from "zod";
-import type { ArchiveDeps } from "./shared";
 import { requireConversation } from "./shared";
 
-export interface Decision {
-  category: "architecture" | "technology" | "process" | "risk";
-  title: string;
-  description: string;
-  rationale: string;
-  impact: "high" | "medium" | "low";
-}
-
-export interface ArchitectureInsight {
-  decisions: Decision[];
-  risks: Array<{
-    title: string;
-    description: string;
-    mitigation: string;
-    severity: "critical" | "high" | "medium";
-  }>;
-  summary: string;
-}
-
 const input = z.object({
-  conversation_id: z.string().min(1).describe("The conversation ID to extract insights from"),
+  id: z.string().min(1).describe("The conversation ID to extract decisions from"),
 });
 
-export function findRelatedConversations(deps: ArchiveDeps) {
-  return defineTool(
-    {
-      name: "find_related_conversations",
-      description:
-        "Extract architecture decisions and technical risks from conversation. Identifies key decisions made and potential risks discussed.",
-      input,
-    },
-    async (params) => {
-      const conv = await requireConversation(deps, params.conversation_id);
-      const messages = conv.messages || [];
-      const fullText = messages.map((m) => m.content).join(" ");
+const output = z.string();
 
-      const insight: ArchitectureInsight = {
-        decisions: [],
-        risks: [],
-        summary: "",
-      };
+export const findRelatedConversations = () =>
+  defineTool({
+    name: "find_related_conversations",
+    description:
+      "Decision Log Agent: extract architecture decisions, technology choices, and technical risks from a conversation.",
+    risk: "read",
+    input,
+    output,
+    async run({ id }, { storage }) {
+      const conv = await requireConversation(storage, id);
+      const fullText = conv.messages.map((m) => m.text).join("\n");
 
-      // Extract decisions
+      const decisions: string[] = [];
+      const risks: string[] = [];
+
       const decisionPatterns = [
-        { keyword: "decided to use", category: "technology" as const },
-        { keyword: "chose", category: "technology" as const },
-        { keyword: "architecture:", category: "architecture" as const },
-        { keyword: "approach:", category: "process" as const },
-        { keyword: "will", category: "technology" as const },
+        /(?:decided?|choose|chose|going with|use|using)\s+(.{10,80})/gi,
+        /(?:architecture|approach|pattern|strategy):\s*(.{10,80})/gi,
+        /(?:instead of|rather than|over)\s+(.{10,80})/gi,
       ];
 
-      decisionPatterns.forEach((pattern) => {
-        const regex = new RegExp(`${pattern.keyword}[^.!?]{20,150}[.!?]`, "gi");
-        let match;
-        while ((match = regex.exec(fullText)) !== null) {
-          const text = match[0];
-          insight.decisions.push({
-            category: pattern.category,
-            title: text.substring(0, 60),
-            description: text,
-            rationale: "Based on conversation context",
-            impact: text.toLowerCase().includes("critical") ? "high" : "medium",
-          });
+      const riskPatterns = [
+        /(?:risk|concern|problem|issue|challenge|warning|careful):\s*(.{10,100})/gi,
+        /(?:might|could|may)\s+(?:cause|fail|break|slow)\s+(.{10,80})/gi,
+      ];
+
+      decisionPatterns.forEach((re) => {
+        let m;
+        while ((m = re.exec(fullText)) !== null) {
+          const text = m[1]?.trim() ?? "";
+          if (text && !decisions.some((d) => d.includes(text.substring(0, 20)))) {
+            decisions.push(text.substring(0, 120));
+          }
         }
       });
 
-      // Extract risks
-      const riskKeywords = ["risk", "challenge", "concern", "issue", "problem", "limitation"];
-      riskKeywords.forEach((keyword) => {
-        const regex = new RegExp(`${keyword}[^.!?]{20,150}[.!?]`, "gi");
-        let match;
-        while ((match = regex.exec(fullText)) !== null) {
-          const text = match[0];
-          insight.risks.push({
-            title: `Identified: ${text.substring(0, 50)}`,
-            description: text,
-            mitigation: "Requires further discussion and planning",
-            severity: text.toLowerCase().includes("critical") ? "critical" : "high",
-          });
+      riskPatterns.forEach((re) => {
+        let m;
+        while ((m = re.exec(fullText)) !== null) {
+          const text = m[1]?.trim() ?? "";
+          if (text && !risks.some((r) => r.includes(text.substring(0, 20)))) {
+            risks.push(text.substring(0, 120));
+          }
         }
       });
 
-      // If no patterns found, add generic insights
-      if (insight.decisions.length === 0) {
-        insight.decisions.push({
-          category: "technology",
-          title: "Technology evaluation",
-          description: `Team discussed technology choices in "${conv.title}"`,
-          rationale: "From conversation context",
-          impact: "medium",
-        });
+      const topDecisions = decisions.slice(0, 5);
+      const topRisks = risks.slice(0, 3);
+
+      if (topDecisions.length === 0 && topRisks.length === 0) {
+        return `No explicit decisions or risks found in "${conv.title}". Try reading the conversation for manual review.`;
       }
 
-      insight.summary = `Found ${insight.decisions.length} architectural decisions and ${insight.risks.length} potential risks.`;
+      const parts: string[] = [`## Decision Log: "${conv.title}"\n`];
 
-      return `## Architecture & Decision Log for "${conv.title}"
+      if (topDecisions.length > 0) {
+        parts.push(`**Decisions (${topDecisions.length}):**\n${topDecisions.map((d, i) => `${i + 1}. ${d}`).join("\n")}`);
+      }
 
-${insight.summary}
+      if (topRisks.length > 0) {
+        parts.push(`\n**Risks (${topRisks.length}):**\n${topRisks.map((r, i) => `${i + 1}. [RISK] ${r}`).join("\n")}`);
+      }
 
-### Key Decisions:
-${insight.decisions
-  .map(
-    (d, i) => `
-${i + 1}. **[${d.category.toUpperCase()}] ${d.title}**
-   - Impact: ${d.impact}
-   - Rationale: ${d.rationale}
-`
-  )
-  .join("\n")}
-
-${
-  insight.risks.length > 0
-    ? `### Identified Risks:
-${insight.risks
-  .map(
-    (r, i) => `
-${i + 1}. **[${r.severity.toUpperCase()}] ${r.title}**
-   - ${r.description}
-   - Mitigation: ${r.mitigation}
-`
-  )
-  .join("\n")}`
-    : ""
-}`;
-    }
-  );
-}
+      return parts.join("\n");
+    },
+  });
