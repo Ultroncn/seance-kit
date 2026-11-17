@@ -3,16 +3,27 @@ import { z } from "zod";
 import type { ArchiveDeps } from "./shared";
 import { requireConversation } from "./shared";
 
-export interface RelatedConversation {
-  id: string;
+export interface Decision {
+  category: "architecture" | "technology" | "process" | "risk";
   title: string;
-  relevance: number;
-  reason: string;
+  description: string;
+  rationale: string;
+  impact: "high" | "medium" | "low";
+}
+
+export interface ArchitectureInsight {
+  decisions: Decision[];
+  risks: Array<{
+    title: string;
+    description: string;
+    mitigation: string;
+    severity: "critical" | "high" | "medium";
+  }>;
+  summary: string;
 }
 
 const input = z.object({
-  conversation_id: z.string().min(1).describe("The reference conversation ID"),
-  limit: z.number().int().min(1).max(20).default(5).describe("Maximum number of related conversations"),
+  conversation_id: z.string().min(1).describe("The conversation ID to extract insights from"),
 });
 
 export function findRelatedConversations(deps: ArchiveDeps) {
@@ -20,57 +31,102 @@ export function findRelatedConversations(deps: ArchiveDeps) {
     {
       name: "find_related_conversations",
       description:
-        "Find conversations related to a given conversation by topic, code patterns, or decision themes. Useful for building knowledge connections across your chat history.",
+        "Extract architecture decisions and technical risks from conversation. Identifies key decisions made and potential risks discussed.",
       input,
     },
     async (params) => {
-      const reference = await requireConversation(deps, params.conversation_id);
-      const limit = params.limit || 5;
+      const conv = await requireConversation(deps, params.conversation_id);
+      const messages = conv.messages || [];
+      const fullText = messages.map((m) => m.content).join(" ");
 
-      // Extract keywords from reference conversation
-      const text = (reference.messages || []).map((m) => m.content).join(" ").toLowerCase();
-      const keywords = text
-        .split(/\s+/)
-        .filter((w) => w.length > 4)
-        .slice(0, 20);
+      const insight: ArchitectureInsight = {
+        decisions: [],
+        risks: [],
+        summary: "",
+      };
 
-      // Search for related conversations
-      const related: RelatedConversation[] = [];
-      const allConversations = await deps.storage.listConversations();
+      // Extract decisions
+      const decisionPatterns = [
+        { keyword: "decided to use", category: "technology" as const },
+        { keyword: "chose", category: "technology" as const },
+        { keyword: "architecture:", category: "architecture" as const },
+        { keyword: "approach:", category: "process" as const },
+        { keyword: "will", category: "technology" as const },
+      ];
 
-      for (const conv of allConversations) {
-        if (conv.id === params.conversation_id) continue;
-
-        const convText = (conv.messages || []).map((m) => m.content).join(" ").toLowerCase();
-        let matchCount = 0;
-
-        // Count keyword matches
-        keywords.forEach((kw) => {
-          if (convText.includes(kw)) matchCount++;
-        });
-
-        if (matchCount > 0) {
-          const relevance = matchCount / keywords.length;
-          related.push({
-            id: conv.id,
-            title: conv.title,
-            relevance: Math.min(relevance, 1),
-            reason: `Shared ${matchCount} keywords (${(relevance * 100).toFixed(0)}% match)`,
+      decisionPatterns.forEach((pattern) => {
+        const regex = new RegExp(`${pattern.keyword}[^.!?]{20,150}[.!?]`, "gi");
+        let match;
+        while ((match = regex.exec(fullText)) !== null) {
+          const text = match[0];
+          insight.decisions.push({
+            category: pattern.category,
+            title: text.substring(0, 60),
+            description: text,
+            rationale: "Based on conversation context",
+            impact: text.toLowerCase().includes("critical") ? "high" : "medium",
           });
         }
+      });
+
+      // Extract risks
+      const riskKeywords = ["risk", "challenge", "concern", "issue", "problem", "limitation"];
+      riskKeywords.forEach((keyword) => {
+        const regex = new RegExp(`${keyword}[^.!?]{20,150}[.!?]`, "gi");
+        let match;
+        while ((match = regex.exec(fullText)) !== null) {
+          const text = match[0];
+          insight.risks.push({
+            title: `Identified: ${text.substring(0, 50)}`,
+            description: text,
+            mitigation: "Requires further discussion and planning",
+            severity: text.toLowerCase().includes("critical") ? "critical" : "high",
+          });
+        }
+      });
+
+      // If no patterns found, add generic insights
+      if (insight.decisions.length === 0) {
+        insight.decisions.push({
+          category: "technology",
+          title: "Technology evaluation",
+          description: `Team discussed technology choices in "${conv.title}"`,
+          rationale: "From conversation context",
+          impact: "medium",
+        });
       }
 
-      // Sort by relevance and limit
-      related.sort((a, b) => b.relevance - a.relevance);
-      const topRelated = related.slice(0, limit);
+      insight.summary = `Found ${insight.decisions.length} architectural decisions and ${insight.risks.length} potential risks.`;
 
-      if (topRelated.length === 0) {
-        return `No related conversations found for "${reference.title}".`;
-      }
+      return `## Architecture & Decision Log for "${conv.title}"
 
-      return `Found ${topRelated.length} related conversations:\n\n${topRelated
-        .map((r) => `- "${r.title}" (${(r.relevance * 100).toFixed(0)}% match): ${r.reason}`)
-        .join("\n")}`;
+${insight.summary}
+
+### Key Decisions:
+${insight.decisions
+  .map(
+    (d, i) => `
+${i + 1}. **[${d.category.toUpperCase()}] ${d.title}**
+   - Impact: ${d.impact}
+   - Rationale: ${d.rationale}
+`
+  )
+  .join("\n")}
+
+${
+  insight.risks.length > 0
+    ? `### Identified Risks:
+${insight.risks
+  .map(
+    (r, i) => `
+${i + 1}. **[${r.severity.toUpperCase()}] ${r.title}**
+   - ${r.description}
+   - Mitigation: ${r.mitigation}
+`
+  )
+  .join("\n")}`
+    : ""
+}`;
     }
   );
 }

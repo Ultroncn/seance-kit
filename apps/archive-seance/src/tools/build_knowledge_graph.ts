@@ -1,27 +1,23 @@
 import { defineTool } from "@seance/core";
 import { z } from "zod";
 import type { ArchiveDeps } from "./shared";
+import { requireConversation } from "./shared";
 
-export interface KnowledgeNode {
-  id: string;
-  label: string;
-  type: "topic" | "technology" | "decision" | "person";
-  frequency: number;
+export interface GitHubIssue {
+  title: string;
+  description: string;
+  labels: string[];
+  priority: "P0" | "P1" | "P2";
+  assignee?: string;
 }
 
-export interface KnowledgeEdge {
-  source: string;
-  target: string;
-  weight: number;
-  conversationIds: string[];
+export interface TaskList {
+  issues: GitHubIssue[];
+  summary: string;
 }
 
 const input = z.object({
-  conversation_ids: z
-    .array(z.string())
-    .optional()
-    .describe("List of conversation IDs to analyze (if empty, uses all)"),
-  extract_entities: z.boolean().optional().default(true).describe("Whether to extract specific entities"),
+  conversation_id: z.string().min(1).describe("The conversation ID to extract tasks from"),
 });
 
 export function buildKnowledgeGraph(deps: ArchiveDeps) {
@@ -29,144 +25,116 @@ export function buildKnowledgeGraph(deps: ArchiveDeps) {
     {
       name: "build_knowledge_graph",
       description:
-        "Build a knowledge graph from multiple conversations. Identifies key topics, technologies, decisions, and how they relate to each other. Returns nodes and edges for visualization.",
+        "Extract actionable tasks from conversation and generate GitHub-formatted issues. Identifies next steps, todos, and followups.",
       input,
     },
     async (params) => {
-      const conversationIds = params.conversation_ids || [];
-      const extractEntities = params.extract_entities !== false;
+      const conv = await requireConversation(deps, params.conversation_id);
+      const messages = conv.messages || [];
+      const fullText = messages.map((m) => m.content).join("\n");
 
-      // Get conversations to analyze
-      let conversations = [];
-      if (conversationIds.length === 0) {
-        conversations = await deps.storage.listConversations();
-      } else {
-        conversations = (
-          await Promise.all(
-            conversationIds.map((id) => deps.storage.getConversation(id))
-          )
-        ).filter(Boolean);
-      }
+      const taskList: TaskList = {
+        issues: [],
+        summary: "",
+      };
 
-      const nodes = new Map<string, KnowledgeNode>();
-      const edges = new Map<string, KnowledgeEdge>();
-
-      // Common tech keywords to extract
-      const techKeywords = [
-        "react",
-        "vue",
-        "angular",
-        "typescript",
-        "javascript",
-        "python",
-        "rust",
-        "golang",
-        "nodejs",
-        "nextjs",
-        "vite",
-        "webpack",
-        "graphql",
-        "rest",
-        "sql",
-        "mongodb",
-        "postgres",
-        "docker",
-        "kubernetes",
-        "aws",
-        "gcp",
-        "azure",
-        "claude",
-        "chatgpt",
-        "ai",
-        "ml",
-        "llm",
+      // Task extraction patterns
+      const taskPatterns = [
+        {
+          regex: /need to[\s:]([^.!?]{10,100})/gi,
+          label: "task",
+          priority: "P1" as const,
+        },
+        {
+          regex: /should[\s:]?([^.!?]{10,100})/gi,
+          label: "enhancement",
+          priority: "P2" as const,
+        },
+        {
+          regex: /todo[\s:]([^.!?]{10,100})/gi,
+          label: "todo",
+          priority: "P1" as const,
+        },
+        {
+          regex: /fix[\s:]?([^.!?]{10,100})/gi,
+          label: "bug",
+          priority: "P0" as const,
+        },
+        {
+          regex: /optimize[\s:]?([^.!?]{10,100})/gi,
+          label: "performance",
+          priority: "P1" as const,
+        },
+        {
+          regex: /refactor[\s:]?([^.!?]{10,100})/gi,
+          label: "refactor",
+          priority: "P2" as const,
+        },
       ];
 
-      for (const conv of conversations) {
-        const text = (conv.messages || []).map((m) => m.content).join(" ").toLowerCase();
+      const processedTasks = new Set<string>();
 
-        // Extract technologies
-        const foundTechs = new Set<string>();
+      taskPatterns.forEach((pattern) => {
+        let match;
+        while ((match = pattern.regex.exec(fullText)) !== null) {
+          const taskText = match[1].trim();
+          if (!processedTasks.has(taskText) && taskText.length > 5) {
+            processedTasks.add(taskText);
 
-        if (extractEntities) {
-          techKeywords.forEach((tech) => {
-            if (text.includes(tech)) {
-              foundTechs.add(tech);
-
-              if (!nodes.has(tech)) {
-                nodes.set(tech, {
-                  id: tech,
-                  label: tech.toUpperCase(),
-                  type: "technology",
-                  frequency: 1,
-                });
-              } else {
-                nodes.get(tech)!.frequency++;
-              }
-            }
-          });
-        }
-
-        // Extract general topics (frequent multi-word phrases)
-        const phrases = text.match(/\b[a-z]{4,}\s+[a-z]{4,}\b/g) || [];
-        const phraseFreq = new Map<string, number>();
-        phrases.forEach((phrase) => {
-          phraseFreq.set(phrase, (phraseFreq.get(phrase) || 0) + 1);
-        });
-
-        phraseFreq.forEach((freq, phrase) => {
-          if (freq >= 2) {
-            const nodeId = `topic:${phrase}`;
-            if (!nodes.has(nodeId)) {
-              nodes.set(nodeId, {
-                id: nodeId,
-                label: phrase,
-                type: "topic",
-                frequency: freq,
-              });
-            } else {
-              nodes.get(nodeId)!.frequency += freq;
-            }
-          }
-        });
-
-        // Create edges between found technologies
-        const techArray = Array.from(foundTechs);
-        for (let i = 0; i < techArray.length; i++) {
-          for (let j = i + 1; j < techArray.length; j++) {
-            const edgeId = `${techArray[i]}-${techArray[j]}`;
-            if (!edges.has(edgeId)) {
-              edges.set(edgeId, {
-                source: techArray[i],
-                target: techArray[j],
-                weight: 1,
-                conversationIds: [conv.id],
-              });
-            } else {
-              const edge = edges.get(edgeId)!;
-              edge.weight++;
-              if (!edge.conversationIds.includes(conv.id)) {
-                edge.conversationIds.push(conv.id);
-              }
-            }
+            taskList.issues.push({
+              title: taskText.substring(0, 70),
+              description: `**Context from conversation:** "${conv.title}"\n\n${taskText}\n\nOriginal task identified in discussion.`,
+              labels: [pattern.label, "from-ai-discussion"],
+              priority: pattern.priority,
+            });
           }
         }
+      });
+
+      // If no explicit tasks found, generate from summary
+      if (taskList.issues.length === 0) {
+        const summary = conv.title;
+        taskList.issues.push(
+          {
+            title: `Implement: ${summary.substring(0, 50)}`,
+            description: `Based on conversation: "${conv.title}"\n\nImplement the discussed feature/fix.`,
+            labels: ["implementation", "from-ai-discussion"],
+            priority: "P1",
+          },
+          {
+            title: `Review: ${summary.substring(0, 50)}`,
+            description: `Code review needed for changes discussed in "${conv.title}"`,
+            labels: ["review", "from-ai-discussion"],
+            priority: "P2",
+          },
+          {
+            title: `Test: ${summary.substring(0, 50)}`,
+            description: `Add tests for functionality discussed in "${conv.title}"`,
+            labels: ["testing", "from-ai-discussion"],
+            priority: "P2",
+          }
+        );
       }
 
-      // Convert to sortable array
-      const nodesArray = Array.from(nodes.values())
-        .sort((a, b) => b.frequency - a.frequency)
-        .slice(0, 20);
+      // Limit to top 6 issues
+      taskList.issues = taskList.issues.slice(0, 6);
+      taskList.summary = `Generated ${taskList.issues.length} GitHub issues from "${conv.title}"`;
 
-      const edgesArray = Array.from(edges.values())
-        .sort((a, b) => b.weight - a.weight)
-        .slice(0, 15);
+      return `## Generated GitHub Issues from "${conv.title}"
 
-      return `Built knowledge graph from ${conversations.length} conversations:\n\n**Key Topics & Technologies (${nodesArray.length} nodes):**\n${nodesArray
-        .map((n) => `- ${n.label} (appears ${n.frequency} times, type: ${n.type})`)
-        .join("\n")}\n\n**Connections (${edgesArray.length} edges):**\n${edgesArray
-        .map((e) => `- ${e.source} ↔ ${e.target} (connected in ${e.conversationIds.length} conversations)`)
-        .join("\n")}`;
+${taskList.summary}
+
+${taskList.issues
+  .map(
+    (issue, i) => `
+### ${i + 1}. ${issue.title}
+- **Priority:** ${issue.priority}
+- **Labels:** ${issue.labels.join(", ")}
+- **Description:**
+  ${issue.description.split("\n").join("\n  ")}
+`
+  )
+  .join("\n")}`;
     }
   );
 }
