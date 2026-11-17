@@ -90,7 +90,7 @@ Exit: public URL works, CI green, `.kiro` committed.
 ## M4. MCP, template, landing, a11y (Nov 29-30)
 
 - [x] 4.1 `packages/mcp-server` over stdio using the MCP SDK and File adapter. (R9.1, R9.3)
-- [ ] 4.2 Register in `.kiro/settings/mcp.json`. Test from Kiro with an exported archive. (R9.2) _Config written to `docs/kiro-mcp.json` and verified by running its exact commands with an MCP client. Kiro blocks agent writes to `.kiro/settings/`, so the user copies it and checks the servers in Kiro's MCP panel._
+- [x] 4.2 Register in `.kiro/settings/mcp.json`. Test from Kiro with an exported archive. (R9.2) _Nov 17, explicitly authorized by the user: both servers Connected (7 tools each); actual Kiro searches for `sourdough` and `boiler` each returned total 1. Archive also imported a Storage.exportAll JSON made from the 12 public sample conversations into a fresh isolated directory; its stored collection contained 12 records and a Kiro search succeeded. This was an API-generated sample export, not a verified browser download. Read calls required one-time approval despite autoApprove; no writes tested. Restored the portable sample config after the isolated check._
 - [x] 4.3 `templates/app` minimal working app. (R10.1)
 - [x] 4.4 `pnpm new:app` script. CI job generates an app, builds and tests it. (R10.2)
 - [x] 4.5 README "afternoon path" in under ten steps. (R10.3)
@@ -113,6 +113,7 @@ An independent review (four reviewer sub-agents, findings in `.shots/review-*.md
 - [x] R.7 Deploy and CI: deep links served in place (no 307); the `.kiro` check really fails when `.kiro` is ignored; Playwright fails on flaky tests in CI.
 - [x] R.8 MCP and storage: undo tool, one call at a time, data-folder lock, FileStorage batches writes (2,000 puts 6.6 s → 0.01 s).
 
+- [x] R.21 Register and verify both MCP servers in Kiro, including an isolated sample-export import; correct documentation that overstated observed read auto-approval.
 - [x] R.20 Complete the KIRO_USAGE text from tracked specs, steering, hooks and history; distinguish configuration, automated evidence and pending manual Kiro checks. Screenshot placeholders remain TODO; task 5.1 is not marked fully done.
 - [x] R.19 Verified the deployed apps offline on Nov 17 (`BASE_URL=https://seance-kit.mask988888888.workers.dev pnpm e2e e2e/offline.spec.ts`): 3/3 passed before local performance changes; no deployment made.
 - [x] R.18 Split importers, email parsing, zip extraction, Settings, the command palette and the directory-import dialog on demand; defer the existing landing timeline until near the viewport. Keep all chunks precached for offline use; add initial-executable-JS budgets and offline first-use coverage. Measurements and limits in design.md section 12b.

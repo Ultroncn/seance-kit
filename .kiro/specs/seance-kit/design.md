@@ -37,7 +37,7 @@ templates/app/             starter copied by `pnpm new:app`
 scripts/                   build-all, serve-dist, new-app, check-kiro-not-ignored
 worker/                    Cloudflare Worker: per-app SPA fallback
 wrangler.jsonc             Cloudflare deploy config
-docs/kiro-mcp.json         Kiro MCP config, copied by the user to .kiro/settings/mcp.json
+docs/kiro-mcp.json         Portable example, also tracked at .kiro/settings/mcp.json
 LICENSE  README.md  KIRO_USAGE.md
 ```
 
@@ -180,7 +180,7 @@ Large files are read in chunks and imported in batches so the UI stays responsiv
 
 Each app has `mcp/app.ts` (its registry, search and importers over `FileStorage`) and `mcp/main.ts`. Flags: `--data <dir>`, `--import <file>` (a Séance export from Settings, or a raw export the app reads), `--read-only`. Relative paths resolve against the repo root, so the server works whatever directory the client starts it from. Logs go to stderr.
 
-Kiro config: `docs/kiro-mcp.json`, to be copied to `.kiro/settings/mcp.json`. Kiro's built-in scope rule blocks agents from writing `.kiro/settings/`, so the user copies it. Read tools are auto-approved. Kiro asks before every write and destructive tool. The Kiro docs do not say that annotations change approval, so we rely on `autoApprove` only. Each start imports the sample data, and P3 makes re-imports no-ops.
+Kiro config: `docs/kiro-mcp.json`, also tracked at `.kiro/settings/mcp.json` after the user's explicit Nov 17 authorization. Each server connected in Kiro with seven tools. The config lists only read tools in `autoApprove`, but Kiro still requested one-time approval for reads in the tested Accept file changes session. No persistent approval was granted and no MCP write was exercised, so configuration and risk annotations are not proof of client approval behavior. Each start imports the fictional sample data, and P3 makes re-imports no-ops.
 
 ## 10. UI and visual direction
 

@@ -41,7 +41,7 @@ CI generates an app from the template on every push and checks that it installs,
 
 ## Use the apps from Kiro (MCP)
 
-Copy `docs/kiro-mcp.json` to `.kiro/settings/mcp.json`. Kiro starts both servers on the sample data. Then ask, for example: _"Use archive-seance to find my Lisbon chats."_ Read tools are auto-approved, and Kiro asks before every change.
+The checked-in `.kiro/settings/mcp.json` matches `docs/kiro-mcp.json` and starts both servers on fictional sample data. Then ask, for example: _"Use archive-seance to search for sourdough."_ Only read tools are listed in `autoApprove`; the Nov 17 Kiro acceptance session still requested approval for those reads. Review each permission prompt. Write and destructive tools are not in the auto-approval list.
 
 To use your own data, change the `--import` paths to a Séance export (Settings → Export all data) or a raw `conversations.json`, `.zip` or `.mbox`. Re-importing the same file adds nothing.
 
