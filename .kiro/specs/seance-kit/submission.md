@@ -23,23 +23,24 @@ Sources: [Official rules](https://kiroween.devpost.com/rules), [submission final
 - `KIRO_USAGE.md` now includes actual spec, steering, hooks, MCP, history and review/test screenshots, plus the configured real-model approval state in docs/runtime-evidence. Captions state the coverage limits.
 - The existing Devpost draft was renamed **Séance Kit**. Its project story, three technology tags, four links, Skeleton Crew category, testing instructions and technology disclosure were saved. The form still shows **DRAFT, 2/5 steps**; missing fields and terms have not been fabricated or accepted.
 
-## Demo cut and remaining recording
+## Reviewed demo cut and remaining publication
 
-The current English candidate measures **2:44.63** (1920×1080, H.264/AAC). It is an edited montage of actual browser/Kiro screenshots with synthetic English narration and subtitles, **not continuous screen recording**. The pending-model placeholder has been replaced with the actual deepseek-flash search/read/summary-approval state. No key or private archive is recorded. The candidate still needs owner review and authorization for a public YouTube upload; no final video URL exists yet.
+The local publication file is **seance-kit-demo-publish.mp4**, **1:44.67**, 1920×1080 H.264/AAC. It replaces the rejected screenshot-only candidate. Actual tab interactions are edited together with cropped Kiro evidence, synthetic English narration and subtitles. Source tabs were sampled at approximately four frames per second during actual actions and rendered at 30 fps; this is not native 30 fps capture or a one-take recording. Cuts and final-frame holds preserve the timing of the selected action ranges.
 
-The final video should follow this 2:45 outline, leaving 15 seconds below the limit:
-
-| Time | Actual screen action | Narration focus |
+| Time | Shown evidence | Coverage |
 | --- | --- | --- |
-| 0:00–0:12 | Landing page and two app links | One reusable local-first agent template, two concrete apps. |
-| 0:12–0:32 | Tool definition and shared UI | zod schema, risk, agent loop, storage; `pnpm new:app`. |
-| 0:32–1:02 | Archive public sample, search/tag approval, Reject | Demo badge stays visible; the script invokes actual tools and respects rejection. |
-| 1:02–1:27 | Owner-configured real provider and one actual prompt | Hide key-entry fields while recording. Show successful connection, selected model, no Mock badge and actual tool/approval result. This state has been captured with deepseek-flash; the video candidate uses a still-image montage, not a continuous settings-switch recording. |
-| 1:27–1:57 | Inbox sample, Banish approval, Allow, Undo | Five listed messages, Inbox 18→13→18, recoverable local changes; never sends. |
-| 1:57–2:37 | Kiro specs, steering/hook configuration and actual MCP read result | Distinguish configured hooks from observed execution; disclose other-tool follow-up. |
-| 2:37–2:45 | Public demo and repository links | No account for the labelled demo; bring your own provider for a real model. |
+| 0:00–0:18 | Landing and actual Define/Run/Render tab changes | Typed tools and the shared foundation. |
+| 0:18–0:30 | Archive sample load/read, tag approval and Reject | Demo provider; actual tools and rejection. |
+| 0:30–0:50 | Inbox import, full approval list, Allow and Undo | Five messages; Inbox 18→13→18; local recovery. |
+| 0:50–1:10 | Actual deepseek-flash search/read and tag approval/Reject | Owner-configured real provider; a second explicit prompt requested the tag tool. No tag was added. Settings/key entry is not recorded. |
+| 1:10–1:35 | Cropped actual Kiro specs, steering, hook configuration and MCP results | Hook configuration is labelled as configuration, not proof of execution; each observed MCP search returned one sample record. |
+| 1:35–1:45 | Readable public demo and repository URLs | Labelled demo without sign-up; own provider required for real calls. |
 
-Final recording checklist: actual working flows; readable Demo badge; real-provider segment genuinely verified; no keys/private data; English narration/subtitles; duration below 180 seconds; YouTube **public**, then put the actual URL in Devpost and `VIDEO_URL` in `site/src/App.tsx`. No placeholder URL.
+All 17 scene samples and all 26 caption frames were visually checked. Complete local audio transcription matches the script after normalizing “eighteen”/“18”; subtitles were aligned to the recognized word boundaries. The complete file decodes without error. This is frame-based visual review, full automated transcription and technical audio checking, not a claim of human listening or uninterrupted full-speed playback. See [media review and asset disclosure](../../../docs/demo-video-review.md).
+
+Narration is locally generated with Kokoro-82M v1.0 (Apache-2.0), voice af_heart, through kokoro-onnx (MIT); it is not the owner's voice. The publication package contains captions, credits, the upload copy and a checksum manifest. Earlier system-voice drafts are superseded. No key, private archive, stock footage or music is included.
+
+**No upload or public video URL exists yet.** The owner still needs to review this specific file and authorize public YouTube publication. After successful upload, put the actual URL in Devpost and `VIDEO_URL` in `site/src/App.tsx`; do not insert a placeholder.
 
 ## Saved Devpost copy
 
@@ -114,7 +115,7 @@ The project uses standard third-party libraries and tools listed in the reposito
 ## Owner actions and final gate
 
 - [x] Owner-configured real-provider tool/approval path: owner confirmed working, and actual deepseek-flash browser state showed a successful search and five reads followed by a summary approval card. No write was approved during capture, and no key was recorded. The earlier gpt-6-luna error is not claimed fixed; other endpoints were not manually certified.
-- [ ] Review the candidate containing the actual real-model state, approve the publication, and upload a public YouTube video. Add its actual link to the landing page and Devpost. The candidate is a screenshot montage, not a continuous recording.
+- [ ] Review the 1:44.67 publication file, authorize public YouTube upload, and verify the resulting public video. Add its actual link to the landing page and Devpost. The edited video includes actual recorded interactions and Kiro evidence; it is not a one-take recording.
 - [x] Upload the three public sample cover/gallery images. On Nov 17, the approved landing-page cover and Archive/Inbox approval screenshots were uploaded through the native file picker; both gallery captions were saved and verified after navigation. The upload interface continued returning a file-permission error despite the owner reporting the flag already enabled. Its actual cause was not established; no extension setting change was needed for native upload.
 - [ ] Fill personal fields truthfully: residence, age/jurisdiction eligibility, submitter type, AWS employment, previous Kiroween participation and the two personal surveys. Do not infer these from the repository.
 - [ ] Review all saved fields and the public preview. Re-check remote commit, CI, deployed site and the final R1 checklist.
